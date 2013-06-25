@@ -39,12 +39,12 @@ import cx.util.SourcePosition;
 
 public class EvaluateVisitor implements Visitor {
 	private Context cx = null;
-	private SourcePosition position = null;
-	private final boolean isDebug;
+	private final List<ObjectHandler> handlers = new ArrayList<ObjectHandler>();
 
-	public EvaluateVisitor(Context paramContext, boolean isDebug) {
+	public SourcePosition position = null;
+
+	public EvaluateVisitor(Context paramContext) {
 		cx = paramContext;
-		this.isDebug = isDebug;
 	}
 
 	private Object eval(Node paramNode) {
@@ -65,6 +65,10 @@ public class EvaluateVisitor implements Visitor {
 		cx = cx.parent;
 	}
 
+	void addHandler(ObjectHandler handler) {
+		if (handler != null) handlers.add(handler);
+	}
+
 	public void visitBlock(NodeBlock paramBlockNode) {
 		position = paramBlockNode.position;
 		try {
@@ -72,12 +76,6 @@ public class EvaluateVisitor implements Visitor {
 
 			for (Node statement : paramBlockNode.statements) {
 				eval(statement);
-			}
-			if (isDebug) {
-				System.out.println("{");
-				System.out.println(position);
-				cx.dumpContext();
-				System.out.println("}");
 			}
 		} finally {
 			popContext();
@@ -127,7 +125,7 @@ public class EvaluateVisitor implements Visitor {
 			cx.setVariable(varName, rhsObject);
 
 		} else if (assignNode.left instanceof NodeAccess) {
-			// TODO: implement
+			setNodeAccessValue((NodeAccess) assignNode.left, eval(assignNode.right));
 
 		} else if (assignNode.left == null) {
 			cx.result = null;
@@ -349,39 +347,57 @@ public class EvaluateVisitor implements Visitor {
 		return new Integer(number.intValue() - 1);
 	}
 
-	public void visitUnary(NodeUnary paramUnaryExprNode) {
-		position = paramUnaryExprNode.position;
-		Object result = eval(paramUnaryExprNode.expresion);
-		switch (paramUnaryExprNode.operator) {
+	public void visitUnary(NodeUnary unary) {
+		position = unary.position;
+		Object result = eval(unary.expresion);
+		switch (unary.operator) {
 			case NOT:
-				if ((result instanceof Boolean)) cx.result = (!((Boolean) result) ? Boolean.TRUE : Boolean.FALSE);
+				if ((result instanceof Boolean)) {
+					cx.result = (!((Boolean) result) ? Boolean.TRUE : Boolean.FALSE);
+				}
 				break;
 			case INC_PRE:
 				if ((result instanceof Number)) {
-					cx.result = increment((Number) result);
-					if ((paramUnaryExprNode.expresion instanceof NodeVariable))
-						cx.setVariable(((NodeVariable) paramUnaryExprNode.expresion).name, cx.result);
+					Object newValue = increment((Number) result);
+					if ((unary.expresion instanceof NodeVariable)) {
+						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+					} else if (unary.expresion instanceof NodeAccess) {
+						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
+					}
+					cx.result = newValue;
 				}
 				break;
 			case INC_POST:
 				if ((result instanceof Number)) {
+					Object newValue = increment((Number) result);
+					if (unary.expresion instanceof NodeVariable) {
+						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+					} else if (unary.expresion instanceof NodeAccess) {
+						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
+					}
 					cx.result = result;
-					if ((paramUnaryExprNode.expresion instanceof NodeVariable))
-						cx.setVariable(((NodeVariable) paramUnaryExprNode.expresion).name, increment((Number) result));
 				}
 				break;
 			case DEC_PRE:
 				if ((result instanceof Number)) {
-					cx.result = decrement((Number) result);
-					if ((paramUnaryExprNode.expresion instanceof NodeVariable))
-						cx.setVariable(((NodeVariable) paramUnaryExprNode.expresion).name, cx.result);
+					Object newValue = decrement((Number) result);
+					if ((unary.expresion instanceof NodeVariable)) {
+						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+					} else if (unary.expresion instanceof NodeAccess) {
+						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
+					}
+					cx.result = newValue;
 				}
 				break;
 			case DEC_POST:
 				if ((result instanceof Number)) {
+					Object newValue = decrement((Number) result);
+					if ((unary.expresion instanceof NodeVariable)) {
+						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+					} else if (unary.expresion instanceof NodeAccess) {
+						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
+					}
 					cx.result = result;
-					if ((paramUnaryExprNode.expresion instanceof NodeVariable))
-						cx.setVariable(((NodeVariable) paramUnaryExprNode.expresion).name, decrement((Number) result));
 				}
 				break;
 		}
@@ -720,16 +736,129 @@ public class EvaluateVisitor implements Visitor {
 		cx.result = result;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void setNodeAccessValue(NodeAccess access, Object value) {
+		Object obj = eval(access.object);
+		String element;
+		if (access.element instanceof NodeVariable) {
+			element = ((NodeVariable) access.element).name;
+		} else {
+			element = eval(access.element).toString();
+		}
+
+		if (obj instanceof Map) {
+			((Map) obj).put(element, value);
+		} else if (obj instanceof List) {
+			final List list = ((List) obj);
+			try {
+				int ix = Integer.parseInt(element);
+				while (ix >= list.size()) {
+					list.add(null);
+				}
+				list.set(ix, value);
+			} catch (Exception e) {
+				// not an integer index for addressing list
+			}
+		} else {
+			for (ObjectHandler handler : handlers) {
+				if (handler.accept(obj)) {
+					handler.set(obj, element, value);
+					break;
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
 	public void visitAccess(NodeAccess node) {
-		// TODO Auto-generated method stub
+		position = node.position;
+		Object obj = eval(node.object);
+		String element;
+		if (node.element instanceof NodeVariable) {
+			element = ((NodeVariable) node.element).name;
+		} else {
+			element = eval(node.element).toString();
+		}
+
+		cx.result = null;
+		if (obj instanceof Map) {
+			cx.result = ((Map) obj).get(element);
+		} else if (obj instanceof List) {
+			final List list = ((List) obj);
+			try {
+				int ix = Integer.parseInt(element);
+				if (ix >= 0 && ix < list.size()) {
+					cx.result = list.get(ix);
+				}
+			} catch (Exception e) {
+				// not an integer index for addressing list
+			}
+		} else {
+			for (ObjectHandler handler : handlers) {
+				if (handler.accept(obj)) {
+					cx.result = handler.get(obj, element);
+					break;
+				}
+			}
+		}
 	}
 
-	public void visitFunction(NodeFunction paramFunctionDeclNode) {
-		position = paramFunctionDeclNode.position;
-		// TODO Auto-generated method stub
+	public void visitFunction(NodeFunction function) {
+		position = function.position;
+		String name = function.name;
+		if (name != null && name.length() > 0) {
+			cx.setVariable(name, function);
+		}
+		cx.result = function;
 	}
 
-	public void visitCall(NodeCall paramFunctionNode) {
-		// TODO Auto-generated method stub
+	public void visitCall(NodeCall call) {
+		position = call.position;
+		// evaluate arguments left to right
+
+		Object function = eval(call.function);
+		List<Node> arguments = call.arguments.elements;
+		Object[] argValues = new Object[arguments.size()];
+		for (int i = 0; i < argValues.length; i++) {
+			argValues[i] = eval(arguments.get(i));
+		}
+
+		try {
+			pushContext();
+			cx.result = null;
+			// do the call
+			if (function instanceof NodeFunction) {
+				cx.result = callNodeFunction(cx, ((NodeFunction) function), argValues);
+
+			} else {
+				for (ObjectHandler handler : handlers) {
+					if (handler.accept(function)) {
+						cx.result = handler.call(cx, function, argValues);
+						break;
+					}
+				}
+			}
+		} finally {
+			popContext();
+		}
+	}
+
+	public Object callNodeFunction(Context executionContext, NodeFunction function, Object[] args) {
+		final List<Node> params = function.arguments.elements;
+		final int l = args.length;
+		if (l != params.size()) {
+			return null;
+		}
+		// add parameters
+		for (int i = 0; i < l; i++) {
+			executionContext.setVariable(params.get(i).toString(), args[i]);
+		}
+		try {
+			// evaluate function
+			executionContext.evaluate(function.body);
+		} catch (JumpReturn result) {
+			executionContext.result = result.value;
+		}
+		return executionContext.result;
 	}
 }
