@@ -1,0 +1,97 @@
+package cx;
+
+import cx.Scanner;
+import cx.Token;
+import junit.framework.TestCase;
+
+public class TestScanner extends TestCase {
+
+	public void testScanner() {
+		Scanner scanner;
+
+		scanner = new Scanner("0xAC;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.NUMBER, scanner.getToken());
+		assertEquals("0xAC", scanner.getString());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+		assertEquals(Token.EOF, scanner.getToken());
+
+		scanner = new Scanner("++p;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.INCREMENT, scanner.getToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+		assertEquals(Token.EOF, scanner.getToken());
+
+		scanner = new Scanner("/* comment */++p;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.INCREMENT, scanner.getToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+		assertEquals(Token.EOF, scanner.getToken());
+
+		scanner = new Scanner(" // comment \n ++p;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.INCREMENT, scanner.peekToken());
+		assertEquals(Token.INCREMENT, scanner.getToken());
+		assertEquals(Token.NAME, scanner.peekToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.SEMICOLON, scanner.peekToken());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+		assertEquals(Token.EOF, scanner.getToken());
+
+		scanner = new Scanner(" // comment \n ++p;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.INCREMENT, scanner.peekToken());
+		assertEquals(Token.INCREMENT, scanner.peekToken());
+		assertEquals(Token.INCREMENT, scanner.peekToken());
+		assertEquals(Token.INCREMENT, scanner.getToken());
+		assertEquals(Token.NAME, scanner.peekToken());
+		assertEquals(Token.NAME, scanner.peekToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.SEMICOLON, scanner.peekToken());
+		assertEquals(Token.SEMICOLON, scanner.peekToken());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+		assertEquals(Token.EOF, scanner.getToken());
+
+		scanner = new Scanner(" // comment \n ++p;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.INCREMENT, scanner.peekToken(1));
+		assertEquals(Token.NAME, scanner.peekToken(2));
+		assertEquals(Token.SEMICOLON, scanner.peekToken(3));
+		assertEquals(Token.EOF, scanner.peekToken(4));
+		assertEquals(Token.EOF, scanner.peekToken(5));
+		assertEquals(Token.EOF, scanner.peekToken(5));
+
+		scanner = new Scanner("obj.5?^;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.NUMBER, scanner.getToken());
+		assertEquals(Token.QUESTION, scanner.getToken());
+		assertEquals(Token.BIT_XOR, scanner.getToken());
+
+		scanner = new Scanner(
+				"if do for new \t var \r case else null \n true this  break    while false return switch import delete default continue function ");
+		scanner.setDebugMode(true);
+		assertEquals(Token.IF, scanner.getToken());
+		assertEquals(Token.DO, scanner.getToken());
+		assertEquals(Token.FOR, scanner.getToken());
+		assertEquals(Token.NEW, scanner.getToken());
+		assertEquals(Token.VAR, scanner.getToken());
+		assertEquals(Token.CASE, scanner.getToken());
+		assertEquals(Token.ELSE, scanner.getToken());
+		assertEquals(Token.NULL, scanner.getToken());
+		assertEquals(Token.TRUE, scanner.getToken());
+		assertEquals(Token.THIS, scanner.getToken());
+		assertEquals(Token.BREAK, scanner.getToken());
+		assertEquals(Token.WHILE, scanner.getToken());
+		assertEquals(Token.FALSE, scanner.getToken());
+		assertEquals(Token.RETURN, scanner.getToken());
+		assertEquals(Token.SWITCH, scanner.getToken());
+		assertEquals(Token.IMPORT, scanner.getToken());
+		assertEquals(Token.DELETE, scanner.getToken());
+		assertEquals(Token.DEFAULT, scanner.getToken());
+		assertEquals(Token.CONTINUE, scanner.getToken());
+		assertEquals(Token.FUNCTION, scanner.getToken());
+	}
+}
