@@ -1,0 +1,120 @@
+
+var SUDOKU = [
+    2,0,7, 0,3,5, 0,0,8,
+    5,0,3, 0,0,0, 0,0,0,
+    9,0,4, 0,7,0, 5,0,0,
+    
+    3,7,0, 0,0,0, 8,0,0,
+    0,0,0, 0,2,0, 0,0,0,
+    0,0,5, 0,0,0, 0,7,3,
+    
+    0,0,8, 0,9,0, 3,0,5,
+    0,0,0, 0,0,0, 1,0,7,
+    7,0,0, 5,1,0, 6,0,2
+];
+
+var SUDOKU_ZERO = [
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0,
+    
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0,
+    
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0,
+    0,0,0, 0,0,0, 0,0,0
+];
+
+var result = "";
+
+function log(msg){
+    result = result + msg + "\n";
+};
+
+function checkHorisontal(SUDOKU, x, g){
+    for(var y = 0; y < 9; y++){
+        if(SUDOKU[x*9+y] == g){
+            return false;
+        }
+    }
+    return true;
+};
+
+function checkVertical(SUDOKU, y, g){
+    for(var x = 0; x < 9; x++){
+        if(SUDOKU[x*9+y] == g){
+            return false;
+        }
+    }
+    return true;
+};
+
+function checkSquare(SUDOKU, x, y, g){
+    var h = (x / 3)|0;
+    var w = (y / 3)|0;
+    h*=3;
+    w*=3;
+    for(var i = 0; i < 3; i++){
+        for(var j = 0; j < 3; j++){
+            if(SUDOKU[(h+i)*9+(w+j)] == g){
+                return false;
+            }
+        }
+    }
+    return true;
+};
+
+function solve(SUDOKU, x, y){
+    if(x>8){
+        dumpResult(SUDOKU);
+        return true;
+    }
+    
+    if(SUDOKU[x*9+y] > 0){
+        if(y<8) return solve(SUDOKU,x, y+1);
+        else return solve(SUDOKU,x+1, 0);
+        
+    }else{
+        //brute forse
+        for(var g = 1; g < 10; ++g){
+            if(!checkHorisontal(SUDOKU, x, g)) continue;
+            if(!checkVertical(SUDOKU, y, g)) continue;
+            if(!checkSquare(SUDOKU, x, y, g)) continue;
+            SUDOKU[x*9+y] = g;
+            
+            var result = false;
+            if(y<8) result = solve(SUDOKU,x, y+1);
+            else result = solve(SUDOKU,x+1, 0);
+            SUDOKU[x*9+y] = 0;
+            if(result) return result;
+        }
+        return false;
+    }
+};
+
+function dumpResult(SUDOKU){
+    log("");
+    for(var i = 0; i < 9; i++){
+        var line ="";
+        for(var j = 0; j < 9; j++){
+            var n = SUDOKU[i*9+j];
+            line = line + " " +n;
+            if(j%3 == 2){
+                line =line +"   ";
+            }
+            
+        }
+        log(line);
+        if(i%3 == 2){
+            log("");
+        }
+    }
+};
+
+log("================== original ===================");
+dumpResult(SUDOKU);
+log("================== solution ===================");
+log(solve(SUDOKU,0,0) ? "ok" : "error");
+result;
