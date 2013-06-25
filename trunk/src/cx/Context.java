@@ -3,27 +3,56 @@ package cx;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import com.sun.beans.ObjectHandler;
 import cx.ast.Node;
 import cx.runtime.EvaluateVisitor;
 
 public class Context {
+	public Object result = null;
 	public final Context parent;
 	private final Map<String, Object> cx = new HashMap<String, Object>(32);
-	public Object result = null;
-	public boolean debugMode = false;
+	private EvaluateVisitor localEvaluateVisitor;
 
 	public Context() {
 		parent = null;
+		localEvaluateVisitor = new EvaluateVisitor(this);
 	}
 
 	public Context(Context parent) {
 		this.parent = parent;
+		localEvaluateVisitor = parent.localEvaluateVisitor;
+	}
+
+	void addHandler(ObjectHandler handler) {
+		// add handler to the parent interpreter: localEvaluateVisitor
+		if (handler == null) return;
+		Context ccx = this;
+		while (ccx.parent != null) {
+			ccx = ccx.parent;
+		}
+		ccx.addHandler(handler);
+	}
+
+	public static final void mergeContext(Context from, Context to) {
+		List<Context> cxs = new LinkedList<Context>();
+		Context ccx = from;
+		while (ccx != null) {
+			cxs.add(ccx);
+			ccx = ccx.parent;
+		}
+		for (Context c : cxs) {
+			to.addContext(c);
+		}
+	}
+
+	public void addContext(Context context) {
+		cx.putAll(context.cx);
 	}
 
 	public Context evaluate(Node node) {
-		EvaluateVisitor localEvaluateVisitor = new EvaluateVisitor(this, debugMode);
 		node.accept(localEvaluateVisitor);
 		return this;
 	}
