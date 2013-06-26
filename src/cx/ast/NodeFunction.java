@@ -20,6 +20,6 @@ public class NodeFunction extends Node {
 	}
 
 	public String toString() {
-		return "fuction " + name + "(" + arguments + ")" + body;
+		return "function " + name + "(" + arguments + ")" + body;
 	}
 }

@@ -13,7 +13,7 @@ import cx.runtime.EvaluateVisitor;
 public class Context {
 	public Object result = null;
 	public final Context parent;
-	private final Map<String, Object> cx = new HashMap<String, Object>(32);
+	public final Map<String, Object> cx = new HashMap<String, Object>(32);
 	private EvaluateVisitor localEvaluateVisitor;
 
 	public Context() {
@@ -57,11 +57,7 @@ public class Context {
 		return this;
 	}
 
-	public Map<String, Object> getVariables() {
-		return cx;
-	}
-
-	public Object getVariable(String paramString) {
+	public Object get(String paramString) {
 		Context ccx = this;
 		Object result;
 		do {
@@ -74,7 +70,7 @@ public class Context {
 		return null;
 	}
 
-	public Context setVariable(String paramString, Object paramScriptObject) {
+	public Context set(String paramString, Object paramScriptObject) {
 		Context ccx = this;
 		Object result;
 		do {
@@ -100,12 +96,13 @@ public class Context {
 		}
 		Collections.sort(_keys);
 
-		StringBuilder result = new StringBuilder();
+		StringBuilder result = new StringBuilder("{\n");
 		for (int i = 0; i < _keys.size(); i++) {
 			Object key = _keys.get(i);
 			result.append(key).append(" = ");
 			result.append(cx.get(key)).append("\n");
 		}
+		result.append("}");
 		return result.toString();
 	}
 

@@ -1,7 +1,6 @@
 package cx.runtime;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import cx.Context;
@@ -38,6 +37,7 @@ import cx.exception.JumpReturn;
 import cx.util.SourcePosition;
 
 public class EvaluateVisitor implements Visitor {
+	private static final String THIS = "this";
 	private Context cx = null;
 	private final List<ObjectHandler> handlers = new ArrayList<ObjectHandler>();
 
@@ -114,7 +114,7 @@ public class EvaluateVisitor implements Visitor {
 
 	public void visitVariable(NodeVariable variableNode) {
 		position = variableNode.position;
-		cx.result = cx.getVariable(variableNode.name);
+		cx.result = cx.get(variableNode.name);
 	}
 
 	public void visitAssign(NodeAssign assignNode) {
@@ -122,7 +122,7 @@ public class EvaluateVisitor implements Visitor {
 		if (assignNode.left instanceof NodeVariable) {
 			String varName = ((NodeVariable) assignNode.left).name;
 			Object rhsObject = eval(assignNode.right);
-			cx.setVariable(varName, rhsObject);
+			cx.set(varName, rhsObject);
 
 		} else if (assignNode.left instanceof NodeAccess) {
 			setNodeAccessValue((NodeAccess) assignNode.left, eval(assignNode.right));
@@ -360,7 +360,7 @@ public class EvaluateVisitor implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = increment((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+						cx.set(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -371,7 +371,7 @@ public class EvaluateVisitor implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = increment((Number) result);
 					if (unary.expresion instanceof NodeVariable) {
-						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+						cx.set(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -382,7 +382,7 @@ public class EvaluateVisitor implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = decrement((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+						cx.set(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -393,7 +393,7 @@ public class EvaluateVisitor implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = decrement((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.setVariable(((NodeVariable) unary.expresion).name, newValue);
+						cx.set(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -725,15 +725,24 @@ public class EvaluateVisitor implements Visitor {
 		cx.result = result;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void visitObject(NodeObject object) {
 		position = object.position;
-		int len = object.object.size();
-		Map result = new HashMap(len);
-		for (String key : object.object.keySet()) {
-			result.put(key, eval(object.object.get(key)));
+		String parentObjectName = object.parent;
+		final Context newObject;
+		if (parentObjectName != null && parentObjectName.length() > 0) {
+			Object parent = cx.get(parentObjectName);
+			newObject = (parent instanceof Context) ? new Context((Context) parent) : new Context();
+		} else {
+			newObject = new Context();
 		}
-		cx.result = result;
+		Context current = cx;
+		cx = newObject;
+		// add object elements
+		for (String key : object.object.keySet()) {
+			newObject.set(key, eval(object.object.get(key)));
+		}
+		cx = current;
+		cx.result = newObject;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -746,8 +755,8 @@ public class EvaluateVisitor implements Visitor {
 			element = eval(access.element).toString();
 		}
 
-		if (obj instanceof Map) {
-			((Map) obj).put(element, value);
+		if (obj instanceof Context) {
+			((Context) obj).set(element, value);
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
@@ -759,6 +768,8 @@ public class EvaluateVisitor implements Visitor {
 			} catch (Exception e) {
 				// not an integer index for addressing list
 			}
+		} else if (obj instanceof Map) {
+			((Map) obj).put(element, value);
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
@@ -781,8 +792,8 @@ public class EvaluateVisitor implements Visitor {
 		}
 
 		cx.result = null;
-		if (obj instanceof Map) {
-			cx.result = ((Map) obj).get(element);
+		if (obj instanceof Context) {
+			cx.result = ((Context) obj).get(element);
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
@@ -793,6 +804,8 @@ public class EvaluateVisitor implements Visitor {
 			} catch (Exception e) {
 				// not an integer index for addressing list
 			}
+		} else if (obj instanceof Map) {
+			cx.result = ((Map) obj).get(element);
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
@@ -806,10 +819,11 @@ public class EvaluateVisitor implements Visitor {
 	public void visitFunction(NodeFunction function) {
 		position = function.position;
 		String name = function.name;
+		Function result = new Function(cx, function);
 		if (name != null && name.length() > 0) {
-			cx.setVariable(name, function);
+			cx.set(name, result);
 		}
-		cx.result = function;
+		cx.result = result;
 	}
 
 	public void visitCall(NodeCall call) {
@@ -827,8 +841,8 @@ public class EvaluateVisitor implements Visitor {
 			pushContext();
 			cx.result = null;
 			// do the call
-			if (function instanceof NodeFunction) {
-				cx.result = callNodeFunction(cx, ((NodeFunction) function), argValues);
+			if (function instanceof Function) {
+				cx.result = callFunction(cx, ((Function) function), argValues);
 
 			} else {
 				for (ObjectHandler handler : handlers) {
@@ -843,19 +857,22 @@ public class EvaluateVisitor implements Visitor {
 		}
 	}
 
-	public Object callNodeFunction(Context executionContext, NodeFunction function, Object[] args) {
-		final List<Node> params = function.arguments.elements;
+	public Object callFunction(Context executionContext, Function function, Object[] args) {
+		final List<Node> params = function.function.arguments.elements;
 		final int l = args.length;
 		if (l != params.size()) {
 			return null;
 		}
+		//add this
+
+		executionContext.cx.put(THIS, function.thiz);
 		// add parameters
 		for (int i = 0; i < l; i++) {
-			executionContext.setVariable(params.get(i).toString(), args[i]);
+			executionContext.set(params.get(i).toString(), args[i]);
 		}
 		try {
 			// evaluate function
-			executionContext.evaluate(function.body);
+			executionContext.evaluate(function.function.body);
 		} catch (JumpReturn result) {
 			executionContext.result = result.value;
 		}

@@ -1021,16 +1021,14 @@ public class Parser {
 			if (token == Token.R_CURLY) {
 				token = scanner.getToken();
 				return;
-			}
-			if (token == Token.COMMA) {
+			} else if (token == Token.COMMA) {
 				scanner.getToken();
 				token = scanner.peekToken();
 				if (token == Token.R_CURLY) {
 					scanner.getToken();
 					return;
 				}
-			}
-			if (token == Token.STRING || token == Token.NAME || token == Token.NUMBER) {
+			} else if (token == Token.STRING || token == Token.NAME || token == Token.NUMBER) {
 				token = scanner.getToken();
 				String key = scanner.getString();
 				if (!scanner.matchToken(Token.COLON)) {
@@ -1038,6 +1036,8 @@ public class Parser {
 				}
 				element = parseExpression();
 				result.put(key, element);
+			} else {
+				handleError("unexpected token: " + token, getSrcPos());
 			}
 		} while (token != Token.EOF && token != Token.ERROR);
 		handleError("Missing '}'", getSrcPos());

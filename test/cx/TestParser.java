@@ -44,6 +44,11 @@ public class TestParser extends TestCase {
 		Parser parser;
 		NodeBlock block;
 		{
+			parser = new Parser("obj = {n:42, inc:function(){n+=42;}}; obj.inc(); i=obj.n;");
+			block = parser.parse();
+			assertEquals(3, block.statements.size());
+		}
+		{
 			parser = new Parser("'string'.length(); system.out.print(m,b[5], 'm+p=', m+p);"
 					+ "array.subarray[i][j]++; /*comment*/ function empty(){};"
 					+ "function a(b, arg, c){ var b = arg % 4, c= 'string'.length(); return b?true:false;};"
