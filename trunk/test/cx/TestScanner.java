@@ -1,7 +1,5 @@
 package cx;
 
-import cx.Scanner;
-import cx.Token;
 import junit.framework.TestCase;
 
 public class TestScanner extends TestCase {
@@ -71,7 +69,7 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.BIT_XOR, scanner.getToken());
 
 		scanner = new Scanner(
-				"if do for new \t var \r case else null \n true this  break    while false return switch import delete default continue function ");
+				"if do for new \t var \r case else null \n true  break    while false return switch import delete default continue function ");
 		scanner.setDebugMode(true);
 		assertEquals(Token.IF, scanner.getToken());
 		assertEquals(Token.DO, scanner.getToken());
@@ -82,7 +80,6 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.ELSE, scanner.getToken());
 		assertEquals(Token.NULL, scanner.getToken());
 		assertEquals(Token.TRUE, scanner.getToken());
-		assertEquals(Token.THIS, scanner.getToken());
 		assertEquals(Token.BREAK, scanner.getToken());
 		assertEquals(Token.WHILE, scanner.getToken());
 		assertEquals(Token.FALSE, scanner.getToken());
