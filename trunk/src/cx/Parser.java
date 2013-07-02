@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -26,7 +28,9 @@ import cx.ast.NodeReturn;
 import cx.ast.NodeString;
 import cx.ast.NodeSwitch;
 import cx.ast.NodeTernary;
+import cx.ast.NodeThrow;
 import cx.ast.NodeTrue;
+import cx.ast.NodeTry;
 import cx.ast.NodeUnary;
 import cx.ast.NodeVar;
 import cx.ast.NodeVariable;
@@ -38,6 +42,7 @@ public class Parser {
 	boolean isDebug = false;
 	private Scanner scanner;
 	private NodeBlock root = null;
+	public boolean supportTryCatchThrow = false;
 
 	public Parser(char[] paramArrayOfChar) {
 		scanner = new Scanner(paramArrayOfChar);
@@ -48,6 +53,7 @@ public class Parser {
 			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(parseFile), "UTF-8"));
 			long length = parseFile.length();
 			if (length > Integer.MAX_VALUE) {
+				in.close();
 				throw new ParserException("File too big!");
 			}
 			char[] content = new char[(int) length];
@@ -132,6 +138,12 @@ public class Parser {
 				return parseDoWhile();
 			case SWITCH:
 				return parseSwitch();
+			case TRY:
+				if (supportTryCatchThrow) {
+					return parseTry();
+				} else {
+					handleError("try...catch... throw not enabled!", getSrcPos());
+				}
 			case BREAK:
 				scanner.getToken();
 				node = new NodeBreak(getSrcPos());
@@ -142,6 +154,13 @@ public class Parser {
 				break;
 			case RETURN:
 				node = parseReturn();
+				break;
+			case THROW:
+				if (supportTryCatchThrow) {
+					node = parseThrow();
+				} else {
+					handleError("try...catch... throw not enabled!", getSrcPos());
+				}
 				break;
 			case VAR:
 				node = parseVar();
@@ -353,6 +372,96 @@ public class Parser {
 		return new NodeSwitch(localSourcePosition, switchValue, cases, defaultIndex);
 	}
 
+	private Node parseTry() {
+		if (isDebug) System.out.println("parseTry");
+		SourcePosition localSourcePosition = getSrcPos();
+		Node tryBody = null;
+		Node finallyBody = null;
+		scanner.getToken();// eat 'try'
+
+		Token token = scanner.peekToken();
+
+		if (token == Token.L_CURLY) {
+			scanner.getToken();
+			tryBody = parseBlock();
+		} else {
+			if (scanner.matchToken(Token.SEMICOLON)) {
+				tryBody = null;
+			} else {
+				tryBody = parseStatement();
+			}
+		}
+
+		final List<String> exceptionTypes = new ArrayList<String>();
+		final List<String> exceptionVarNames = new ArrayList<String>();
+		final List<Node> exceptionBodies = new ArrayList<Node>();
+
+		boolean hasCatchFinally = false;
+		do {
+			if (scanner.matchToken(Token.CATCH)) {
+				hasCatchFinally = true;
+				if (!scanner.matchToken(Token.L_PAREN)) {
+					handleError("expecting '(' after catch!", scanner.getSrcPos());
+				}
+				if (!scanner.matchToken(Token.NAME)) {
+					handleError("expecting exception name in catch(...)!", scanner.getSrcPos());
+				}
+				String exceptionType = scanner.getString();
+				if (!scanner.matchToken(Token.NAME)) {
+					handleError("expecting variable after exception name in catch(Exception variable)!",
+							scanner.getSrcPos());
+				}
+				String exceptionVar = scanner.getString();
+				if (!scanner.matchToken(Token.R_PAREN)) {
+					handleError("expecting variable after exception name in catch(Exception variable)!",
+							scanner.getSrcPos());
+				}
+				token = scanner.peekToken();
+				Node exceptionBody;
+				if (token == Token.L_CURLY) {
+					scanner.getToken();
+					exceptionBody = parseBlock();
+				} else {
+					if (scanner.matchToken(Token.SEMICOLON)) {
+						exceptionBody = null;
+					} else {
+						exceptionBody = parseStatement();
+					}
+				}
+				exceptionTypes.add(exceptionType);
+				exceptionVarNames.add(exceptionVar);
+				exceptionBodies.add(exceptionBody);
+				continue;
+
+			} else if (scanner.matchToken(Token.FINALLY)) {
+				hasCatchFinally = true;
+				token = scanner.peekToken();
+				if (token == Token.L_CURLY) {
+					scanner.getToken();
+					finallyBody = parseBlock();
+				} else {
+					if (scanner.matchToken(Token.SEMICOLON)) {
+						finallyBody = null;
+					} else {
+						finallyBody = parseStatement();
+					}
+				}
+				break;
+
+			} else {
+				break;
+			}
+		} while (true);
+
+		if (!hasCatchFinally) {
+			handleError("expecting 'catch' or 'finally' block after 'try'!", scanner.getSrcPos());
+		}
+
+		return new NodeTry(localSourcePosition, tryBody, exceptionTypes.toArray(new String[exceptionTypes.size()]),
+				exceptionVarNames.toArray(new String[exceptionVarNames.size()]),
+				exceptionBodies.toArray(new Node[exceptionBodies.size()]), finallyBody);
+	}
+
 	private Node parseFor() {
 		if (isDebug) System.out.println("parseFor()");
 		SourcePosition localSourcePosition = getSrcPos();
@@ -510,59 +619,57 @@ public class Parser {
 	private Node parseAssignmentExpr() {
 		Node localObject = parseTernaryExpr();
 		Token token = scanner.peekToken();
-		switch (token) {
-			case ASSIGN:
-				scanner.getToken();
-				localObject = new NodeAssign(getSrcPos(), (Node) localObject, parseAssignmentExpr());
-				break;
-			case ASSIGNOP:
-				scanner.getToken();
-				Operator operator = Operator.NOP;
-				switch (scanner.getOperator()) {
-					case ADD:
-						operator = Operator.ADD;
-						break;
-					case SUB:
-						operator = Operator.SUB;
-						break;
-					case MUL:
-						operator = Operator.MUL;
-						break;
-					case DIV:
-						operator = Operator.DIV;
-						break;
-					case MOD:
-						operator = Operator.MOD;
-						break;
-					case BIT_LEFT:
-						operator = Operator.BIT_LEFT;
-						break;
-					case BIT_RIGHT:
-						operator = Operator.BIT_RIGHT;
-						break;
-					case BIT_OR:
-						operator = Operator.BIT_OR;
-						break;
-					case BIT_AND:
-						operator = Operator.BIT_AND;
-						break;
-					case AND:
-						operator = Operator.AND;
-						break;
-					case OR:
-						operator = Operator.OR;
-						break;
-					case BIT_XOR:
-						operator = Operator.BIT_XOR;
-						break;
-					default:
-						handleError("Unsupported assign operator", scanner.getSrcPos());
-				}
-				Node paramNode1 = (Node) localObject;
-				Node paramNode2 = parseAssignmentExpr();
-				localObject = new NodeAssign(getSrcPos(), paramNode1, new NodeBinary(getSrcPos(), paramNode1, operator,
-						paramNode2));
-				break;
+		if (token == Token.ASSIGN) {
+			scanner.getToken();
+			localObject = new NodeAssign(getSrcPos(), (Node) localObject, parseAssignmentExpr());
+		} else if (token == Token.ASSIGNOP) {
+
+			scanner.getToken();
+			Operator operator = Operator.NOP;
+			switch (scanner.getOperator()) {
+				case ADD:
+					operator = Operator.ADD;
+					break;
+				case SUB:
+					operator = Operator.SUB;
+					break;
+				case MUL:
+					operator = Operator.MUL;
+					break;
+				case DIV:
+					operator = Operator.DIV;
+					break;
+				case MOD:
+					operator = Operator.MOD;
+					break;
+				case BIT_LEFT:
+					operator = Operator.BIT_LEFT;
+					break;
+				case BIT_RIGHT:
+					operator = Operator.BIT_RIGHT;
+					break;
+				case BIT_OR:
+					operator = Operator.BIT_OR;
+					break;
+				case BIT_AND:
+					operator = Operator.BIT_AND;
+					break;
+				case AND:
+					operator = Operator.AND;
+					break;
+				case OR:
+					operator = Operator.OR;
+					break;
+				case BIT_XOR:
+					operator = Operator.BIT_XOR;
+					break;
+				default:
+					handleError("Unsupported assign operator", scanner.getSrcPos());
+			}
+			Node paramNode1 = (Node) localObject;
+			Node paramNode2 = parseAssignmentExpr();
+			localObject = new NodeAssign(getSrcPos(), paramNode1, new NodeBinary(getSrcPos(), paramNode1, operator,
+					paramNode2));
 		}
 		return localObject;
 	}
@@ -587,14 +694,12 @@ public class Parser {
 	private Node parseLogicalExpr() {
 		Node localObject = parseBitExpr();
 		Token token = scanner.peekToken();
-		switch (token) {
-			case OR:
-				scanner.getToken();
-				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.OR, parseBitExpr());
-				break;
-			case AND:
-				scanner.getToken();
-				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.AND, parseBitExpr());
+		if (token == Token.OR) {
+			scanner.getToken();
+			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.OR, parseBitExpr());
+		} else if (token == Token.AND) {
+			scanner.getToken();
+			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.AND, parseBitExpr());
 		}
 		return localObject;
 	}
@@ -602,18 +707,15 @@ public class Parser {
 	private Node parseBitExpr() {
 		Node localObject = parseRelationalExpr();
 		Token token = scanner.peekToken();
-		switch (token) {
-			case BIT_OR:
-				scanner.getToken();
-				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_OR, parseRelationalExpr());
-				break;
-			case BIT_AND:
-				scanner.getToken();
-				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_AND, parseRelationalExpr());
-				break;
-			case BIT_XOR:
-				scanner.getToken();
-				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_XOR, parseRelationalExpr());
+		if (token == Token.BIT_OR) {
+			scanner.getToken();
+			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_OR, parseRelationalExpr());
+		} else if (token == Token.BIT_AND) {
+			scanner.getToken();
+			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_AND, parseRelationalExpr());
+		} else if (token == Token.BIT_XOR) {
+			scanner.getToken();
+			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_XOR, parseRelationalExpr());
 		}
 		return localObject;
 	}
@@ -645,6 +747,7 @@ public class Parser {
 			case LT:
 				scanner.getToken();
 				localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.LT, parseShiftExpr());
+			default:
 		}
 		return localObject;
 	}
@@ -751,14 +854,12 @@ public class Parser {
 			default:
 				localObject = parseAccessExpr();
 				token = scanner.peekToken();
-				switch (token) {
-					case INCREMENT:
-						scanner.getToken();
-						localObject = new NodeUnary(getSrcPos(), Operator.INC_POST, (Node) localObject);
-						break;
-					case DECREMENT:
-						scanner.getToken();
-						localObject = new NodeUnary(getSrcPos(), Operator.DEC_POST, (Node) localObject);
+				if (token == Token.INCREMENT) {
+					scanner.getToken();
+					localObject = new NodeUnary(getSrcPos(), Operator.INC_POST, (Node) localObject);
+				} else if (token == Token.DECREMENT) {
+					scanner.getToken();
+					localObject = new NodeUnary(getSrcPos(), Operator.DEC_POST, (Node) localObject);
 				}
 				break;
 		}
@@ -975,6 +1076,16 @@ public class Parser {
 		}
 		Node localNode = parseExpression();
 		return new NodeReturn(getSrcPos(), localNode);
+	}
+
+	private NodeThrow parseThrow() {
+		scanner.getToken();// eat "throw"
+		Token token = scanner.peekToken();
+		if (token == Token.SEMICOLON) {
+			return new NodeThrow(getSrcPos(), null);
+		}
+		Node localNode = parseExpression();
+		return new NodeThrow(getSrcPos(), localNode);
 	}
 
 	private NodeArray parseArray() {

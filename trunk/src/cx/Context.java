@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import com.sun.beans.ObjectHandler;
 import cx.ast.Node;
 import cx.runtime.EvaluateVisitor;
+import cx.runtime.ObjectHandler;
 
 public class Context {
 	public Object result = null;

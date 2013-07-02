@@ -69,7 +69,7 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.BIT_XOR, scanner.getToken());
 
 		scanner = new Scanner(
-				"if do for new \t var \r case else null \n true  break    while false return switch import delete default continue function ");
+				"if do for new \t var \r case else null \n true  break    while false return switch import delete default continue function try catch \r finally throw");
 		scanner.setDebugMode(true);
 		assertEquals(Token.IF, scanner.getToken());
 		assertEquals(Token.DO, scanner.getToken());
@@ -90,5 +90,9 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.DEFAULT, scanner.getToken());
 		assertEquals(Token.CONTINUE, scanner.getToken());
 		assertEquals(Token.FUNCTION, scanner.getToken());
+		assertEquals(Token.TRY, scanner.getToken());
+		assertEquals(Token.CATCH, scanner.getToken());
+		assertEquals(Token.FINALLY, scanner.getToken());
+		assertEquals(Token.THROW, scanner.getToken());
 	}
 }

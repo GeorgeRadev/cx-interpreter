@@ -42,6 +42,10 @@ public abstract interface Visitor {
 
 	public abstract void visitCase(NodeCase node);
 
+	public abstract void visitTry(NodeTry node);
+
+	public abstract void visitThrow(NodeThrow node);
+
 	public abstract void visitBreak(NodeBreak node);
 
 	public abstract void visitContinue(NodeContinue node);

@@ -30,6 +30,65 @@ import cx.ast.NodeWhile;
 
 public class TestParser extends TestCase {
 
+	public void testTryCatchFinally() {
+		Parser parser;
+		NodeBlock block;
+		{
+			parser = new Parser("throw '2'+5;");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("throw;");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("try ; catch(Exception e);");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			assertEquals(1, block.statements.size());
+			parser = new Parser("try{}catch(Exception e){}catch(Exception2 e){}");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("try{}catch(Exception1 a){}catch(Exception2 b);catch(Exception3 c){}finally;");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("try{}catch(Exception e);finally{}");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("try{}finally{}");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+		}
+		try {
+			parser = new Parser("try ; catch(Exception e);");
+			block = parser.parse();
+			fail();
+		} catch (Throwable e) {
+			// OK
+		}
+		try {
+			parser = new Parser("try ; catch(Exception e);");
+			block = parser.parse();
+			fail();
+		} catch (Throwable e) {
+			// OK
+		}
+		try {
+			parser = new Parser("try{}");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			fail();
+		} catch (Throwable e) {
+			// OK
+		}
+		try {
+			parser = new Parser("throw");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			fail();
+		} catch (Throwable e) {
+			// OK
+		}
+	}
+
 	public void testFileParsing() {
 		Parser parser;
 		NodeBlock block;
@@ -39,6 +98,7 @@ public class TestParser extends TestCase {
 			assertEquals(14, block.statements.size());
 		}
 	}
+
 
 	public void testMultipleExpressions() {
 		Parser parser;

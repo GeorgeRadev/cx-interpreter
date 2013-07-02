@@ -25,7 +25,9 @@ import cx.ast.NodeReturn;
 import cx.ast.NodeString;
 import cx.ast.NodeSwitch;
 import cx.ast.NodeTernary;
+import cx.ast.NodeThrow;
 import cx.ast.NodeTrue;
+import cx.ast.NodeTry;
 import cx.ast.NodeUnary;
 import cx.ast.NodeVar;
 import cx.ast.NodeVariable;
@@ -877,5 +879,17 @@ public class EvaluateVisitor implements Visitor {
 			executionContext.result = result.value;
 		}
 		return executionContext.result;
+	}
+
+	@Override
+	public void visitTry(NodeTry node) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visitThrow(NodeThrow node) {
+		// TODO Auto-generated method stub
+
 	}
 }
