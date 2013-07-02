@@ -1,6 +1,6 @@
 package cx.runtime;
 
-interface ObjectHandler {
+public interface ObjectHandler {
 
 	boolean accept(Object object);
 

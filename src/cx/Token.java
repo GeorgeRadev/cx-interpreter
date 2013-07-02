@@ -1,7 +1,7 @@
 package cx;
 
 public enum Token {
-	ERROR, EOF, EOL, NAME, NUMBER, STRING, L_PAREN, R_PAREN, COMMA, DOT, RETURN, EQ, NE, LT, LE, GT, GE, ADD, SUB, MUL, DIV, MOD, NOT, NEW, SEMICOLON, L_BRACKET, R_BRACKET, L_CURLY, R_CURLY, ASSIGN, ASSIGNOP, COLON, OR, AND, INCREMENT, DECREMENT, NULL, FALSE, TRUE, REGEXP, FUNCTION, IMPORT, IF, ELSE, SWITCH, CASE, DEFAULT, WHILE, DO, FOR, BREAK, CONTINUE, VAR, BIT_OR, BIT_AND, DELETE, QUESTION, BIT_XOR, BIT_LEFT, BIT_RIGHT;
+	ERROR, EOF, EOL, NAME, NUMBER, STRING, L_PAREN, R_PAREN, COMMA, DOT, RETURN, EQ, NE, LT, LE, GT, GE, ADD, SUB, MUL, DIV, MOD, NOT, NEW, SEMICOLON, L_BRACKET, R_BRACKET, L_CURLY, R_CURLY, ASSIGN, ASSIGNOP, COLON, OR, AND, INCREMENT, DECREMENT, NULL, FALSE, TRUE, REGEXP, FUNCTION, IMPORT, IF, ELSE, SWITCH, CASE, DEFAULT, WHILE, DO, FOR, BREAK, CONTINUE, VAR, BIT_OR, BIT_AND, DELETE, QUESTION, BIT_XOR, BIT_LEFT, BIT_RIGHT, TRY, CATCH, FINALLY, THROW;
 
 	static Token toKeyword(final String keyword) {
 		String keywordGuess = null;
@@ -27,6 +27,10 @@ public enum Token {
 					case 'n':
 						keywordGuess = "new";
 						token = NEW;
+						break;
+					case 't':
+						keywordGuess = "try";
+						token = TRY;
 						break;
 					case 'v':
 						keywordGuess = "var";
@@ -59,6 +63,10 @@ public enum Token {
 						keywordGuess = "break";
 						token = BREAK;
 						break;
+					case 'c':
+						keywordGuess = "catch";
+						token = CATCH;
+						break;
 					case 'w':
 						keywordGuess = "while";
 						token = WHILE;
@@ -66,6 +74,10 @@ public enum Token {
 					case 'f':
 						keywordGuess = "false";
 						token = FALSE;
+						break;
+					case 't':
+						keywordGuess = "throw";
+						token = THROW;
 				}
 				break;
 			case 6:
@@ -92,6 +104,10 @@ public enum Token {
 					case 'd':
 						keywordGuess = "default";
 						token = DEFAULT;
+						break;
+					case 'f':
+						keywordGuess = "finally";
+						token = FINALLY;
 				}
 				break;
 			case 8:
