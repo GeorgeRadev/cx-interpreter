@@ -1,6 +1,5 @@
 package cx.ast;
 
-import cx.util.SourcePosition;
 
 public class NodeFalse extends Node {
 	public NodeFalse(SourcePosition position) {

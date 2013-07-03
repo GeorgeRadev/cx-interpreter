@@ -2,7 +2,6 @@ package cx.ast;
 
 import java.util.ArrayList;
 import java.util.List;
-import cx.util.SourcePosition;
 
 public class NodeVar extends Node {
 	public final List<NodeAssign> vars = new ArrayList<NodeAssign>(4);

@@ -35,8 +35,8 @@ import cx.ast.NodeUnary;
 import cx.ast.NodeVar;
 import cx.ast.NodeVariable;
 import cx.ast.NodeWhile;
+import cx.ast.SourcePosition;
 import cx.exception.ParserException;
-import cx.util.SourcePosition;
 
 public class Parser {
 	boolean isDebug = false;
@@ -50,12 +50,12 @@ public class Parser {
 
 	public Parser(File parseFile) {
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(parseFile), "UTF-8"));
 			long length = parseFile.length();
 			if (length > Integer.MAX_VALUE) {
-				in.close();
 				throw new ParserException("File too big!");
 			}
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(parseFile), "UTF-8"),
+					1026 * 32);
 			char[] content = new char[(int) length];
 			in.read(content);
 			in.close();

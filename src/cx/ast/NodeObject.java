@@ -2,7 +2,6 @@ package cx.ast;
 
 import java.util.HashMap;
 import java.util.Map;
-import cx.util.SourcePosition;
 
 public class NodeObject extends Node {
 	public final String parent;
