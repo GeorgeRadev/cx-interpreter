@@ -1,6 +1,5 @@
 package cx.ast;
 
-import cx.util.SourcePosition;
 
 public class NodeTry extends Node {
 	public Node tryBody;

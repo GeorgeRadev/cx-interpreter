@@ -1,7 +1,6 @@
 package cx.ast;
 
 import cx.Operator;
-import cx.util.SourcePosition;
 
 public class NodeUnary extends Node {
 	public final Operator operator;

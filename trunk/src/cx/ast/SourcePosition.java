@@ -1,4 +1,4 @@
-package cx.util;
+package cx.ast;
 
 public class SourcePosition {
 	public final int idxStart;

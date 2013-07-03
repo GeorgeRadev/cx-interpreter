@@ -1,6 +1,5 @@
 package cx.ast;
 
-import cx.util.SourcePosition;
 
 public class NodeVariable extends Node {
 	public final String name;

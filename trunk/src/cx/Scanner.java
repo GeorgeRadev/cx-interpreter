@@ -2,8 +2,8 @@ package cx;
 
 import java.util.LinkedList;
 import java.util.List;
+import cx.ast.SourcePosition;
 import cx.exception.ParserException;
-import cx.util.SourcePosition;
 
 class Scanner {
 	private boolean isDebug = false;

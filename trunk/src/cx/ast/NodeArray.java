@@ -2,7 +2,6 @@ package cx.ast;
 
 import java.util.ArrayList;
 import java.util.List;
-import cx.util.SourcePosition;
 
 public class NodeArray extends Node {
 	public NodeArray(SourcePosition position) {

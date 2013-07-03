@@ -1,6 +1,5 @@
 package cx.ast;
 
-import cx.util.SourcePosition;
 
 public class NodeCase extends Node {
 	public final NodeString caseValue;

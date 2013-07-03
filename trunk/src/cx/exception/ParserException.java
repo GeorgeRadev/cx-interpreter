@@ -1,6 +1,6 @@
 package cx.exception;
 
-import cx.util.SourcePosition;
+import cx.ast.SourcePosition;
 
 public class ParserException extends ScriptException {
 	SourcePosition position;

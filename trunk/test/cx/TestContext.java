@@ -3,6 +3,7 @@ package cx;
 import java.util.List;
 import junit.framework.TestCase;
 import cx.ast.NodeBlock;
+import cx.runtime.ContextFrame;
 
 public class TestContext extends TestCase {
 
@@ -43,8 +44,8 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.set("obj", new Integer(0xCAFE));
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'}; obj.a++; obj.b += ' more';")).parse());
-			Context obj = (Context) cx.get("obj");
-			assertEquals(2, obj.cx.size());
+			ContextFrame obj = (ContextFrame) cx.get("obj");
+			assertEquals(2, obj.frame.size());
 			assertEquals(2, obj.get("a"));
 			assertEquals("string more", obj.get("b"));
 		}
@@ -52,8 +53,8 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.set("obj", new Integer(0xCAFE));
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'};")).parse());
-			Context obj = (Context) cx.get("obj");
-			assertEquals(2, obj.cx.size());
+			ContextFrame obj = (ContextFrame) cx.get("obj");
+			assertEquals(2, obj.frame.size());
 			assertEquals(1, obj.get("a"));
 			assertEquals("string", obj.get("b"));
 		}
