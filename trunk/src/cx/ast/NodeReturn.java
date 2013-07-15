@@ -14,6 +14,6 @@ public class NodeReturn extends Node {
 	}
 
 	public String toString() {
-		return "return";
+		return expression == null ? "return" : ("return " + expression);
 	}
 }

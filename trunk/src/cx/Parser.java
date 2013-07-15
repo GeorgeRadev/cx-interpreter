@@ -681,12 +681,12 @@ public class Parser {
 			return condition;
 		} else {
 			token = scanner.getToken();
-			Node trueValue = parseLogicalExpr();
+			Node trueValue = parseExpression();
 			token = scanner.getToken();
 			if (token != Token.COLON) {
 				handleError(": expected for ? operator!", scanner.getSrcPos());
 			}
-			Node falseValue = parseLogicalExpr();
+			Node falseValue = parseExpression();
 			return new NodeTernary(getSrcPos(), condition, trueValue, falseValue);
 		}
 	}
@@ -933,7 +933,7 @@ public class Parser {
 			case NAME:
 				return new NodeVariable(getSrcPos(), scanner.getString());
 			case FUNCTION:
-				return parseFinction();
+				return parseFunction();
 			case L_PAREN: {
 				Node localNode = parseExpression();
 				if (!scanner.matchToken(Token.R_PAREN)) {
@@ -960,7 +960,7 @@ public class Parser {
 		return null;
 	}
 
-	private Node parseFinction() {
+	private Node parseFunction() {
 		if (isDebug) System.out.println("parseFunction()");
 		SourcePosition position = scanner.getSrcPos();
 		String functionName;

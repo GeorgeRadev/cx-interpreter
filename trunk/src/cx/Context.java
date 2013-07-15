@@ -89,14 +89,19 @@ public class Context implements Visitor {
 
 	public void visitBlock(NodeBlock paramBlockNode) {
 		position = paramBlockNode.position;
+		boolean needBlockContext = (cx.parent != null);
 		try {
-			pushContext();
+			if (needBlockContext) {
+				pushContext();
+			}
 
 			for (Node statement : paramBlockNode.statements) {
 				eval(statement);
 			}
 		} finally {
-			popContext();
+			if (needBlockContext) {
+				popContext();
+			}
 		}
 	}
 
