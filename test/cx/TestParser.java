@@ -187,6 +187,14 @@ public class TestParser extends TestCase {
 	public void testFunction() {
 		Parser parser;
 		NodeBlock block;
+		{
+			parser = new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );};");
+			block = parser.parse();
+			NodeFunction function = (NodeFunction) block.statements.get(0);
+			assertNotNull(function.name);
+			assertEquals(1, function.arguments.elements.size());
+			assertEquals(1, function.body.statements.size());
+		}
 		try {
 			parser = new Parser("function(a,b,c,){};");
 			parser.parse();

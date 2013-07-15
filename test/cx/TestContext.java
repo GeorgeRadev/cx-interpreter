@@ -18,6 +18,19 @@ public class TestContext extends TestCase {
 	}
 
 	public void testFunction() {
+		{// Factorial calculating
+			Context cx = new Context();
+			cx.evaluate((new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );};")).parse());
+			NodeBlock block = (new Parser("f=fact(f);")).parse();
+
+			long f = 1;
+			for (int i = 1; i < 14; i++) {
+				cx.set("f", new Integer(i));
+				cx.evaluate(block);
+				f *= i;
+				assertEquals(f, ((Number) cx.get("f")).longValue());
+			}
+		}
 		{
 			Context cx = new Context();
 			cx.set("i", new Integer(0xCAFE));
@@ -182,7 +195,7 @@ public class TestContext extends TestCase {
 			cx.set("a", new Integer(3));
 			cx.evaluate(block);
 			assertEquals(3, ((Number) cx.get("a")).intValue());
-			assertNull(cx.get("b"));
+			assertEquals(8, ((Number) cx.get("b")).intValue());
 		}
 		{
 			parser = new Parser("a+=1;a=a+4;");
