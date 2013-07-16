@@ -2,7 +2,7 @@ package cx;
 
 import java.util.List;
 import junit.framework.TestCase;
-import cx.ast.NodeBlock;
+import cx.ast.Node;
 import cx.runtime.ContextFrame;
 
 public class TestContext extends TestCase {
@@ -17,11 +17,34 @@ public class TestContext extends TestCase {
 		}
 	}
 
+	public void testBlock() {
+		{
+			Context cx = new Context();
+			cx.set("i", new Integer(0xCAFE));
+			cx.evaluate((new Parser("i = 2;{j = 3;}")).parse());
+			assertEquals(2, ((Number) cx.get("i")));
+			assertNull(cx.get("j"));
+		}
+		{
+			Context cx = new Context();
+			cx.set("i", new Integer(0xCAFE));
+			cx.evaluate((new Parser("i = 2;{var j = 3;}")).parse());
+			assertEquals(2, ((Number) cx.get("i")));
+			assertNull(cx.get("j"));
+		}
+		{
+			Context cx = new Context();
+			cx.set("i", new Integer(0xCAFE));
+			cx.evaluate((new Parser("i = 2;{var i = 3;}")).parse());
+			assertEquals(2, ((Number) cx.get("i")));
+		}
+	}
+
 	public void testFunction() {
 		{// Factorial calculating
 			Context cx = new Context();
 			cx.evaluate((new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );};")).parse());
-			NodeBlock block = (new Parser("f=fact(f);")).parse();
+			List<Node> block = (new Parser("f=fact(f);")).parse();
 
 			long f = 1;
 			for (int i = 1; i < 14; i++) {
@@ -34,7 +57,7 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.set("i", new Integer(0xCAFE));
-			NodeBlock block = (new Parser("obj = {n:42, inc:function(){this.n+=42;}}; obj.inc(); i=obj.n;")).parse();
+			List<Node> block = (new Parser("obj = {n:42, inc:function(){this.n+=42;}}; obj.inc(); i=obj.n;")).parse();
 			cx.evaluate(block);
 			assertEquals(84, ((Number) cx.get("i")));
 		}
@@ -78,7 +101,7 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.set("arr", new Integer(0xCAFE));
-			NodeBlock block = (new Parser("arr = [[1],[2]]; arr[1][0]++; --arr[0][0];")).parse();
+			List<Node> block = (new Parser("arr = [[1],[2]]; arr[1][0]++; --arr[0][0];")).parse();
 			cx.evaluate(block);
 			List arr = (List) cx.get("arr");
 			assertEquals(2, arr.size());
@@ -90,7 +113,7 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.set("arr", new Integer(0xCAFE));
-			NodeBlock block = (new Parser("arr = [1,2,3]; arr[0]++;")).parse();
+			List<Node> block = (new Parser("arr = [1,2,3]; arr[0]++;")).parse();
 			cx.evaluate(block);
 			List arr = (List) cx.get("arr");
 			assertEquals(3, arr.size());
@@ -109,7 +132,7 @@ public class TestContext extends TestCase {
 
 	public void testLogic() {
 		Parser parser;
-		NodeBlock block;
+		List<Node> block;
 		{
 			parser = new Parser("a^=a;");
 			block = parser.parse();
@@ -170,7 +193,7 @@ public class TestContext extends TestCase {
 
 	public void testArithmetic() {
 		Parser parser;
-		NodeBlock block;
+		List<Node> block;
 		{
 			parser = new Parser("a/=2;");
 			block = parser.parse();
@@ -190,7 +213,7 @@ public class TestContext extends TestCase {
 		{
 			parser = new Parser("a+=1;var b=a+4;a=b-5;");
 			block = parser.parse();
-			assertEquals(3, block.statements.size());
+			assertEquals(3, block.size());
 			Context cx = new Context();
 			cx.set("a", new Integer(3));
 			cx.evaluate(block);
@@ -200,7 +223,7 @@ public class TestContext extends TestCase {
 		{
 			parser = new Parser("a+=1;a=a+4;");
 			block = parser.parse();
-			assertEquals(2, block.statements.size());
+			assertEquals(2, block.size());
 			Context cx = new Context();
 			cx.set("a", new Integer(3));
 			cx.evaluate(block);
