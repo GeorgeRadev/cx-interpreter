@@ -41,7 +41,6 @@ import cx.exception.ParserException;
 public class Parser {
 	boolean isDebug = false;
 	private Scanner scanner;
-	private NodeBlock root = null;
 	public boolean supportTryCatchThrow = false;
 
 	public Parser(char[] paramArrayOfChar) {
@@ -69,10 +68,10 @@ public class Parser {
 		scanner = new Scanner(paramArrayOfChar.toCharArray());
 	}
 
-	public NodeBlock parse() throws ParserException {
+	public List<Node> parse() throws ParserException {
+		final List<Node> statements = new ArrayList<Node>();
 		try {
 			scanner.setDebugMode(isDebug);
-			root = new NodeBlock(getSrcPos());
 
 			while (true) {
 				Token token = scanner.peekToken();
@@ -81,12 +80,12 @@ public class Parser {
 				}
 				Node localNode = parseStatement();
 				if (localNode != null) {
-					root.add(localNode);
+					statements.add(localNode);
 				}
 			}
 
 			if (scanner.getErrorCode() != null) handleError(scanner.getErrorCode(), scanner.getSrcPos());
-			return root;
+			return statements;
 
 		} catch (StackOverflowError localStackOverflowError) {
 			handleError("Stack overflow", getSrcPos());

@@ -43,6 +43,8 @@ import cx.runtime.ObjectHandler;
 public class Context implements Visitor {
 	private static final String THIS = "this";
 
+	private static final Integer ZERO = 0;
+
 	private ContextFrame cx = null;
 	public SourcePosition position = null;
 
@@ -56,8 +58,10 @@ public class Context implements Visitor {
 		if (handler != null) handlers.add(handler);
 	}
 
-	public Object evaluate(Node node) {
-		node.accept(this);
+	public Object evaluate(List<Node> nodes) {
+		for (Node node : nodes) {
+			node.accept(this);
+		}
 		return cx.result;
 	}
 
@@ -89,24 +93,26 @@ public class Context implements Visitor {
 
 	public void visitBlock(NodeBlock paramBlockNode) {
 		position = paramBlockNode.position;
-		boolean needBlockContext = (cx.parent != null);
 		try {
-			if (needBlockContext) {
-				pushContext();
-			}
+			pushContext();
 
 			for (Node statement : paramBlockNode.statements) {
 				eval(statement);
 			}
+
 		} finally {
-			if (needBlockContext) {
-				popContext();
-			}
+			popContext();
 		}
 	}
 
 	public void visitVar(NodeVar varNode) {
 		position = varNode.position;
+		//define variables in current context
+		for (NodeAssign node : varNode.vars) {
+			if (node.left instanceof NodeVariable) {
+				cx.frame.put(((NodeVariable) node.left).name, ZERO);
+			}
+		}
 		for (Node node : varNode.vars) {
 			node.accept(this);
 		}
@@ -897,7 +903,7 @@ public class Context implements Visitor {
 		try {
 			cx = executionContext;
 			// evaluate function
-			evaluate(function.function.body);
+			evaluate(function.function.body.statements);
 		} catch (JumpReturn result) {
 			executionContext.result = result.value;
 		} finally {
