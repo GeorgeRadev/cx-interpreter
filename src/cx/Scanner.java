@@ -75,7 +75,7 @@ class Scanner {
 
 	protected SourcePosition getSrcPosInternal() {
 		offset = (srcIdx - lastlineidx);
-		SourcePosition localSourcePosition = new SourcePosition(srcIdx, srcIdx, lineno, offset);
+		SourcePosition localSourcePosition = new SourcePosition(srcIdx, lineno, offset);
 		return localSourcePosition;
 	}
 

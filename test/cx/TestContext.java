@@ -1,5 +1,6 @@
 package cx;
 
+import java.io.File;
 import java.util.List;
 import junit.framework.TestCase;
 import cx.ast.Node;
@@ -9,9 +10,9 @@ public class TestContext extends TestCase {
 
 	public void testSudoku() {
 		{
-			// Context cx = new Context();
-			// cx.set("SUDOKU", new Integer(0xCAFE));
-			// NodeBlock block = (new Parser(new File("sudoku.cx"))).parse();
+			Context cx = new Context();
+			cx.set("SUDOKU", new Integer(0xCAFE));
+			List<Node> block = (new Parser(new File("sudoku.cx"))).parse();
 			// cx.evaluate(block);
 			// assertTrue(cx.get("SUDOKU") instanceof List);
 		}
