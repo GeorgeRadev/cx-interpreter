@@ -897,12 +897,13 @@ public class Context implements Visitor {
 			cx.result = null;
 			// do the call
 			if (function instanceof Function) {
-				cx.result = callFunction(((Function) function), argValues);
+				callFunction(((Function) function), argValues);
 
 			} else {
 				for (ObjectHandler handler : handlers) {
 					if (handler.accept(function)) {
 						cx.result = handler.call(cx, function, argValues);
+
 						break;
 					}
 				}
@@ -913,28 +914,22 @@ public class Context implements Visitor {
 	}
 
 	public Object callFunction(Function function, Object[] args) {
-		final List<Node> params = function.function.arguments.elements;
+		final String[] argumentNames = function.function.argumentNames;
 		final int l = args.length;
-		if (l != params.size()) {
+		if (l != argumentNames.length) {
 			return null;
 		}
 		// add this
-		ContextFrame executionContext = function.thiz;
-		executionContext.frame.put(THIS, function.thiz);
+		cx.frame.put(THIS, function.thiz);
 		// add parameters
 		for (int i = 0; i < l; i++) {
-			executionContext.set(params.get(i).toString(), args[i]);
+			cx.frame.put(argumentNames[i], args[i]);
 		}
-		ContextFrame parent = cx;
+		// execute
 		try {
-			cx = executionContext;
-			// evaluate function
-			evaluate(function.function.body.statements);
+			evaluate(function.function.body);
 		} catch (JumpReturn result) {
-			executionContext.result = result.value;
-		} finally {
-			parent.result = executionContext.result;
-			cx = parent;
+			cx.result = result.value;
 		}
 		return cx.result;
 	}

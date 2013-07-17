@@ -76,7 +76,6 @@ function solve(SUDOKU, x, y) {
 			return solve(SUDOKU, x, y + 1);
 		else
 			return solve(SUDOKU, x + 1, 0);
-
 	} else {
 		//brute force
 		for ( var g = 1; g < 10; ++g) {
@@ -111,7 +110,6 @@ function dumpResult(SUDOKU) {
 			if (j % 3 == 2) {
 				line = line + "   ";
 			}
-
 		}
 		log(line);
 		if (i % 3 == 2) {

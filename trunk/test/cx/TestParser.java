@@ -195,8 +195,8 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
 			assertNotNull(function.name);
-			assertEquals(1, function.arguments.elements.size());
-			assertEquals(1, function.body.statements.size());
+			assertEquals(1, function.argumentNames.length);
+			assertEquals(1, function.body.size());
 		}
 		try {
 			parser = new Parser("function(a,b,c,){};");
@@ -210,24 +210,24 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
 			assertNull(function.name);
-			assertEquals(1, function.arguments.elements.size());
-			assertEquals(0, function.body.statements.size());
+			assertEquals(1, function.argumentNames.length);
+			assertEquals(0, function.body.size());
 		}
 		{
 			parser = new Parser("function(a,b,c){a++;return a+b+c;};");
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
 			assertNull(function.name);
-			assertEquals(3, function.arguments.elements.size());
-			assertEquals(2, function.body.statements.size());
+			assertEquals(3, function.argumentNames.length);
+			assertEquals(2, function.body.size());
 		}
 		{
 			parser = new Parser("function func(){};");
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
 			assertEquals("func", function.name);
-			assertEquals(0, function.arguments.elements.size());
-			assertEquals(0, function.body.statements.size());
+			assertEquals(0, function.argumentNames.length);
+			assertEquals(0, function.body.size());
 		}
 	}
 
