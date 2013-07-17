@@ -17,6 +17,37 @@ public class TestContext extends TestCase {
 		}
 	}
 
+	public void testSwitch() {
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser(
+					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};")).parse());
+			List<Node> block = (new Parser("f=test(f);")).parse();
+
+			cx.set("f", new Integer(1));
+			cx.evaluate(block);
+			assertEquals(1, ((Number) cx.get("f")).intValue());
+
+			cx.set("f", new Integer(2));
+			cx.evaluate(block);
+			assertEquals(0, ((Number) cx.get("f")).intValue());
+
+			cx.set("f", new Integer(3));
+			cx.evaluate(block);
+			assertEquals(2, ((Number) cx.get("f")).intValue());
+
+			cx.set("f", new Integer(4));
+			cx.evaluate(block);
+			assertEquals(1, ((Number) cx.get("f")).intValue());
+
+			for (int i = 5; i < 20; i++) {
+				cx.set("f", new Integer(i));
+				cx.evaluate(block);
+				assertEquals(10, ((Number) cx.get("f")).intValue());
+			}
+		}
+	}
+
 	public void testBlock() {
 		{
 			Context cx = new Context();

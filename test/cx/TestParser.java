@@ -11,7 +11,6 @@ import cx.ast.NodeAssign;
 import cx.ast.NodeBlock;
 import cx.ast.NodeBreak;
 import cx.ast.NodeCall;
-import cx.ast.NodeCaseList;
 import cx.ast.NodeContinue;
 import cx.ast.NodeFor;
 import cx.ast.NodeFunction;
@@ -124,13 +123,6 @@ public class TestParser extends TestCase {
 	public void testSwitch() {
 		Parser parser;
 		List<Node> block;
-		try {
-			parser = new Parser("switch(v){case a+3:}");
-			parser.parse();
-			fail();
-		} catch (Throwable e) {
-			// OK, expression after , is empty
-		}
 		{
 			parser = new Parser("switch(v){default:break; case 2:case 3:return;}");
 			block = parser.parse();
@@ -138,12 +130,9 @@ public class TestParser extends TestCase {
 			assertNotNull(nodeSwitch.value);
 			assertEquals(0, nodeSwitch.defaultIndex);
 			assertEquals("v", ((NodeVariable) nodeSwitch.value).name);
-
-			NodeCaseList caselist = nodeSwitch.cases;
-			assertEquals(3, caselist.cases.size());
-			assertNull(caselist.cases.get(0).caseValue);
-			assertEquals("2", caselist.cases.get(1).caseValue.value);
-			assertEquals("3", caselist.cases.get(2).caseValue.value);
+			assertEquals(2, nodeSwitch.caseValues.length);
+			assertEquals(2, nodeSwitch.caseValueIndexes.length);
+			assertEquals(2, nodeSwitch.caseStatements.length);
 		}
 		{
 			parser = new Parser("switch(v){case '1': r+=1;b+=3;   case 2: {return;}  }");
@@ -152,35 +141,49 @@ public class TestParser extends TestCase {
 			assertNotNull(nodeSwitch.value);
 			assertEquals(-1, nodeSwitch.defaultIndex);
 			assertEquals("v", ((NodeVariable) nodeSwitch.value).name);
-
-			NodeCaseList caselist = nodeSwitch.cases;
-			assertEquals(2, caselist.cases.size());
-			assertEquals("1", caselist.cases.get(0).caseValue.value);
-			assertEquals("2", caselist.cases.get(1).caseValue.value);
+			assertEquals(2, nodeSwitch.caseValues.length);
+			assertEquals(2, nodeSwitch.caseValueIndexes.length);
+			assertEquals(3, nodeSwitch.caseStatements.length);
 		}
 		{
 			parser = new Parser("switch(a){default:}");
 			block = parser.parse();
 			NodeSwitch nodeSwitch = (NodeSwitch) block.get(0);
 			assertNotNull(nodeSwitch.value);
+			assertEquals(0, nodeSwitch.defaultIndex);
 			assertEquals("a", ((NodeVariable) nodeSwitch.value).name);
-			assertEquals(1, nodeSwitch.cases.cases.size());
+			assertEquals(0, nodeSwitch.caseValues.length);
+			assertEquals(0, nodeSwitch.caseValueIndexes.length);
+			assertEquals(0, nodeSwitch.caseStatements.length);
 		}
 		{
 			parser = new Parser("switch(a){case 'check':}");
 			block = parser.parse();
 			NodeSwitch nodeSwitch = (NodeSwitch) block.get(0);
 			assertNotNull(nodeSwitch.value);
+			assertEquals(-1, nodeSwitch.defaultIndex);
 			assertEquals("a", ((NodeVariable) nodeSwitch.value).name);
-			assertEquals(1, nodeSwitch.cases.cases.size());
+			assertEquals(1, nodeSwitch.caseValues.length);
+			assertEquals(1, nodeSwitch.caseValueIndexes.length);
+			assertEquals(0, nodeSwitch.caseStatements.length);
 		}
 		{
 			parser = new Parser("switch(1){}");
 			block = parser.parse();
 			NodeSwitch nodeSwitch = (NodeSwitch) block.get(0);
 			assertNotNull(nodeSwitch.value);
+			assertEquals(-1, nodeSwitch.defaultIndex);
 			assertEquals("1", ((NodeNumber) nodeSwitch.value).value);
-			assertEquals(0, nodeSwitch.cases.cases.size());
+			assertEquals(0, nodeSwitch.caseValues.length);
+			assertEquals(0, nodeSwitch.caseValueIndexes.length);
+			assertEquals(0, nodeSwitch.caseStatements.length);
+		}
+		try {
+			parser = new Parser("switch(v){case a+3:}");
+			parser.parse();
+			fail();
+		} catch (Throwable e) {
+			// OK, expression after , is empty
 		}
 	}
 

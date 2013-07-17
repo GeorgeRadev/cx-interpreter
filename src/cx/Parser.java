@@ -15,8 +15,6 @@ import cx.ast.NodeBinary;
 import cx.ast.NodeBlock;
 import cx.ast.NodeBreak;
 import cx.ast.NodeCall;
-import cx.ast.NodeCase;
-import cx.ast.NodeCaseList;
 import cx.ast.NodeContinue;
 import cx.ast.NodeFalse;
 import cx.ast.NodeFor;
@@ -283,7 +281,6 @@ public class Parser {
 		if (isDebug) System.out.println("parseSwitch()");
 		SourcePosition localSourcePosition = getSrcPos();
 		Node switchValue = null;
-		NodeCaseList cases;
 		scanner.getToken();// eat 'switch'
 
 		if (!scanner.matchToken(Token.L_PAREN)) {
@@ -301,10 +298,13 @@ public class Parser {
 			handleError("expected '{' in 'switch(...){' !", scanner.getSrcPos());
 		}
 		// parse cases
-		cases = new NodeCaseList(scanner.getSrcPos());
 		Token token;
 		int defaultIndex = -1;
-		NodeString value = null;
+		final List<Object> caseValues = new ArrayList<Object>();
+		final List<Integer> caseValueIndexes = new ArrayList<Integer>();
+		final List<Node> caseStatements = new ArrayList<Node>();
+
+		Object value = null;
 		do {
 			token = scanner.peekToken();
 			if (token == Token.CASE || token == Token.DEFAULT) {
@@ -312,19 +312,21 @@ public class Parser {
 				scanner.getToken();
 				if (token == Token.DEFAULT) {
 					if (defaultIndex == -1) {
-						defaultIndex = cases.cases.size();
+						defaultIndex = caseStatements.size();
 					} else {
 						handleError("only one default case for switch allowed !", scanner.getSrcPos());
 					}
 				} else {
 					token = scanner.getToken();
 					if (token == Token.NUMBER) {
-						value = new NodeNumber(getSrcPos(), scanner.getString());
+						value = toNumber(scanner.getString());
 					} else if (token == Token.STRING) {
-						value = new NodeString(getSrcPos(), scanner.getString());
+						value = scanner.getString();
 					} else {
 						handleError("case value should be number or string!", scanner.getSrcPos());
 					}
+					caseValues.add(value);
+					caseValueIndexes.add(caseStatements.size());
 				}
 
 				if (!scanner.matchToken(Token.COLON)) {
@@ -333,34 +335,17 @@ public class Parser {
 
 				token = scanner.peekToken();
 				if (token == Token.CASE || token == Token.DEFAULT) {
-					cases.cases.add(new NodeCase(scanner.getSrcPos(), value, null));
 					continue;
 				}
 				if (token == Token.R_CURLY) {
-					cases.cases.add(new NodeCase(scanner.getSrcPos(), value, null));
 					break;
 				}
-				NodeBlock caseBlock = new NodeBlock(scanner.getSrcPos());
-				do {
-					token = scanner.peekToken();
-					if (token == Token.R_CURLY || token == Token.CASE || token == Token.DEFAULT) {
-						break;
-					}
-					if (token == Token.SEMICOLON) {
-						continue;
-					}
-					Node statement = parseStatement();
-					caseBlock.add(statement);
-
-				} while (token != Token.EOF && token != Token.ERROR);
-				cases.cases.add(new NodeCase(scanner.getSrcPos(), value, caseBlock));
-
 			} else if (token == Token.R_CURLY) {
 				break;
-
-			} else {
-				handleError("unexpected token in switch: " + token, scanner.getSrcPos());
 			}
+
+			Node statement = parseStatement();
+			caseStatements.add(statement);
 
 		} while (token != Token.EOF && token != Token.ERROR);
 
@@ -368,7 +353,8 @@ public class Parser {
 			handleError("expected '}' in 'switch(...){...}' !", scanner.getSrcPos());
 		}
 
-		return new NodeSwitch(localSourcePosition, switchValue, cases, defaultIndex);
+		return new NodeSwitch(localSourcePosition, switchValue, defaultIndex, caseValues, caseValueIndexes,
+				caseStatements);
 	}
 
 	private Node parseTry() {
@@ -918,17 +904,7 @@ public class Parser {
 				return new NodeString(getSrcPos(), scanner.getString());
 			case NUMBER:
 				String number = scanner.getString();
-				try {
-					if (number.length() > 2 && number.charAt(0) == '0'
-							&& (number.charAt(1) == 'x' || number.charAt(1) == 'X')) {
-						Long.parseLong(number.substring(2), 16);
-					} else {
-						Double.parseDouble(number);
-					}
-				} catch (Exception e) {
-					handleError(number + " is not a number!", getSrcPos());
-				}
-				return new NodeNumber(getSrcPos(), number);
+				return new NodeNumber(getSrcPos(), number, toNumber(number));
 			case NAME:
 				return new NodeVariable(getSrcPos(), scanner.getString());
 			case FUNCTION:
@@ -1151,5 +1127,30 @@ public class Parser {
 			}
 		} while (token != Token.EOF && token != Token.ERROR);
 		handleError("Missing '}'", getSrcPos());
+	}
+
+	public Number toNumber(String number) {
+		try {
+			if (number.length() > 2 && number.charAt(0) == '0' && (number.charAt(1) == 'x' || number.charAt(1) == 'X')) {
+				long l = Long.parseLong(number.substring(2), 16);
+				if (l < Integer.MAX_VALUE) {
+					return new Integer((int) l);
+				} else {
+					return new Long(l);
+				}
+			} else if (number.indexOf('.') < 0 || number.indexOf('e') < 0 || number.indexOf('E') < 0) {
+				long l = Long.parseLong(number, 10);
+				if (l < Integer.MAX_VALUE) {
+					return new Integer((int) l);
+				} else {
+					return new Long(l);
+				}
+			} else {
+				return Double.parseDouble(number);
+			}
+		} catch (Exception e) {
+			handleError(number + " is not a number!", getSrcPos());
+			return null;
+		}
 	}
 }

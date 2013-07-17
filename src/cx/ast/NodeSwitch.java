@@ -1,16 +1,23 @@
 package cx.ast;
 
+import java.util.List;
+
 
 public class NodeSwitch extends Node {
 	public final Node value;
-	public final NodeCaseList cases;
 	public final int defaultIndex;
+	public final Object[] caseValues;
+	public final Integer[] caseValueIndexes;
+	public final Node[] caseStatements;
 
-	public NodeSwitch(SourcePosition position, Node value, NodeCaseList caseList, int defaultIndex) {
+	public NodeSwitch(SourcePosition position, Node value, int defaultIndex, List<Object> caseValues,
+			List<Integer> caseValueIndexes, List<Node> caseStatements) {
 		super(position);
 		this.value = value;
-		cases = caseList;
 		this.defaultIndex = defaultIndex;
+		this.caseValues = caseValues.toArray(new Object[caseValues.size()]);
+		this.caseValueIndexes = caseValueIndexes.toArray(new Integer[caseValueIndexes.size()]);
+		this.caseStatements = caseStatements.toArray(new Node[caseStatements.size()]);
 	}
 
 	public void accept(Visitor visitor) {
@@ -18,6 +25,7 @@ public class NodeSwitch extends Node {
 	}
 
 	public String toString() {
-		return "switch(" + value + "){" + cases + "}";
+		return "switch(" + value + "){" + arrayToString(caseValues) + arrayToString(caseValueIndexes)
+				+ arrayToString(caseStatements) + "}";
 	}
 }
