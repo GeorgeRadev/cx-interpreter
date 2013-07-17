@@ -38,10 +38,6 @@ public abstract interface Visitor {
 
 	public abstract void visitSwitch(NodeSwitch node);
 
-	public abstract void visitCaseList(NodeCaseList node);
-
-	public abstract void visitCase(NodeCase node);
-
 	public abstract void visitTry(NodeTry node);
 
 	public abstract void visitThrow(NodeThrow node);

@@ -11,8 +11,6 @@ import cx.ast.NodeBinary;
 import cx.ast.NodeBlock;
 import cx.ast.NodeBreak;
 import cx.ast.NodeCall;
-import cx.ast.NodeCase;
-import cx.ast.NodeCaseList;
 import cx.ast.NodeContinue;
 import cx.ast.NodeFalse;
 import cx.ast.NodeFor;
@@ -107,7 +105,7 @@ public class Context implements Visitor {
 
 	public void visitVar(NodeVar varNode) {
 		position = varNode.position;
-		//define variables in current context
+		// define variables in current context
 		for (NodeAssign node : varNode.vars) {
 			if (node.left instanceof NodeVariable) {
 				cx.frame.put(((NodeVariable) node.left).name, ZERO);
@@ -247,11 +245,39 @@ public class Context implements Visitor {
 		cx.result = null;
 	}
 
-	public void visitSwitch(NodeSwitch paramSwitchNode) {}
+	public void visitSwitch(NodeSwitch switchNode) {
+		position = switchNode.position;
+		Object value = eval(switchNode.value);
 
-	public void visitCaseList(NodeCaseList paramCaseListNode) {}
-
-	public void visitCase(NodeCase paramCaseNode) {}
+		int executeIndex = switchNode.defaultIndex;
+		if (value != null) {
+			// find value that matches
+			for (int i = 0, l = switchNode.caseValues.length; i < l; i++) {
+				Object caseValue = switchNode.caseValues[i];
+				if (caseValue != null) {
+					if ((value instanceof Double && caseValue instanceof Double && value.equals(caseValue))
+							|| (value instanceof Number && caseValue instanceof Number && ((Number) value).longValue() == ((Number) caseValue).longValue())
+							|| (value.toString().equals(caseValue.toString()))) {
+						executeIndex = i;
+						break;
+					}
+				}
+			}
+		}
+		if (executeIndex >= 0) {
+			final Node[] statements = switchNode.caseStatements;
+			int i = executeIndex, l = statements.length;
+			if (executeIndex < l) {
+				try {
+					for (; i < l; i++) {
+						eval(statements[i]);
+					}
+				} catch (JumpBreak localBreakJump) {
+					// break
+				}
+			}
+		}
+	}
 
 	public void visitFor(NodeFor paramForNode) {
 		position = paramForNode.position;
