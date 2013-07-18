@@ -72,6 +72,68 @@ public class TestContext extends TestCase {
 		}
 	}
 
+	public void testTryCatch() {
+		{// with return
+			Context cx = new Context();
+			Parser parser = new Parser("var r=0; function x(){try{return 1;}finally{return 2;}}; r =x();");
+			parser.supportTryCatchThrow = true;
+			List<Node> block = parser.parse();
+
+			cx.evaluate(block);
+			assertEquals("2", cx.get("r").toString());
+		}
+		{// with finally
+			Context cx = new Context();
+			Parser parser = new Parser(
+					"var f = 0; try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Integer e){arg = 'integer';}catch(String e){arg = 'string';}finally{f = 42;}");
+			parser.supportTryCatchThrow = true;
+			List<Node> block = parser.parse();
+
+			cx.set("arg", 0);
+			cx.evaluate(block);
+			assertEquals("0", cx.get("arg").toString());
+			assertEquals("42", cx.get("f").toString());
+
+			cx.set("arg", 1);
+			cx.evaluate(block);
+			assertEquals("integer", cx.get("arg").toString());
+			assertEquals("42", cx.get("f").toString());
+
+			cx.set("arg", 2);
+			cx.evaluate(block);
+			assertEquals("string", cx.get("arg").toString());
+			assertEquals("42", cx.get("f").toString());
+
+			cx.set("arg", 3);
+			cx.evaluate(block);
+			assertEquals("3", cx.get("arg").toString());
+			assertEquals("42", cx.get("f").toString());
+		}
+		{// just catch
+			Context cx = new Context();
+			Parser parser = new Parser(
+					"try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Integer e){arg = 'integer';}catch(String e){arg = 'string';}");
+			parser.supportTryCatchThrow = true;
+			List<Node> block = parser.parse();
+
+			cx.set("arg", 0);
+			cx.evaluate(block);
+			assertEquals("0", cx.get("arg").toString());
+
+			cx.set("arg", 1);
+			cx.evaluate(block);
+			assertEquals("integer", cx.get("arg").toString());
+
+			cx.set("arg", 2);
+			cx.evaluate(block);
+			assertEquals("string", cx.get("arg").toString());
+
+			cx.set("arg", 3);
+			cx.evaluate(block);
+			assertEquals("3", cx.get("arg").toString());
+		}
+	}
+
 	public void testFunction() {
 		{// Factorial calculating
 			Context cx = new Context();
