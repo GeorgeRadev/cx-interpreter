@@ -31,6 +31,7 @@ import cx.ast.NodeVariable;
 import cx.ast.NodeWhile;
 import cx.ast.SourcePosition;
 import cx.ast.Visitor;
+import cx.exception.CXException;
 import cx.exception.JumpBreak;
 import cx.exception.JumpContinue;
 import cx.exception.JumpReturn;
@@ -914,6 +915,7 @@ public class Context implements Visitor {
 	}
 
 	public Object callFunction(Function function, Object[] args) {
+		position = function.function.position;
 		final String[] argumentNames = function.function.argumentNames;
 		final int l = args.length;
 		if (l != argumentNames.length) {
@@ -934,11 +936,55 @@ public class Context implements Visitor {
 		return cx.result;
 	}
 
-	public void visitTry(NodeTry node) {
-		// TODO Auto-generated method stub
+	public void visitTry(NodeTry tryNode) {
+		position = tryNode.position;
+		boolean needFinally = true;
+		try {
+			eval(tryNode.tryBody);
+
+		} catch (JumpReturn returnJump) {
+			needFinally = false;
+			eval(tryNode.finallyBody);
+			throw returnJump;
+
+		} catch (JumpBreak breakJump) {
+			needFinally = false;
+			eval(tryNode.finallyBody);
+			throw breakJump;
+
+		} catch (JumpContinue continueJump) {
+			needFinally = false;
+			eval(tryNode.finallyBody);
+			throw continueJump;
+
+		} catch (CXException cxException) {
+			Object exception = cxException.object;
+			if (exception != null) {
+				String exceptionName = exception.getClass().getSimpleName();
+				for (int i = 0, l = tryNode.exceptionTypes.length; i < l; i++) {
+					String catchName = tryNode.exceptionTypes[i];
+					if (exceptionName.equals(catchName)) {
+						try {
+							pushContext();
+							cx.frame.put(tryNode.exceptionNames[i], exception);
+							eval(tryNode.exceptionBodies[i]);
+						} finally {
+							popContext();
+						}
+						break;
+					}
+				}
+			}
+		} finally {
+			if (needFinally) {
+				eval(tryNode.finallyBody);
+			}
+		}
 	}
 
-	public void visitThrow(NodeThrow node) {
-		// TODO Auto-generated method stub
+	public void visitThrow(NodeThrow throwNode) {
+		position = throwNode.position;
+		Object exception = eval(throwNode.expresion);
+		throw new CXException(exception);
 	}
 }
