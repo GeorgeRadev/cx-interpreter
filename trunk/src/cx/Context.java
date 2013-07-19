@@ -58,8 +58,17 @@ public class Context implements Visitor {
 	}
 
 	public Object evaluate(List<Node> nodes) {
+		try {
 		for (Node node : nodes) {
 			node.accept(this);
+		}
+		} catch (JumpBreak breakJump) {
+			// finish block execution
+		} catch (JumpContinue continueJump) {
+			// finish execution
+		} catch (JumpReturn returnJump) {
+			// finish interpretation and set the result
+			cx.result = returnJump.value;
 		}
 		return cx.result;
 	}
