@@ -139,6 +139,7 @@ class Scanner {
 					Long.parseLong(value.substring(2), 16);
 				} catch (NumberFormatException localNumberFormatException) {
 					error = "Invalid hex number: " + value;
+					return Token.ERROR;
 				}
 				return Token.NUMBER;
 			}
@@ -146,11 +147,16 @@ class Scanner {
 				strToken.append(c);
 				for (c = getChar(); ('0' <= c) && (c <= '9'); c = getChar())
 					strToken.append(c);
-				if (c == '.') {
+				if (c == '.' || c == 'e' || c == 'E') {
+					int len = strToken.length() + 1;
 					do {
 						strToken.append(c);
 						c = getChar();
 					} while (isDigit(c));
+					if (len >= strToken.length()) {
+						error = "Invalid decimal format in number: " + strToken.toString();
+						return Token.ERROR;
+					}
 				}
 				srcIdx--;
 				String value = strToken.toString();

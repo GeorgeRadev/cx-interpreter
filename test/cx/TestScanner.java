@@ -68,6 +68,10 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.QUESTION, scanner.getToken());
 		assertEquals(Token.BIT_XOR, scanner.getToken());
 
+		scanner = new Scanner("0.0;");
+		scanner.setDebugMode(true);
+		assertEquals(Token.NUMBER, scanner.getToken());
+
 		scanner = new Scanner(
 				"if do for new \t var \r case else null \n true  break    while false return switch import delete default continue function try catch \r finally throw");
 		scanner.setDebugMode(true);

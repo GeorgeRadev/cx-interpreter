@@ -5,16 +5,61 @@ import java.util.List;
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.runtime.ContextFrame;
+import cx.runtime.ObjectHandler;
 
 public class TestContext extends TestCase {
 
 	public void testSudoku() {
 		{
 			Context cx = new Context();
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
 			cx.set("SUDOKU", new Integer(0xCAFE));
 			List<Node> block = (new Parser(new File("sudoku.cx"))).parse();
-			// cx.evaluate(block);
-			// assertTrue(cx.get("SUDOKU") instanceof List);
+			cx.evaluate(block);
+			assertTrue(cx.get("SUDOKU") instanceof List);
+		}
+	}
+
+	private static class PrintHandler implements ObjectHandler {
+		public String value = "";
+
+		public boolean accept(Object object) {
+			return false;
+		}
+
+		public void set(Object thiz, String method, Object value) {}
+
+		public Object get(Object thiz, String method) {
+			return null;
+		}
+
+		public Object call(Object object, Object[] args) {
+			return null;
+		}
+
+		public boolean acceptStaticCall(String method, Object[] args) {
+			return ("print".equals(method) || "log".equals(method)) && args != null && args.length == 1;
+		}
+
+		public Object staticCall(String method, Object[] args) {
+			if ("print".equals(method) || "log".equals(method)) {
+				String str = args[0].toString();
+				System.out.println(str);
+				value = value + str;
+				return value;
+			}
+			return null;
+		}
+	}
+
+	public void testHandler() {
+		{
+			Context cx = new Context();  
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
+			cx.evaluate((new Parser("print('hi '+'world');")).parse());
+			assertEquals(printHandler.value, "hi world");
 		}
 	}
 
