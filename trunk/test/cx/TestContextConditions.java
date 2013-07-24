@@ -455,65 +455,61 @@ public class TestContextConditions extends TestCase {
 	public void testStringConditions() {
 		{// >
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = -10.2 > 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' > 'A';")).parse());
+			assertTrue((Boolean) cx.get("b"));
+			cx.evaluate((new Parser("b = 'Z' > 'Aaaa';")).parse());
+			assertTrue((Boolean) cx.get("b"));
+			cx.evaluate((new Parser("b = 'Z' > 'Z';")).parse());
 			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 > 5.2;")).parse());
-			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 > -10.2;")).parse());
-			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 > 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'A' > 'Z';")).parse());
 			assertFalse((Boolean) cx.get("b"));
 		}
 		{// >=
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = 10.2 >= 5.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' >= 'A';")).parse());
 			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 >= 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' >= 'Aaaa';")).parse());
 			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 >= 10.2;")).parse());
-			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = -10.2 >= 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' >= 'Z';")).parse());
+			assertTrue((Boolean) cx.get("b"));
+			cx.evaluate((new Parser("b = 'A' >= 'Z';")).parse());
 			assertFalse((Boolean) cx.get("b"));
 		}
 		{// <
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = 10.2 < 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' < 'A';")).parse());
 			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 < 5.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' < 'Aaaa';")).parse());
 			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 < 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' < 'Z';")).parse());
+			assertFalse((Boolean) cx.get("b"));
+			cx.evaluate((new Parser("b = 'A' < 'Z';")).parse());
 			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 < -10.2;")).parse());
-			assertFalse((Boolean) cx.get("b"));
 		}
 		{// <=
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = 10.2 <= 10.2;")).parse());
-			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 <= 5.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' <= 'A';")).parse());
 			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 <= 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'Z' <= 'Aaaa';")).parse());
+			assertFalse((Boolean) cx.get("b"));
+			cx.evaluate((new Parser("b = 'Z' <= 'Z';")).parse());
 			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = -10.2 <= 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'A' <= 'Z';")).parse());
 			assertTrue((Boolean) cx.get("b"));
 		}
 		{// ==
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = 10.2 == 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'test' == 'test';")).parse());
 			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 == -10.2;")).parse());
-			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 5.2 == 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'test' == 'TEST';")).parse());
 			assertFalse((Boolean) cx.get("b"));
 		}
 
 		{// !=
 			Context cx = new Context();
-			cx.evaluate((new Parser("b = 10.2 != 10.2;")).parse());
+			cx.evaluate((new Parser("b = 'test' != 'test';")).parse());
 			assertFalse((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = 10.2 != 5.2;")).parse());
-			assertTrue((Boolean) cx.get("b"));
-			cx.evaluate((new Parser("b = -10.2 != 0.2;")).parse());
+			cx.evaluate((new Parser("b = 'test' != 'TEST';")).parse());
 			assertTrue((Boolean) cx.get("b"));
 		}
 	}
