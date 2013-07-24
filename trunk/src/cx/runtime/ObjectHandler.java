@@ -2,11 +2,19 @@ package cx.runtime;
 
 public interface ObjectHandler {
 
+	// for attribute access and call implementation
+
 	boolean accept(Object object);
 
-	Object get(Object thiz, String method);
+	void set(Object object, String variable, Object value);
 
-	void set(Object thiz, String method, Object value);
+	Object get(Object object, String variable);
 
-	Object call(Object thiz, Object method, Object[] args);
+	Object call(Object object, Object[] args);
+
+	// for static calls implementation
+
+	boolean acceptStaticCall(String method, Object[] args);
+
+	Object staticCall(String method, Object[] args);
 }

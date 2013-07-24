@@ -26,6 +26,7 @@ import cx.ast.NodeUnary;
 import cx.ast.NodeVar;
 import cx.ast.NodeVariable;
 import cx.ast.NodeWhile;
+import cx.exception.ParserException;
 
 public class TestParser extends TestCase {
 
@@ -813,6 +814,44 @@ public class TestParser extends TestCase {
 			NodeArray arr = (NodeArray) block.get(0);
 			List<Node> list = arr.elements;
 			assertEquals(list.size(), 0);
+		}
+	}
+
+	public void testCardinals() {
+		{
+			List<Node> block = new Parser("'test';").parse();
+			NodeString str = (NodeString) block.get(0);
+			assertEquals(str.value, "test");
+		}
+		{
+			List<Node> block = new Parser("0.0;").parse();
+			NodeNumber n = (NodeNumber) block.get(0);
+			assertEquals(n.value, "0.0");
+			assertEquals(n.number.doubleValue(), 0.0D);
+		}
+		{
+			List<Node> block = new Parser("0e5;").parse();
+			NodeNumber n = (NodeNumber) block.get(0);
+			assertEquals(n.value, "0e5");
+			assertEquals(n.number.doubleValue(), 0D);
+		}
+		try {
+			new Parser("0e;").parse();
+			fail();
+		} catch (ParserException e) {
+			// ok
+		}
+		{
+			List<Node> block = new Parser("0x5;").parse();
+			NodeNumber n = (NodeNumber) block.get(0);
+			assertEquals(n.value, "0x5");
+			assertEquals(n.number.intValue(), 5);
+		}
+		try {
+			new Parser("0x;").parse();
+			fail();
+		} catch (ParserException e) {
+			// ok
 		}
 	}
 }

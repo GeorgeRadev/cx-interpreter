@@ -42,7 +42,7 @@ import cx.runtime.ObjectHandler;
 public class Context implements Visitor {
 	private static final String THIS = "this";
 
-	private static final Integer ZERO = 0;
+	private static final Long ZERO = 0L;
 
 	private ContextFrame cx = null;
 	public SourcePosition position = null;
@@ -59,9 +59,9 @@ public class Context implements Visitor {
 
 	public Object evaluate(List<Node> nodes) {
 		try {
-		for (Node node : nodes) {
-			node.accept(this);
-		}
+			for (Node node : nodes) {
+				node.accept(this);
+			}
 		} catch (JumpBreak breakJump) {
 			// finish block execution
 		} catch (JumpContinue continueJump) {
@@ -219,24 +219,10 @@ public class Context implements Visitor {
 				cx.result = (isTrue(left) && isTrue(right)) ? Boolean.TRUE : Boolean.FALSE;
 				return;
 			case EQ:
-				if (left == null && right == null) {
-					cx.result = true;
-					return;
-				} else if (left != null) {
-					cx.result = left.equals(right);
-					return;
-				}
-				cx.result = false;
+				cx.result = equalWith(left, right);
 				return;
 			case NE:
-				if (left == null && right == null) {
-					cx.result = false;
-					return;
-				} else if (left != null) {
-					cx.result = !left.equals(right);
-					return;
-				}
-				cx.result = true;
+				cx.result = isTrue(equalWith(left, right)) ? Boolean.FALSE : Boolean.TRUE;
 				return;
 			case GT:
 				cx.result = greaterThan(left, right);
@@ -246,6 +232,7 @@ public class Context implements Visitor {
 				return;
 			case LT:
 				cx.result = lowerThan(left, right);
+				;
 				return;
 			case LE:
 				cx.result = lowerEqual(left, right);
@@ -411,14 +398,22 @@ public class Context implements Visitor {
 		return new Integer(number.intValue() - 1);
 	}
 
+	private Number negate(Number number) {
+		if (number instanceof Double) {
+			return new Double(number.doubleValue() * -1.0d);
+		}
+		if (number instanceof Long) {
+			return new Long(number.longValue() * -1L);
+		}
+		return new Integer(number.intValue() * -1);
+	}
+
 	public void visitUnary(NodeUnary unary) {
 		position = unary.position;
 		Object result = eval(unary.expresion);
 		switch (unary.operator) {
 			case NOT:
-				if ((result instanceof Boolean)) {
-					cx.result = (!((Boolean) result) ? Boolean.TRUE : Boolean.FALSE);
-				}
+				cx.result = isTrue(result) ? Boolean.FALSE : Boolean.TRUE;
 				return;
 			case INC_PRE:
 				if ((result instanceof Number)) {
@@ -464,133 +459,196 @@ public class Context implements Visitor {
 					cx.result = result;
 				}
 				return;
+			case NEGATE:
+				if ((result instanceof Number)) {
+					cx.result = negate((Number) result);
+				}
+				return;
 			default:
 		}
 	}
 
 	@SuppressWarnings("rawtypes")
 	boolean isTrue(Object obj) {
-		return obj != null
-				&& ((obj instanceof Boolean && ((Boolean) obj))
-						|| (obj instanceof Number && ((Number) obj).longValue() != 0L)
-						|| (obj instanceof String && obj.toString().length() > 0)
-						|| (obj instanceof List && ((List) obj).size() > 0) || (obj instanceof Map && ((Map) obj).size() > 0));
+		if (obj == null) {
+			return false;
+		} else if (obj instanceof Boolean) {
+			return (Boolean) obj;
+		} else if (obj instanceof String) {
+			return obj.toString().length() > 0;
+		} else if (obj instanceof Number) {
+			return ((Number) obj).doubleValue() != 0D;
+		} else if (obj instanceof List) {
+			return ((List) obj).size() > 0;
+		} else if (obj instanceof Map) {
+			return ((Map) obj).size() > 0;
+		}
+		return false;
+	}
+
+	Long toLong(Object obj) {
+		if (obj == null) {
+			return ZERO;
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? 1L : 0L;
+		} else if (obj instanceof Number) {
+			return ((Number) obj).longValue();
+		} else if (obj instanceof String && ((String) obj).length() == 0) {
+			return ZERO;
+		} else {
+			try {
+				return Parser.parseNumber(obj.toString()).longValue();
+			} catch (NumberFormatException e) {}
+		}
+		return null;
+	}
+
+	double toDouble(Object obj) {
+		if (obj == null) {
+			return 0.0d;
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? 1d : 0d;
+		} else if (obj instanceof Number) {
+			return ((Number) obj).doubleValue();
+		} else if (obj instanceof String && ((String) obj).length() == 0) {
+			return 0.0d;
+		} else {
+			try {
+				return Parser.parseNumber(obj.toString()).doubleValue();
+			} catch (NumberFormatException e) {}
+		}
+		return Double.NaN;
+	}
+
+	String toString(Object obj) {
+		if (obj == null) {
+			return "";
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? "true" : "";
+		} else if (obj instanceof Number) {
+			return ((Number) obj).doubleValue() == 0d ? "" : obj.toString();
+		} else if (obj instanceof String && ((String) obj).length() == 0) {
+			return "";
+		}
+		return obj.toString();
+	}
+
+	/**
+	 * null = false = 0 = 0.0 = "". cast to the left when comparing.
+	 */
+	private Object equalWith(Object left, Object right) {
+		if (left == null && !isTrue(right)) {
+			return Boolean.TRUE;
+
+		} else if (left instanceof Boolean) {
+			return isTrue(left) == isTrue(right);
+
+		} else if (left instanceof Double) {
+			double l = toDouble(left);
+			double r = toDouble(right);
+			return l == r;
+
+		} else if (left instanceof Number) {
+			Long l = toLong(left);
+			Long r = toLong(right);
+			return r == null || r.compareTo(l) == 0;
+
+		} else if (left instanceof String) {
+			return toString(left).compareTo(toString(right)) == 0;
+		}
+		return Boolean.FALSE;
 	}
 
 	private Object greaterThan(Object left, Object right) {
-		if (left == null && right == null) {
+		if (left == null && !isTrue(right)) {
 			return Boolean.FALSE;
+
 		} else if (left instanceof Boolean) {
 			return isTrue(left) && !isTrue(right);
-		} else if (left instanceof String) {
-			if (right == null) {
-				return Boolean.TRUE;
-			}
-			return left.toString().compareTo(right.toString()) > 0;
-		} else if (left instanceof Number) {
-			double l = ((Number) left).doubleValue();
-			double r;
-			if (right instanceof Boolean) {
-				r = isTrue(left) ? 1 : 0;
-			} else if (right instanceof Number) {
-				r = ((Number) right).doubleValue();
-			} else if (right instanceof String) {
-				try {
-					r = Double.parseDouble(right.toString());
-				} catch (Exception e) {
-					return Boolean.TRUE;
-				}
-				return l > r;
-			}
-		}
-		return Boolean.TRUE;
-	}
 
-	private Object greaterEqual(Object left, Object right) {
-		if (left == null && right == null) {
-			return Boolean.TRUE;
-		} else if (left instanceof Boolean) {
-			return isTrue(left) || !isTrue(right);
-		} else if (left instanceof String) {
-			if (right == null) {
-				return Boolean.TRUE;
-			}
-			return left.toString().compareTo(right.toString()) >= 0;
+		} else if (left instanceof Double) {
+			double l = toDouble(left);
+			double r = toDouble(right);
+			return l > r;
+
 		} else if (left instanceof Number) {
-			double l = ((Number) left).doubleValue();
-			double r;
-			if (right instanceof Boolean) {
-				r = isTrue(left) ? 1 : 0;
-			} else if (right instanceof Number) {
-				r = ((Number) right).doubleValue();
-			} else if (right instanceof String) {
-				try {
-					r = Double.parseDouble(right.toString());
-				} catch (Exception e) {
-					return left.toString().compareTo(right.toString()) < 0;
-				}
-				return l >= r;
-			}
+			Long l = toLong(left);
+			Long r = toLong(right);
+			return r == null || r.compareTo(l) < 0;
+
+		} else if (left instanceof String) {
+			return toString(left).compareTo(toString(right)) > 0;
 		}
-		return Boolean.TRUE;
+		return Boolean.FALSE;
 	}
 
 	private Object lowerThan(Object left, Object right) {
-		if (left == null && right == null) {
-			return Boolean.FALSE;
+		if (left == null && isTrue(right)) {
+			return Boolean.TRUE;
+
 		} else if (left instanceof Boolean) {
 			return !isTrue(left) && isTrue(right);
-		} else if (left instanceof String) {
-			if (right == null) {
-				return Boolean.FALSE;
-			}
-			return left.toString().compareTo(right.toString()) < 0;
+
+		} else if (left instanceof Double) {
+			double l = toDouble(left);
+			double r = toDouble(right);
+			return l < r;
+
 		} else if (left instanceof Number) {
-			double l = ((Number) left).doubleValue();
-			double r;
-			if (right instanceof Boolean) {
-				r = isTrue(left) ? 1 : 0;
-			} else if (right instanceof Number) {
-				r = ((Number) right).doubleValue();
-			} else if (right instanceof String) {
-				try {
-					r = Double.parseDouble(right.toString());
-				} catch (Exception e) {
-					return left.toString().compareTo(right.toString()) < 0;
-				}
-				return l < r;
-			}
+			Long l = toLong(left);
+			Long r = toLong(right);
+			return r == null || r.compareTo(l) > 0;
+
+		} else if (left instanceof String) {
+			return toString(left).compareTo(toString(right)) < 0;
 		}
-		return Boolean.TRUE;
+		return Boolean.FALSE;
+	}
+
+	private Object greaterEqual(Object left, Object right) {
+		if (left == null && !isTrue(right)) {
+			return Boolean.TRUE;
+
+		} else if (left instanceof Boolean) {
+			return isTrue(left) || !isTrue(right);
+
+		} else if (left instanceof Double) {
+			double l = toDouble(left);
+			double r = toDouble(right);
+			return l >= r;
+
+		} else if (left instanceof Number) {
+			Long l = toLong(left);
+			Long r = toLong(right);
+			return r == null || r.compareTo(l) <= 0;
+
+		} else if (left instanceof String) {
+			return toString(left).compareTo(toString(right)) >= 0;
+		}
+		return Boolean.FALSE;
 	}
 
 	private Object lowerEqual(Object left, Object right) {
-		if (left == null && right == null) {
+		if (left == null) {
 			return Boolean.TRUE;
+
 		} else if (left instanceof Boolean) {
-			return !isTrue(left) || isTrue(right);
-		} else if (left instanceof String) {
-			if (right == null) {
-				return Boolean.FALSE;
-			}
-			return left.toString().compareTo(right.toString()) < 0;
+			return isTrue(right) || !isTrue(left);
+
+		} else if (left instanceof Double) {
+			double l = toDouble(left);
+			double r = toDouble(right);
+			return l <= r;
+
 		} else if (left instanceof Number) {
-			double l = ((Number) left).doubleValue();
-			double r;
-			if (right instanceof Boolean) {
-				r = isTrue(left) ? 1 : 0;
-			} else if (right instanceof Number) {
-				r = ((Number) right).doubleValue();
-			} else if (right instanceof String) {
-				try {
-					r = Double.parseDouble(right.toString());
-				} catch (Exception e) {
-					return left.toString().compareTo(right.toString()) < 0;
-				}
-				return l <= r;
-			}
+			Long l = toLong(left);
+			Long r = toLong(right);
+			return r == null || r.compareTo(l) >= 0;
+
+		} else if (left instanceof String) {
+			return toString(left).compareTo(toString(right)) <= 0;
 		}
-		return Boolean.TRUE;
+		return Boolean.FALSE;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -910,11 +968,20 @@ public class Context implements Visitor {
 				callFunction(((Function) function), argValues);
 
 			} else {
-				for (ObjectHandler handler : handlers) {
-					if (handler.accept(function)) {
-						cx.result = handler.call(cx, function, argValues);
-
-						break;
+				if (function == null && call.function instanceof NodeVariable) {
+					String functionName = ((NodeVariable) call.function).name;
+					for (ObjectHandler handler : handlers) {
+						if (handler.acceptStaticCall(functionName, argValues)) {
+							cx.result = handler.staticCall(functionName, argValues);
+							break;
+						}
+					}
+				} else {
+					for (ObjectHandler handler : handlers) {
+						if (handler.accept(function)) {
+							cx.result = handler.call(function, argValues);
+							break;
+						}
 					}
 				}
 			}

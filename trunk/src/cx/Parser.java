@@ -1131,26 +1131,30 @@ public class Parser {
 
 	public Number toNumber(String number) {
 		try {
-			if (number.length() > 2 && number.charAt(0) == '0' && (number.charAt(1) == 'x' || number.charAt(1) == 'X')) {
-				long l = Long.parseLong(number.substring(2), 16);
-				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
-				} else {
-					return new Long(l);
-				}
-			} else if (number.indexOf('.') < 0 || number.indexOf('e') < 0 || number.indexOf('E') < 0) {
-				long l = Long.parseLong(number, 10);
-				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
-				} else {
-					return new Long(l);
-				}
-			} else {
-				return Double.parseDouble(number);
-			}
+			return parseNumber(number);
 		} catch (Exception e) {
 			handleError(number + " is not a number!", getSrcPos());
 			return null;
+		}
+	}
+
+	public static Number parseNumber(String number) throws NumberFormatException {
+		if (number.length() > 2 && number.charAt(0) == '0' && (number.charAt(1) == 'x' || number.charAt(1) == 'X')) {
+			long l = Long.parseLong(number.substring(2), 16);
+			if (l < Integer.MAX_VALUE) {
+				return new Integer((int) l);
+			} else {
+				return new Long(l);
+			}
+		} else if (number.indexOf('.') < 0 && number.indexOf('e') < 0 && number.indexOf('E') < 0) {
+			long l = Long.parseLong(number, 10);
+			if (l < Integer.MAX_VALUE) {
+				return new Integer((int) l);
+			} else {
+				return new Long(l);
+			}
+		} else {
+			return Double.parseDouble(number);
 		}
 	}
 }
