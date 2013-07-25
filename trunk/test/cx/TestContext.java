@@ -15,8 +15,8 @@ public class TestContext extends TestCase {
 			PrintHandler printHandler = new PrintHandler();
 			cx.addHandler(printHandler);
 			List<Node> block = (new Parser(new File("sudoku.cx"))).parse();
-			// cx.evaluate(block);
-			// assertTrue(cx.get("SUDOKU") instanceof List);
+			cx.evaluate(block);
+			assertTrue(cx.get("SUDOKU") instanceof List);
 		}
 	}
 
@@ -38,15 +38,34 @@ public class TestContext extends TestCase {
 		}
 
 		public boolean acceptStaticCall(String method, Object[] args) {
-			return ("print".equals(method) || "log".equals(method)) && args != null && args.length == 1;
+			switch (args.length) {
+				case 0:
+					return "breakpoint".equals(method);
+				case 1:
+					return "print".equals(method) || "log".equals(method);
+			}
+			return false;
 		}
 
+		static int lines = 0;
 		public Object staticCall(String method, Object[] args) {
-			if ("print".equals(method) || "log".equals(method)) {
-				String str = args[0].toString();
-				System.out.println(str);
-				value = value + str;
-				return value;
+			switch (args.length) {
+				case 0:
+					if ("breakpoint".equals(method)) {
+						// break point
+						return false;
+					}
+					break;
+				case 1:
+					if ("print".equals(method) || "log".equals(method)) {
+						String str = args[0].toString();
+						System.out.println(str);
+						value = value + str;
+						lines++;
+						if (lines > 50000) System.exit(0);
+						return value;
+					}
+					break;
 			}
 			return null;
 		}
