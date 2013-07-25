@@ -28,7 +28,7 @@ var SUDOKU_ZERO = [
 
 var result = "";
 
-function log(msg) {
+function _log(msg) {
 	result = result + msg + "\n";
 };
 
@@ -67,11 +67,14 @@ function checkSquare(SUDOKU, x, y, g) {
 
 function solve(SUDOKU, x, y) {
 	if (x > 8) {
+		breakpoint();
 		dumpResult(SUDOKU);
 		return true;
 	}
-
-	if (SUDOKU[x * 9 + y] > 0) {
+	var ix = x * 9 + y;
+	log(ix);
+	
+	if (SUDOKU[ix] > 0) {
 		if (y < 8)
 			return solve(SUDOKU, x, y + 1);
 		else
@@ -79,22 +82,27 @@ function solve(SUDOKU, x, y) {
 	} else {
 		//brute force
 		for ( var g = 1; g < 10; ++g) {
+			//log("ix="+ix+" g="+g);
 			if (!checkHorisontal(SUDOKU, x, g))
 				continue;
 			if (!checkVertical(SUDOKU, y, g))
 				continue;
 			if (!checkSquare(SUDOKU, x, y, g))
 				continue;
-			SUDOKU[x * 9 + y] = g;
+
+			SUDOKU[ix] = g;
 
 			var result = false;
 			if (y < 8)
 				result = solve(SUDOKU, x, y + 1);
 			else
 				result = solve(SUDOKU, x + 1, 0);
-			SUDOKU[x * 9 + y] = 0;
-			if (result)
+
+			SUDOKU[ix] = 0;
+			
+			if (result){				
 				return result;
+			}			
 		}
 		return false;
 	}

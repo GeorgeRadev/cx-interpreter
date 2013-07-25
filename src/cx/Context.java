@@ -327,9 +327,9 @@ public class Context implements Visitor {
 		position = paramIfNode.position;
 		try {
 			pushContext();
-			Object localScrBoolean = eval(paramIfNode.condition);
+			Object condition = eval(paramIfNode.condition);
 
-			if (isTrue(localScrBoolean)) {
+			if (isTrue(condition)) {
 				eval(paramIfNode.body);
 			} else {
 				eval(paramIfNode.elseBody);
@@ -871,19 +871,31 @@ public class Context implements Visitor {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setNodeAccessValue(NodeAccess access, Object value) {
 		Object obj = eval(access.object);
-		String element;
-		if (access.element instanceof NodeVariable) {
-			element = ((NodeVariable) access.element).name;
-		} else {
-			element = eval(access.element).toString();
+		Object element;
+		{
+			final Node e = access.element;
+			if (e instanceof NodeVariable) {
+				element = ((NodeVariable) e).name;
+			} else {
+				element = eval(e);
+				if (element == null) {
+					cx.result = null;
+					return;
+				}
+			}
 		}
 
 		if (obj instanceof ContextFrame) {
-			((ContextFrame) obj).set(element, value);
+			((ContextFrame) obj).set(element.toString(), value);
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
-				int ix = Integer.parseInt(element);
+				int ix;
+				if (element instanceof Number) {
+					ix = ((Number) element).intValue();
+				} else {
+					ix = Integer.parseInt(element.toString());
+				}
 				while (ix >= list.size()) {
 					list.add(null);
 				}
@@ -896,7 +908,7 @@ public class Context implements Visitor {
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
-					handler.set(obj, element, value);
+					handler.set(obj, element.toString(), value);
 					break;
 				}
 			}
@@ -907,22 +919,36 @@ public class Context implements Visitor {
 	public void visitAccess(NodeAccess node) {
 		position = node.position;
 		Object obj = eval(node.object);
-		String element;
-		if (node.element instanceof NodeVariable) {
-			element = ((NodeVariable) node.element).name;
-		} else {
-			element = eval(node.element).toString();
+		Object element;
+		{
+			final Node e = node.element;
+			if (e instanceof NodeVariable) {
+				element = ((NodeVariable) e).name;
+			} else {
+				element = eval(e);
+				if (element == null) {
+					cx.result = null;
+					return;
+				}
+			}
 		}
 
 		cx.result = null;
 		if (obj instanceof ContextFrame) {
-			cx.result = ((ContextFrame) obj).get(element);
+			cx.result = ((ContextFrame) obj).get(element.toString());
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
-				int ix = Integer.parseInt(element);
+				int ix;
+				if (element instanceof Number) {
+					ix = ((Number) element).intValue();
+				} else {
+					ix = Integer.parseInt(element.toString());
+				}
 				if (ix >= 0 && ix < list.size()) {
 					cx.result = list.get(ix);
+				} else {
+					cx.result = null;
 				}
 			} catch (Exception e) {
 				// not an integer index for addressing list
@@ -932,7 +958,7 @@ public class Context implements Visitor {
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
-					cx.result = handler.get(obj, element);
+					cx.result = handler.get(obj, element.toString());
 					break;
 				}
 			}
