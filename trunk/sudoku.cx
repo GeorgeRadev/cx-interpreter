@@ -67,12 +67,14 @@ function checkSquare(SUDOKU, x, y, g) {
 
 function solve(SUDOKU, x, y) {
 	if (x > 8) {
-		breakpoint();
+		for (i = 0, l = SUDOKU_ZERO.length; i < l; i++) {
+			SUDOKU_ZERO[i] = SUDOKU[i];
+		}
 		dumpResult(SUDOKU);
 		return true;
 	}
+	
 	var ix = x * 9 + y;
-	log(ix);
 	
 	if (SUDOKU[ix] > 0) {
 		if (y < 8)
@@ -82,7 +84,6 @@ function solve(SUDOKU, x, y) {
 	} else {
 		//brute force
 		for ( var g = 1; g < 10; ++g) {
-			//log("ix="+ix+" g="+g);
 			if (!checkHorisontal(SUDOKU, x, g))
 				continue;
 			if (!checkVertical(SUDOKU, y, g))
