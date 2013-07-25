@@ -870,32 +870,28 @@ public class Context implements Visitor {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setNodeAccessValue(NodeAccess access, Object value) {
-		Object obj = eval(access.object);
-		Object element;
-		{
-			final Node e = access.element;
-			if (e instanceof NodeVariable) {
-				element = ((NodeVariable) e).name;
-			} else {
-				element = eval(e);
-				if (element == null) {
-					cx.result = null;
-					return;
-				}
-			}
-		}
+		final Object obj = eval(access.object);
+		final Node element = access.element;
 
-		if (obj instanceof ContextFrame) {
-			((ContextFrame) obj).set(element.toString(), value);
-		} else if (obj instanceof List) {
+		if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
 				int ix;
-				if (element instanceof Number) {
-					ix = ((Number) element).intValue();
+				Object _element = eval(element);
+				if (_element == null) {
+					if (element instanceof NodeVariable) {
+						_element = ((NodeVariable) element).name;
+					} else {
+						cx.result = null;
+						return;
+					}
+				}
+				if (_element instanceof Number) {
+					ix = ((Number) _element).intValue();
 				} else {
 					ix = Integer.parseInt(element.toString());
 				}
+
 				while (ix >= list.size()) {
 					list.add(null);
 				}
@@ -903,12 +899,23 @@ public class Context implements Visitor {
 			} catch (Exception e) {
 				// not an integer index for addressing list
 			}
-		} else if (obj instanceof Map) {
-			((Map) obj).put(element, value);
+			return;
+		}
+
+		String _element;
+		if (element instanceof NodeVariable) {
+			_element = ((NodeVariable) element).name;
+		} else {
+			_element = eval(element).toString();
+		}
+		if (obj instanceof Map) {
+			((Map) obj).put(_element, value);
+		} else if (obj instanceof ContextFrame) {
+			((ContextFrame) obj).set(_element, value);
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
-					handler.set(obj, element.toString(), value);
+					handler.set(obj, _element, value);
 					break;
 				}
 			}
@@ -918,33 +925,34 @@ public class Context implements Visitor {
 	@SuppressWarnings("rawtypes")
 	public void visitAccess(NodeAccess node) {
 		position = node.position;
-		Object obj = eval(node.object);
-		Object element;
-		{
-			final Node e = node.element;
-			if (e instanceof NodeVariable) {
-				element = ((NodeVariable) e).name;
-			} else {
-				element = eval(e);
-				if (element == null) {
-					cx.result = null;
-					return;
-				}
-			}
-		}
+		final Object obj = eval(node.object);
+		final Node element = node.element;
 
 		cx.result = null;
-		if (obj instanceof ContextFrame) {
-			cx.result = ((ContextFrame) obj).get(element.toString());
-		} else if (obj instanceof List) {
+		if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
 				int ix;
-				if (element instanceof Number) {
-					ix = ((Number) element).intValue();
+				Object _element = eval(element);
+				if (_element == null) {
+					if (element instanceof NodeVariable) {
+						_element = ((NodeVariable) element).name;
+						if ("length".equals(_element)) {
+							cx.result = list.size();
+							return;
+						}
+					} else {
+						cx.result = null;
+						return;
+					}
+				}
+
+				if (_element instanceof Number) {
+					ix = ((Number) _element).intValue();
 				} else {
 					ix = Integer.parseInt(element.toString());
 				}
+
 				if (ix >= 0 && ix < list.size()) {
 					cx.result = list.get(ix);
 				} else {
@@ -953,12 +961,29 @@ public class Context implements Visitor {
 			} catch (Exception e) {
 				// not an integer index for addressing list
 			}
-		} else if (obj instanceof Map) {
-			cx.result = ((Map) obj).get(element);
+			return;
+		}
+
+		String _element;
+		if (element instanceof NodeVariable) {
+			_element = ((NodeVariable) element).name;
+			if ("length".equals(_element)) {
+				if (obj instanceof Map) {
+					cx.result = ((Map) obj).size();
+					return;
+				}
+			}
+		} else {
+			_element = eval(element).toString();
+		}
+		if (obj instanceof Map) {
+			cx.result = ((Map) obj).get(_element);
+		} else if (obj instanceof ContextFrame) {
+			cx.result = ((ContextFrame) obj).get(_element);
 		} else {
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
-					cx.result = handler.get(obj, element.toString());
+					cx.result = handler.get(obj, _element);
 					break;
 				}
 			}
