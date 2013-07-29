@@ -99,4 +99,11 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.FINALLY, scanner.getToken());
 		assertEquals(Token.THROW, scanner.getToken());
 	}
+
+	public void testTokenCompare() {
+		assertTrue(Token.compare(new StringBuilder(""), ""));
+		assertTrue(Token.compare(new StringBuilder("test"), "test"));
+		assertFalse(Token.compare(new StringBuilder("test"), "pest"));
+		assertFalse(Token.compare(new StringBuilder("_test"), "_tesm"));
+	}
 }

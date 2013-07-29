@@ -1,11 +1,76 @@
 package cx.runtime;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
+import cx.Context;
 
 public class DateHandler implements ObjectHandler {
-	private static enum DateMetod {
-		getDate, getTime, getHours, getMinutes, getSeconds, getYear, getMonth, getDay, setDate, setTime, setHours, setMinutes, setYear, setMonth, setDay
+	public static enum DateMetod {
+		year, month, day, hour, minute, second, millisecond, zone, time;
+
+		public static DateMetod parse(final String str) {
+			String guess = null;
+			final int length = str.length();
+			DateMetod method = null;
+
+			switch (length) {
+
+				case 3:
+					if (str.charAt(0) == 'd') {
+						guess = "day";
+						method = day;
+					}
+					break;
+				case 4:
+					switch (str.charAt(0)) {
+						case 'y':
+							guess = "year";
+							method = year;
+							break;
+						case 'h':
+							guess = "hour";
+							method = hour;
+							break;
+						case 'z':
+							guess = "zone";
+							method = zone;
+							break;
+						case 't':
+							guess = "time";
+							method = time;
+							break;
+					}
+					break;
+				case 5:
+					if (str.charAt(0) == 'm') {
+						guess = "month";
+						method = month;
+					}
+					break;
+				case 6:
+					if (str.charAt(0) == 'm') {
+						guess = "minute";
+						method = minute;
+					} else if (str.charAt(0) == 's') {
+						guess = "second";
+						method = second;
+					}
+					break;
+				case 11:
+					if (str.charAt(0) == 'm') {
+						guess = "millisecond";
+						method = millisecond;
+					}
+					break;
+			}
+			if ((guess != null) && !guess.equals(str)) {
+				return null;
+			}
+			return method;
+		}
 	}
+	TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("GMT");
 
 	private static class DateCall {
 		final Calendar calendar;
@@ -24,51 +89,50 @@ public class DateHandler implements ObjectHandler {
 	public void set(Object object, String variable, Object value) {
 		if (object instanceof Calendar) {
 			Calendar calendar = (Calendar) object;
-			if ("date".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("time".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("hours".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("minutes".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("seconds".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("year".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("month".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
-			} else if ("day".equals(variable)) {
-				calendar.set(Calendar.DATE, 0);
+			Long l = Context.toLong(value);
+			if (l == null) {
+				return;
+			}
+			DateMetod method = DateMetod.parse(variable);
+			if (method != null) {
+				switch (method) {
+					case year:
+						calendar.set(Calendar.DATE, l.intValue());
+						break;
+					case month:
+						calendar.set(Calendar.MONTH, l.intValue());
+						break;
+					case day:
+						calendar.set(Calendar.DAY_OF_MONTH, l.intValue());
+						break;
+					case hour:
+						calendar.set(Calendar.HOUR_OF_DAY, l.intValue());
+						break;
+					case minute:
+						calendar.set(Calendar.MINUTE, l.intValue());
+						break;
+					case second:
+						calendar.set(Calendar.SECOND, l.intValue());
+						break;
+					case millisecond:
+						calendar.set(Calendar.MILLISECOND, l.intValue());
+						break;
+					case zone:
+						calendar.set(Calendar.ZONE_OFFSET, l.intValue());
+						break;
+					case time:
+						calendar.setTimeInMillis(l.intValue());
+						break;
+				}
 			}
 		}
 	}
 
 	public Object get(Object thiz, String variable) {
 		if (thiz instanceof Calendar) {
-			if ("date".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getDate);
-			}
-			if ("time".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getTime);
-			}
-			if ("hours".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getHours);
-			}
-			if ("minutes".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getMinutes);
-			}
-			if ("seconds".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getSeconds);
-			}
-			if ("year".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getYear);
-			}
-			if ("month".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getMonth);
-			}
-			if ("day".equals(variable)) {
-				return new DateCall((Calendar) thiz, DateMetod.getDay);
+			DateMetod method = DateMetod.parse(variable);
+			if (method != null) {
+				return new DateCall((Calendar) thiz, method);
 			}
 		}
 		return null;
@@ -78,61 +142,83 @@ public class DateHandler implements ObjectHandler {
 		if (!(object instanceof DateCall)) {
 			return null;
 		}
+
 		DateCall dateCall = (DateCall) object;
-		switch (args.length) {
-			case 0:
-				switch (dateCall.method) {
-					case getDate:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getTime:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getHours:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getMinutes:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getYear:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getMonth:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case getDay:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-				}
-				break;
-			case 1:
-				switch (dateCall.method) {
-					case setDate:
-						// return dateCall.calendar.set(Calendar.DATE,
-						// args[0].toString());
-					case setTime:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case setHours:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case setMinutes:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case setYear:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case setMonth:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-					case setDay:
-						return new Integer(dateCall.calendar.get(Calendar.DATE));
-				}
-				break;
+		if (args.length == 0) {
+			Long l = Context.toLong(args[0]);
+			if (l == null) {
+				return null;
+			}
+			long result = 0;
+			switch (dateCall.method) {
+				case year:
+					result = dateCall.calendar.get(Calendar.YEAR);
+					break;
+				case month:
+					result = dateCall.calendar.get(Calendar.MONTH);
+					break;
+				case day:
+					result = dateCall.calendar.get(Calendar.DAY_OF_MONTH);
+					break;
+				case hour:
+					result = dateCall.calendar.get(Calendar.HOUR_OF_DAY);
+					break;
+				case minute:
+					result = dateCall.calendar.get(Calendar.MINUTE);
+					break;
+				case second:
+					result = dateCall.calendar.get(Calendar.SECOND);
+					break;
+				case millisecond:
+					result = dateCall.calendar.get(Calendar.MILLISECOND);
+					break;
+				case zone:
+					result = dateCall.calendar.get(Calendar.ZONE_OFFSET);
+					break;
+				case time:
+					result = dateCall.calendar.getTimeInMillis();
+					break;
+			}
+			return result;
 		}
 		return null;
 	}
 
 	public boolean acceptStaticCall(String method, Object[] args) {
-		// TODO Auto-generated method stub
-		return args != null && (("newDate".equals(method) && args.length <= 2));
+		return args != null
+				&& (("newDate".equals(method) && args.length <= 2) || ("formatDate".equals(method) && args.length == 2));
 	}
 
 	public Object staticCall(String method, Object[] args) {
 		if ("newDate".equals(method)) {
 			if (args.length == 0) {
-				return Calendar.getInstance();
-			} else if (args.length == 0) {
-				Calendar calendar = Calendar.getInstance();
-				return calendar;
+				// newDate() return current Calendar
+				return Calendar.getInstance(UTC_TIMEZONE);
+			} else if (args.length == 1) {
+				if (args[0] instanceof Calendar) {
+					// newDate(calendar) return new instance of Calendar
+					return ((Calendar) args[0]).clone();
+				} else {
+					return null;
+				}
+			} else if (args.length == 2) {
+				// newDate(string,format) try to parse str with format
+				try {
+					SimpleDateFormat formater = new SimpleDateFormat("" + args[1]);
+					Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
+					calendar.setTimeInMillis(formater.parse("" + args[0]).getTime());
+					return calendar;
+				} catch (Exception e) {
+					return null;
+				}
+			}
+		} else if ("formatDate".equals(method) && args.length == 2 && args[0] instanceof Calendar) {
+			// formatDate(calendar ,format) try to parse str with format
+			try {
+				SimpleDateFormat formater = new SimpleDateFormat("" + args[1]);
+				return formater.format(((Calendar) args[0]).getTime());
+			} catch (Exception e) {
+				return null;
 			}
 		}
 		return null;

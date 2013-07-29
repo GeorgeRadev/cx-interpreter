@@ -51,6 +51,10 @@ public class Context implements Visitor {
 		cx = new ContextFrame();
 	}
 
+	public String toString() {
+		return cx.toString();
+	}
+
 	private final List<ObjectHandler> handlers = new ArrayList<ObjectHandler>();
 
 	void addHandler(ObjectHandler handler) {
@@ -486,7 +490,7 @@ public class Context implements Visitor {
 		return false;
 	}
 
-	Long toLong(Object obj) {
+	public static Long toLong(Object obj) {
 		if (obj == null) {
 			return ZERO;
 		} else if (obj instanceof Boolean) {
@@ -503,7 +507,7 @@ public class Context implements Visitor {
 		return null;
 	}
 
-	double toDouble(Object obj) {
+	public static double toDouble(Object obj) {
 		if (obj == null) {
 			return 0.0d;
 		} else if (obj instanceof Boolean) {
@@ -520,15 +524,19 @@ public class Context implements Visitor {
 		return Double.NaN;
 	}
 
-	String toString(Object obj) {
+	public static String toString(Object obj) {
 		if (obj == null) {
 			return "";
 		} else if (obj instanceof Boolean) {
 			return ((Boolean) obj) ? "true" : "";
 		} else if (obj instanceof Number) {
 			return ((Number) obj).doubleValue() == 0d ? "" : obj.toString();
-		} else if (obj instanceof String && ((String) obj).length() == 0) {
+		} else if (obj instanceof String) {
+			if (((String) obj).length() == 0) {
 			return "";
+			} else {
+				return (String) obj;
+			}
 		}
 		return obj.toString();
 	}
@@ -670,7 +678,7 @@ public class Context implements Visitor {
 				}
 			}
 		} else if (left instanceof String) {
-			return left.toString() + right.toString();
+			return (String) left + right.toString();
 		} else if (left instanceof List) {
 			((List) left).add(right);
 			return left;

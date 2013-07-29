@@ -374,5 +374,10 @@ public class TestContext extends TestCase {
 			cx.evaluate(block);
 			assertEquals(8, ((Number) cx.get("a")).intValue());
 		}
+		{
+			Context cx = new Context();
+			cx.evaluate(new Parser("i=0;str='test'+i;").parse());
+			assertEquals("test0", cx.get("str").toString());
+		}
 	}
 }

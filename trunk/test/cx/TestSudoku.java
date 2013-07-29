@@ -8,6 +8,18 @@ import cx.runtime.ObjectHandler;
 
 public class TestSudoku extends TestCase {
 
+	public static void main(String[] args) throws Exception {
+		// for profiling...
+		System.out.println("press ENTER:");
+		System.in.read();
+		System.in.read();
+		TestSudoku t = new TestSudoku();
+		t.testSudoku();
+		System.out.println("press ENTER:");
+		System.in.read();
+		System.in.read();
+	}
+
 	public void testSudoku() {
 		{
 			Context cx = new Context();
@@ -55,6 +67,7 @@ public class TestSudoku extends TestCase {
 		}
 
 		static int lines = 0;
+
 		public Object staticCall(String method, Object[] args) {
 			switch (args.length) {
 				case 0:

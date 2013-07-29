@@ -3,7 +3,6 @@ package cx.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,8 +48,7 @@ public class ContextFrame {
 	}
 
 	public String toString() {
-		final List<String> _keys = new ArrayList<String>(frame.size());// of
-																		// String
+		final List<String> _keys = new ArrayList<String>(frame.size());
 		for (String key : frame.keySet()) {
 			_keys.add(key);
 		}
@@ -69,18 +67,5 @@ public class ContextFrame {
 	public void dumpContext() {
 		System.out.println("Dump Variables:");
 		System.out.println(toString());
-	}
-
-	public static final void mergeContext(ContextFrame from, ContextFrame to) {
-		List<ContextFrame> frameStack = new LinkedList<ContextFrame>();
-
-		ContextFrame ccx = from;
-		while (ccx != null) {
-			frameStack.add(ccx);
-			ccx = ccx.parent;
-		}
-		for (ContextFrame c : frameStack) {
-			to.frame.putAll(c.frame);
-		}
 	}
 }
