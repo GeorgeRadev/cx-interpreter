@@ -100,7 +100,7 @@ public class DateHandler implements ObjectHandler {
 						calendar.set(Calendar.DATE, l.intValue());
 						break;
 					case month:
-						calendar.set(Calendar.MONTH, l.intValue());
+						calendar.set(Calendar.MONTH, l.intValue() - 1);
 						break;
 					case day:
 						calendar.set(Calendar.DAY_OF_MONTH, l.intValue());
@@ -155,7 +155,7 @@ public class DateHandler implements ObjectHandler {
 					result = dateCall.calendar.get(Calendar.YEAR);
 					break;
 				case month:
-					result = dateCall.calendar.get(Calendar.MONTH);
+					result = dateCall.calendar.get(Calendar.MONTH) + 1;
 					break;
 				case day:
 					result = dateCall.calendar.get(Calendar.DAY_OF_MONTH);
