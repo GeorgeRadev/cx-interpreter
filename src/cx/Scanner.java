@@ -120,7 +120,7 @@ class Scanner {
 					strToken.append(c);
 				}
 				srcIdx--;
-				Token i = Token.toKeyword(strToken.toString());
+				Token i = Token.toKeyword(strToken);
 				if (i != Token.EOF) {
 					return (i != Token.ERROR) ? i : Token.NAME;
 				}
