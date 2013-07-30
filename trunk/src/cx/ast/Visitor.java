@@ -1,5 +1,8 @@
 package cx.ast;
 
+import cx.runtime.ObjectHandler;
+
+
 public abstract interface Visitor {
 
 	// cardinal types
@@ -61,4 +64,12 @@ public abstract interface Visitor {
 	public abstract void visitBinary(NodeBinary node);
 
 	public abstract void visitTernary(NodeTernary node);
+
+	// for defining variables and handlers
+
+	public Object get(String varName);
+
+	public void set(String varName, Object value);
+
+	public void addHandler(ObjectHandler handler);
 }
