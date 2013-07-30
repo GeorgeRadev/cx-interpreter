@@ -3,6 +3,7 @@ package cx;
 import java.util.List;
 import junit.framework.TestCase;
 import cx.ast.Node;
+import cx.ast.Visitor;
 import cx.runtime.ContextFrame;
 import cx.runtime.ObjectHandler;
 
@@ -57,6 +58,8 @@ public class TestContext extends TestCase {
 			}
 			return null;
 		}
+
+		public void init(Visitor cx) {}
 	}
 
 	public void testHandler() {
@@ -76,24 +79,24 @@ public class TestContext extends TestCase {
 					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};")).parse());
 			List<Node> block = (new Parser("f=test(f);")).parse();
 
-			cx.set("f", new Integer(1));
+			cx.set("f", Integer.valueOf(1));
 			cx.evaluate(block);
 			assertEquals(1, ((Number) cx.get("f")).intValue());
 
-			cx.set("f", new Integer(2));
+			cx.set("f", Integer.valueOf(2));
 			cx.evaluate(block);
 			assertEquals(0, ((Number) cx.get("f")).intValue());
 
-			cx.set("f", new Integer(3));
+			cx.set("f", Integer.valueOf(3));
 			cx.evaluate(block);
 			assertEquals(2, ((Number) cx.get("f")).intValue());
 
-			cx.set("f", new Integer(4));
+			cx.set("f", Integer.valueOf(4));
 			cx.evaluate(block);
 			assertEquals(1, ((Number) cx.get("f")).intValue());
 
 			for (int i = 5; i < 20; i++) {
-				cx.set("f", new Integer(i));
+				cx.set("f", Integer.valueOf(i));
 				cx.evaluate(block);
 				assertEquals(10, ((Number) cx.get("f")).intValue());
 			}
@@ -103,21 +106,21 @@ public class TestContext extends TestCase {
 	public void testBlock() {
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{j = 3;}")).parse());
 			assertEquals(2, ((Number) cx.get("i")));
 			assertNull(cx.get("j"));
 		}
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{var j = 3;}")).parse());
 			assertEquals(2, ((Number) cx.get("i")));
 			assertNull(cx.get("j"));
 		}
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{var i = 3;}")).parse());
 			assertEquals(2, ((Number) cx.get("i")));
 		}
@@ -193,7 +196,7 @@ public class TestContext extends TestCase {
 
 			long f = 1;
 			for (int i = 1; i < 14; i++) {
-				cx.set("f", new Integer(i));
+				cx.set("f", Integer.valueOf(i));
 				cx.evaluate(block);
 				f *= i;
 				assertEquals(f, ((Number) cx.get("f")).longValue());
@@ -201,20 +204,20 @@ public class TestContext extends TestCase {
 		}
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			List<Node> block = (new Parser("obj = {n:42, inc:function(){this.n+=42;}}; obj.inc(); i=obj.n;")).parse();
 			cx.evaluate(block);
 			assertEquals(84, ((Number) cx.get("i")));
 		}
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("function inc(a){return a+5;}; i=inc(5);")).parse());
 			assertEquals(10, ((Number) cx.get("i")));
 		}
 		{
 			Context cx = new Context();
-			cx.set("i", new Integer(0xCAFE));
+			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i=0; function inc(){i++;}; inc();")).parse());
 			assertEquals(1, ((Number) cx.get("i")));
 		}
@@ -223,7 +226,7 @@ public class TestContext extends TestCase {
 	public void testObject() {
 		{
 			Context cx = new Context();
-			cx.set("obj", new Integer(0xCAFE));
+			cx.set("obj", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'}; obj.a++; obj.b += ' more';")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
 			assertEquals(2, obj.frame.size());
@@ -232,7 +235,7 @@ public class TestContext extends TestCase {
 		}
 		{
 			Context cx = new Context();
-			cx.set("obj", new Integer(0xCAFE));
+			cx.set("obj", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'};")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
 			assertEquals(2, obj.frame.size());
@@ -245,7 +248,7 @@ public class TestContext extends TestCase {
 	public void testArray() {
 		{
 			Context cx = new Context();
-			cx.set("arr", new Integer(0xCAFE));
+			cx.set("arr", Integer.valueOf(0xCAFE));
 			List<Node> block = (new Parser("arr = [[1],[2]]; arr[1][0]++; --arr[0][0];")).parse();
 			cx.evaluate(block);
 			List arr = (List) cx.get("arr");
@@ -257,7 +260,7 @@ public class TestContext extends TestCase {
 		}
 		{
 			Context cx = new Context();
-			cx.set("arr", new Integer(0xCAFE));
+			cx.set("arr", Integer.valueOf(0xCAFE));
 			List<Node> block = (new Parser("arr = [1,2,3]; arr[0]++;")).parse();
 			cx.evaluate(block);
 			List arr = (List) cx.get("arr");
@@ -268,7 +271,7 @@ public class TestContext extends TestCase {
 		}
 		{
 			Context cx = new Context();
-			cx.set("arr", new Integer(0xCAFE));
+			cx.set("arr", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("arr = [1,2,3,4,5]; arr+=6;")).parse());
 			List arr = (List) cx.get("arr");
 			assertEquals(6, arr.size());
@@ -282,7 +285,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a^=a;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(0xCAFE));
+			cx.set("a", Integer.valueOf(0xCAFE));
 			cx.evaluate(block);
 			assertEquals(0, ((Number) cx.get("a")).intValue());
 		}
@@ -306,7 +309,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a|=0xFF;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(0xFF00));
+			cx.set("a", Integer.valueOf(0xFF00));
 			cx.evaluate(block);
 			assertEquals(0xFFFF, ((Number) cx.get("a")).intValue());
 		}
@@ -314,7 +317,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a&=0xFF;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(0xFFFF));
+			cx.set("a", Integer.valueOf(0xFFFF));
 			cx.evaluate(block);
 			assertEquals(0xFF, ((Number) cx.get("a")).intValue());
 		}
@@ -322,7 +325,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a<<=2;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(2));
+			cx.set("a", Integer.valueOf(2));
 			cx.evaluate(block);
 			assertEquals(8, ((Number) cx.get("a")).intValue());
 		}
@@ -330,7 +333,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a>>=1;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(8));
+			cx.set("a", Integer.valueOf(8));
 			cx.evaluate(block);
 			assertEquals(4, ((Number) cx.get("a")).intValue());
 		}
@@ -343,7 +346,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a/=2;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(2));
+			cx.set("a", Integer.valueOf(2));
 			cx.evaluate(block);
 			assertEquals(1d, ((Number) cx.get("a")).doubleValue());
 		}
@@ -351,7 +354,7 @@ public class TestContext extends TestCase {
 			parser = new Parser("a*=2;");
 			block = parser.parse();
 			Context cx = new Context();
-			cx.set("a", new Integer(2));
+			cx.set("a", Integer.valueOf(2));
 			cx.evaluate(block);
 			assertEquals(4, ((Number) cx.get("a")).intValue());
 		}
@@ -360,7 +363,7 @@ public class TestContext extends TestCase {
 			block = parser.parse();
 			assertEquals(3, block.size());
 			Context cx = new Context();
-			cx.set("a", new Integer(3));
+			cx.set("a", Integer.valueOf(3));
 			cx.evaluate(block);
 			assertEquals(3, ((Number) cx.get("a")).intValue());
 			assertEquals(8, ((Number) cx.get("b")).intValue());
@@ -370,7 +373,7 @@ public class TestContext extends TestCase {
 			block = parser.parse();
 			assertEquals(2, block.size());
 			Context cx = new Context();
-			cx.set("a", new Integer(3));
+			cx.set("a", Integer.valueOf(3));
 			cx.evaluate(block);
 			assertEquals(8, ((Number) cx.get("a")).intValue());
 		}

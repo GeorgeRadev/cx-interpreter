@@ -57,8 +57,11 @@ public class Context implements Visitor {
 
 	private final List<ObjectHandler> handlers = new ArrayList<ObjectHandler>();
 
-	void addHandler(ObjectHandler handler) {
-		if (handler != null) handlers.add(handler);
+	public void addHandler(ObjectHandler handler) {
+		if (handler != null) {
+			handlers.add(handler);
+			handler.init(this);
+		}
 	}
 
 	public Object evaluate(List<Node> nodes) {
@@ -146,9 +149,9 @@ public class Context implements Visitor {
 				l = Long.parseLong(value, 10);
 			}
 			if (l < Integer.MAX_VALUE) {
-				cx.result = new Integer((int) l);
+				cx.result = Integer.valueOf((int) l);
 			} else {
-				cx.result = new Long(l);
+				cx.result = Long.valueOf(l);
 			}
 		}
 	}
@@ -387,9 +390,9 @@ public class Context implements Visitor {
 			return new Double(number.doubleValue() + 1.0d);
 		}
 		if (number instanceof Long) {
-			return new Long(number.longValue() + 1L);
+			return Long.valueOf(number.longValue() + 1L);
 		}
-		return new Integer(number.intValue() + 1);
+		return Integer.valueOf(number.intValue() + 1);
 	}
 
 	private Number decrement(Number number) {
@@ -397,9 +400,9 @@ public class Context implements Visitor {
 			return new Double(number.doubleValue() - 1.0d);
 		}
 		if (number instanceof Long) {
-			return new Long(number.longValue() - 1L);
+			return Long.valueOf(number.longValue() - 1L);
 		}
-		return new Integer(number.intValue() - 1);
+		return Integer.valueOf(number.intValue() - 1);
 	}
 
 	private Number negate(Number number) {
@@ -407,9 +410,9 @@ public class Context implements Visitor {
 			return new Double(number.doubleValue() * -1.0d);
 		}
 		if (number instanceof Long) {
-			return new Long(number.longValue() * -1L);
+			return Long.valueOf(number.longValue() * -1L);
 		}
-		return new Integer(number.intValue() * -1);
+		return Integer.valueOf(number.intValue() * -1);
 	}
 
 	public void visitUnary(NodeUnary unary) {
@@ -667,14 +670,14 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			if (left instanceof Double || right instanceof Double) {
-				double d = ((Double) left).doubleValue() + ((Double) right).doubleValue();
+				double d = ((Number) left).doubleValue() + ((Number) right).doubleValue();
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() + ((Number) right).longValue();
 				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
+					return Integer.valueOf((int) l);
 				} else {
-					return new Long(l);
+					return Long.valueOf(l);
 				}
 			}
 		} else if (left instanceof String) {
@@ -693,14 +696,14 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			if (left instanceof Double || right instanceof Double) {
-				double d = ((Double) left).doubleValue() - ((Double) right).doubleValue();
+				double d = ((Number) left).doubleValue() - ((Number) right).doubleValue();
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() - ((Number) right).longValue();
 				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
+					return Integer.valueOf((int) l);
 				} else {
-					return new Long(l);
+					return Long.valueOf(l);
 				}
 			}
 		}
@@ -714,14 +717,14 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			if (left instanceof Double || right instanceof Double) {
-				double d = ((Double) left).doubleValue() * ((Double) right).doubleValue();
+				double d = ((Number) left).doubleValue() * ((Number) right).doubleValue();
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() * ((Number) right).longValue();
 				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
+					return Integer.valueOf((int) l);
 				} else {
-					return new Long(l);
+					return Long.valueOf(l);
 				}
 			}
 		}
@@ -735,14 +738,14 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			if (left instanceof Double || right instanceof Double) {
-				double d = ((Double) left).doubleValue() / ((Double) right).doubleValue();
+				double d = ((Number) left).doubleValue() / ((Number) right).doubleValue();
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() / ((Number) right).longValue();
 				if (l < Integer.MAX_VALUE) {
-					return new Integer((int) l);
+					return Integer.valueOf((int) l);
 				} else {
-					return new Long(l);
+					return Long.valueOf(l);
 				}
 			}
 		}
@@ -757,9 +760,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() % ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -773,9 +776,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() | ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -789,9 +792,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() & ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -805,9 +808,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() ^ ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -821,9 +824,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() << ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -837,9 +840,9 @@ public class Context implements Visitor {
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() >> ((Number) right).longValue();
 			if (l < Integer.MAX_VALUE) {
-				return new Integer((int) l);
+				return Integer.valueOf((int) l);
 			} else {
-				return new Long(l);
+				return Long.valueOf(l);
 			}
 		}
 		return null;

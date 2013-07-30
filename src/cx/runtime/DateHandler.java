@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
 import cx.Context;
+import cx.ast.Visitor;
 
 public class DateHandler implements ObjectHandler {
 	public static enum DateMetod {
@@ -81,6 +82,8 @@ public class DateHandler implements ObjectHandler {
 			this.method = method;
 		}
 	}
+
+	public void init(Visitor cx) {}
 
 	public boolean accept(Object object) {
 		return object instanceof Calendar;

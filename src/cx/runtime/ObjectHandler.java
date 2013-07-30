@@ -1,6 +1,11 @@
 package cx.runtime;
 
+import cx.ast.Visitor;
+
 public interface ObjectHandler {
+	// init() is called when a handler was added to a visitor
+
+	void init(Visitor cx);
 
 	// for attribute access and call implementation
 
