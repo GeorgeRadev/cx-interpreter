@@ -1013,13 +1013,37 @@ public class Context implements Visitor {
 
 	public void visitCall(NodeCall call) {
 		position = call.position;
-		// evaluate arguments left to right
 
 		Object function = eval(call.function);
 		List<Node> arguments = call.arguments.elements;
-		Object[] argValues = new Object[arguments.size()];
-		for (int i = 0; i < argValues.length; i++) {
+
+		// evaluate arguments left to right
+		int argsize = arguments.size();
+		Object[] argValues = new Object[argsize];
+		for (int i = 0; i < argsize; i++) {
 			argValues[i] = eval(arguments.get(i));
+		}
+
+		if (call.function instanceof NodeVariable && "eval".equals(((NodeVariable) call.function).name)) {
+			// eval() function
+			if (argsize == 0) {
+				return;
+			}
+			String code;
+			if (argsize == 1) {
+				code = toString(argValues[0]);
+			} else {
+				StringBuilder codebuf = new StringBuilder(4096);
+				for (int i = 0; i < argsize; i++) {
+					codebuf.append(toString(argValues[i]));
+				}
+				code = codebuf.toString();
+			}
+
+			Parser parser = new Parser(code);
+			List<Node> evalCode = parser.parse();
+			evaluate(evalCode);
+			return;
 		}
 
 		try {

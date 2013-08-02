@@ -72,6 +72,23 @@ public class TestContext extends TestCase {
 		}
 	}
 
+	public void testEval() {
+		{
+			Context cx = new Context();
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
+			cx.evaluate((new Parser("a = 5; eval('a++;');")).parse());
+			assertEquals(6, ((Number) cx.get("a")).intValue());
+		}
+		{
+			Context cx = new Context();
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
+			cx.evaluate((new Parser("a = 5; inc = eval('function (x){return ++x;};'); a = inc(a);")).parse());
+			assertEquals(6, ((Number) cx.get("a")).intValue());
+		}
+	}
+
 	public void testSwitch() {
 		{
 			Context cx = new Context();
