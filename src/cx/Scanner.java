@@ -1,7 +1,9 @@
 package cx;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import cx.ast.SourcePosition;
 import cx.exception.ParserException;
 
@@ -22,6 +24,19 @@ class Scanner {
 	private List<Token> tokenStack = new LinkedList<Token>();
 	private List<String> stringStack = new LinkedList<String>();
 	private List<SourcePosition> positionStack = new LinkedList<SourcePosition>();
+
+	private static Map<Character, Character> escapes = new HashMap<Character, Character>(16);
+
+	static {
+		escapes.put(Character.valueOf('"'), Character.valueOf('"'));
+		escapes.put(Character.valueOf('\\'), Character.valueOf('\\'));
+		escapes.put(Character.valueOf('/'), Character.valueOf('/'));
+		escapes.put(Character.valueOf('b'), Character.valueOf('\b'));
+		escapes.put(Character.valueOf('f'), Character.valueOf('\f'));
+		escapes.put(Character.valueOf('n'), Character.valueOf('\n'));
+		escapes.put(Character.valueOf('r'), Character.valueOf('\r'));
+		escapes.put(Character.valueOf('t'), Character.valueOf('\t'));
+	}
 
 	Scanner(char[] paramArrayOfChar) {
 		src = paramArrayOfChar;
@@ -61,7 +76,7 @@ class Scanner {
 				Token token = getTokenInternal();
 				if (isDebug) System.out.println("Token: " + token);
 				tokenStack.add(token);
-				stringStack.add(strToken.toString());
+				stringStack.add(strToken.length() == 0 ? "" : strToken.toString());
 				positionStack.add(getSrcPosInternal());
 				if (token == Token.EOF) break;
 			}
@@ -177,21 +192,20 @@ class Scanner {
 					}
 					if (c == '\\') {
 						c = getChar();
-						switch (c) {
-							case 'n':
-								c = 10;
-								break;
-							case 'r':
-								c = 13;
-								break;
-							case 't':
-								c = 13;
-								break;
-							default:
-								srcIdx--;
+						if (c == 'u') {
+							strToken.append(unicode());
+						} else {
+							Object value = escapes.get(Character.valueOf(c));
+
+							if (value != null) {
+								strToken.append(((Character) value).charValue());
+							} else {
+								strToken.append(c);
+							}
 						}
+					} else {
+						strToken.append(c);
 					}
-					strToken.append(c);
 				}
 				return Token.STRING;
 			}
@@ -423,5 +437,86 @@ class Scanner {
 			c = getChar();
 		}
 		srcIdx--;
+	}
+
+	private char unicode() {
+		int value = 0;
+
+		for (int i = 0; i < 4; ++i) {
+			int v = toHex(getChar());
+			if (v == -1) {
+				throw new ParserException("Malformed \\uxxxx encoding.");
+			}
+			value = (value << 4) + v;
+		}
+
+		return (char) value;
+	}
+
+	public final static int toHex(char c) {
+		switch (c) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				return c - '0';
+
+			case 'a':
+			case 'b':
+			case 'c':
+			case 'd':
+			case 'e':
+			case 'f':
+				return 0x0A + (c - 'a');
+
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+				return 0x0A + (c - 'A');
+			case 58: // ':'
+			case 59: // ';'
+			case 60: // '<'
+			case 61: // '='
+			case 62: // '>'
+			case 63: // '?'
+			case 64: // '@'
+			case 71: // 'G'
+			case 72: // 'H'
+			case 73: // 'I'
+			case 74: // 'J'
+			case 75: // 'K'
+			case 76: // 'L'
+			case 77: // 'M'
+			case 78: // 'N'
+			case 79: // 'O'
+			case 80: // 'P'
+			case 81: // 'Q'
+			case 82: // 'R'
+			case 83: // 'S'
+			case 84: // 'T'
+			case 85: // 'U'
+			case 86: // 'V'
+			case 87: // 'W'
+			case 88: // 'X'
+			case 89: // 'Y'
+			case 90: // 'Z'
+			case 91: // '['
+			case 92: // '\\'
+			case 93: // ']'
+			case 94: // '^'
+			case 95: // '_'
+			case 96: // '`'
+			default:
+				return -1;
+		}
 	}
 }
