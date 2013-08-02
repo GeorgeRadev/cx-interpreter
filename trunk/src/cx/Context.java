@@ -527,18 +527,39 @@ public class Context implements Visitor {
 		return Double.NaN;
 	}
 
+	@SuppressWarnings("rawtypes")
 	public static String toString(Object obj) {
 		if (obj == null) {
 			return "";
 		} else if (obj instanceof Boolean) {
 			return ((Boolean) obj) ? "true" : "";
 		} else if (obj instanceof Number) {
-			return ((Number) obj).doubleValue() == 0d ? "" : obj.toString();
+			return ((Number) obj).doubleValue() == 0d ? "0" : obj.toString();
 		} else if (obj instanceof String) {
 			if (((String) obj).length() == 0) {
-			return "";
+				return "";
 			} else {
 				return (String) obj;
+			}
+		} else if (obj instanceof List) {
+			if (((List) obj).size() == 0) {
+				return "[]";
+			} else {
+				StringBuilder buffer = new StringBuilder(1024);
+				buffer.append('[');
+				for (Object element : (List) obj) {
+					
+					if (element == null) {
+						buffer.append("null");
+					} else if (element instanceof Number) {
+						buffer.append(element.toString());
+					} else { 
+						escapeString(buffer , element.toString() ); 
+					}
+					buffer.append(',');
+				}
+				buffer.setCharAt(buffer.length() - 1, ']');
+				return buffer.toString();
 			}
 		}
 		return obj.toString();
@@ -565,7 +586,12 @@ public class Context implements Visitor {
 			return r == null || r.compareTo(l) == 0;
 
 		} else if (left instanceof String) {
-			return toString(left).compareTo(toString(right)) == 0;
+			String l = toString(left);
+			if (l.length() <= 0) {
+				return toLong(right) == ZERO;
+			} else {
+				return l.compareTo(toString(right)) == 0;
+			}
 		}
 		return Boolean.FALSE;
 	}
@@ -588,7 +614,12 @@ public class Context implements Visitor {
 			return r == null || r.compareTo(l) < 0;
 
 		} else if (left instanceof String) {
-			return toString(left).compareTo(toString(right)) > 0;
+			String l = toString(left);
+			if (l.length() <= 0) {
+				return Boolean.FALSE;
+			} else {
+				return l.compareTo(toString(right)) > 0;
+			}
 		}
 		return Boolean.FALSE;
 	}
@@ -611,7 +642,13 @@ public class Context implements Visitor {
 			return r == null || r.compareTo(l) > 0;
 
 		} else if (left instanceof String) {
-			return toString(left).compareTo(toString(right)) < 0;
+
+			String l = toString(left);
+			if (l.length() <= 0) {
+				return toLong(right) != ZERO;
+			} else {
+				return l.compareTo(toString(right)) < 0;
+			}
 		}
 		return Boolean.FALSE;
 	}
@@ -634,7 +671,12 @@ public class Context implements Visitor {
 			return r == null || r.compareTo(l) <= 0;
 
 		} else if (left instanceof String) {
-			return toString(left).compareTo(toString(right)) >= 0;
+			String l = toString(left);
+			if (l.length() <= 0) {
+				return toLong(right) == ZERO;
+			} else {
+				return l.compareTo(toString(right)) >= 0;
+			}
 		}
 		return Boolean.FALSE;
 	}
@@ -657,7 +699,12 @@ public class Context implements Visitor {
 			return r == null || r.compareTo(l) >= 0;
 
 		} else if (left instanceof String) {
-			return toString(left).compareTo(toString(right)) <= 0;
+			String l = toString(left);
+			if (l.length() <= 0) {
+				return Boolean.TRUE;
+			} else {
+				return toString(left).compareTo(toString(right)) <= 0;
+			}
 		}
 		return Boolean.FALSE;
 	}
@@ -681,7 +728,7 @@ public class Context implements Visitor {
 				}
 			}
 		} else if (left instanceof String) {
-			return (String) left + right.toString();
+			return (String) left + toString(right);
 		} else if (left instanceof List) {
 			((List) left).add(right);
 			return left;
@@ -1148,5 +1195,52 @@ public class Context implements Visitor {
 		position = throwNode.position;
 		Object exception = eval(throwNode.expresion);
 		throw new CXException(exception);
+	}
+
+	static final char[] hexDigit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+	private static void escapeString(StringBuilder builder, String str) {
+		builder.append('"');
+		for (int i = 0, l = str.length(); i < l; i++) {
+			final char c = str.charAt(i);
+			switch (c) {
+				case '"':
+					builder.append("\\\"");
+					break;
+				case '\\':
+					builder.append("\\\\");
+					break;
+				case '/':
+					builder.append("\\/");
+					break;
+				case '\b':
+					builder.append("\\b");
+					break;
+				case '\f':
+					builder.append("\\f");
+					break;
+				case '\n':
+					builder.append("\\n");
+					break;
+				case '\r':
+					builder.append("\\r");
+					break;
+				case '\t':
+					builder.append("\\t");
+					break;
+				default:
+					if ((c < 0x0020) || (c > 0x007e)) {
+						builder.append("\\u");
+						builder.append(hexDigit[((c >> 12) & 0xF)]);
+						builder.append(hexDigit[((c >> 8) & 0xF)]);
+						builder.append(hexDigit[((c >> 4) & 0xF)]);
+						builder.append(hexDigit[(c & 0xF)]);
+					} else {
+						builder.append(c);
+					}
+					break;
+			}
+		}
+		builder.append('"');
 	}
 }

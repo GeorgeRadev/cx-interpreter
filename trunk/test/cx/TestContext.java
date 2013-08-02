@@ -9,6 +9,22 @@ import cx.runtime.ObjectHandler;
 
 public class TestContext extends TestCase {
 
+	@SuppressWarnings("rawtypes")
+	public void testToString() {
+		{// array
+			Context cx = new Context();
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
+			cx.evaluate((new Parser("a=['te\\'st',1,2.3]; a+=42; b=eval(''+a+';');")).parse());
+			assertTrue(cx.get("b") instanceof List);
+			List l = (List) cx.get("b");
+			assertEquals("te'st", l.get(0).toString());
+			assertEquals("1", l.get(1).toString());
+			assertEquals("2.3", l.get(2).toString());
+			assertEquals("42", l.get(3).toString());
+		}
+	}
+
 	private static class PrintHandler implements ObjectHandler {
 		public String value = "";
 
