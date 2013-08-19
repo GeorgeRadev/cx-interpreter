@@ -14,7 +14,7 @@ public class TestSAXParser extends TestCase {
 	SAXToDOMListener listener = new SAXToDOMListener();
 
 	public void testFile() throws Exception {
-		File file = new File("./test/json/ui.json");
+		File file = new File("./ui.json");
 		long length = file.length();
 		BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"), 1026 * 32);
 		char[] content = new char[(int) length];

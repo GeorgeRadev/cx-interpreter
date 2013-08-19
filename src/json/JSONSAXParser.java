@@ -6,8 +6,9 @@ import java.io.StringReader;
 
 public class JSONSAXParser {
 	private Reader reader;
-	private int parserLineNr;
-	private int parserLinePos;
+	private int parserLineNr = 0;
+	private int parserLinePos = 0;
+	private int parserLineOffset = 0;
 	private final JSONSAXListener listener;
 	private final StringBuilder stringbuffer = new StringBuilder(4096);
 
@@ -31,15 +32,11 @@ public class JSONSAXParser {
 
 	public JSONSAXParser(String json, JSONSAXListener listener) throws IOException, Exception {
 		this.listener = listener;
-		parserLineNr = 0;
-		parserLinePos = 0;
 		parseFromReader(new StringReader(json));
 	}
 
 	public JSONSAXParser(Reader reader, JSONSAXListener listener) throws IOException, Exception {
 		this.listener = listener;
-		parserLineNr = 0;
-		parserLinePos = 0;
 		parseFromReader(reader);
 	}
 
@@ -49,14 +46,14 @@ public class JSONSAXParser {
 	}
 
 	protected final int readChar() throws IOException, Exception {
-		int i = reader.read();
+		final int i = reader.read();
 		parserLinePos++;
-		if (i == 10) {
+		parserLineOffset++;
+		if (i == '\n') {
 			parserLineNr++;
-			return '\n';
-		} else {
-			return i;
+			parserLinePos = 0;
 		}
+		return i;
 	}
 
 	protected final int scanWhitespace() throws IOException, Exception {
@@ -327,11 +324,13 @@ public class JSONSAXParser {
 	}
 
 	protected Exception syntaxError(String s) {
-		return new Exception("line " + parserLineNr + ":" + parserLinePos + " " + s);
+		return new Exception("line:" + parserLineNr + " pos:" + parserLinePos + " (offset:" + parserLineOffset + ") "
+				+ s);
 	}
 
 	protected Exception expectedInput(String s) {
-		return new Exception("line " + parserLineNr + ":" + parserLinePos + " " + s);
+		return new Exception("line:" + parserLineNr + " pos:" + parserLinePos + " (offset:" + parserLineOffset + ") "
+				+ s);
 	}
 
 	public final static int toHex(char c) {
