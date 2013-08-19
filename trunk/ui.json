@@ -7,8 +7,8 @@
 			align:FILL, 
 			valign:BEGINING,
 			children:[
-				{type:label, text:"Editor.Contacts.Label.Search", align:BEGINING, valign:CENTER }, 
-				{type:text, id:filterField, align:FILL, valign:CENTER }, 
+				{type:label,  text:"Editor.Contacts.Label.Search", align:BEGINING, valign:CENTER }, 
+				{type:text,   id:filterField, align:FILL, valign:CENTER }, 
 				{type:button, id:searchButton, text:"Editor.Contacts.Button.Search", icon:"icons/search.png", width:80, height:20, align:BEGINING, valign:CENTER }
 			]
 		}, 
@@ -20,7 +20,7 @@
 					text:"Editor.Contacts.Section.Contacts", 
 					align:FILL, valign:FILL,
 					children:[
-						{type:table, id:tableContacts, fullselection:true, align:FILL, valign:FILL }, 
+						{type:table,  id:tableContacts, fullselection:true, align:FILL, valign:FILL }, 
 						{type:button, id:limitButton, text:"Editor.Contacts.Label.Limit", check:true, align:BEGINING, valign:BEGINNING }
 					]
 				}, 
@@ -29,7 +29,7 @@
 					columns:2, 
 					align:FILL, valign:FILL,
 					children:[
-						{type:text, id:detailsText, html:true, colspan:2, align:FILL, valign:FILL },
+						{type:text,   id:detailsText, html:true, colspan:2, align:FILL, valign:FILL },
 						{type:button, id:editButton, text:"Editor.Contacts.Button.Edit", height:20, align:FILL, valign:BEGINNING },
 						{type:button, id:commentButton, text:"Editor.Contacts.Button.Comment", height:20, align:FILL, valign:BEGINNING },
 						{type:button, id:viewButton, text:"Editor.Contacts.Button.ViewComments", colspan:2, height:20, align:FILL, valign:BEGINNING }

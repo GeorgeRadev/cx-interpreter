@@ -12,7 +12,7 @@ import junit.framework.TestCase;
 public class TestDOMParser extends TestCase {
 
 	public void testFile() throws Exception {
-		File file = new File("./test/json/ui.json");
+		File file = new File("./ui.json");
 		JSONDOMParser parser = new JSONDOMParser();
 		Reader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"), 1026 * 32);
 		@SuppressWarnings("unchecked")
