@@ -7,13 +7,13 @@ import cx.Context;
 import cx.ast.Visitor;
 
 public class DateHandler implements ObjectHandler {
-	public static enum DateMetod {
+	public static enum DateMethod {
 		year, month, day, hour, minute, second, millisecond, zone, time;
 
-		public static DateMetod parse(final String str) {
+		public static DateMethod parse(final String str) {
 			String guess = null;
 			final int length = str.length();
-			DateMetod method = null;
+			DateMethod method = null;
 
 			switch (length) {
 
@@ -75,9 +75,9 @@ public class DateHandler implements ObjectHandler {
 
 	private static class DateCall {
 		final Calendar calendar;
-		final DateMetod method;
+		final DateMethod method;
 
-		DateCall(Calendar calendar, DateMetod method) {
+		DateCall(Calendar calendar, DateMethod method) {
 			this.calendar = calendar;
 			this.method = method;
 		}
@@ -96,7 +96,7 @@ public class DateHandler implements ObjectHandler {
 			if (l == null) {
 				return;
 			}
-			DateMetod method = DateMetod.parse(variable);
+			DateMethod method = DateMethod.parse(variable);
 			if (method != null) {
 				switch (method) {
 					case year:
@@ -133,7 +133,7 @@ public class DateHandler implements ObjectHandler {
 
 	public Object get(Object thiz, String variable) {
 		if (thiz instanceof Calendar) {
-			DateMetod method = DateMetod.parse(variable);
+			DateMethod method = DateMethod.parse(variable);
 			if (method != null) {
 				return new DateCall((Calendar) thiz, method);
 			}

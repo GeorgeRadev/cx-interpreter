@@ -548,13 +548,13 @@ public class Context implements Visitor {
 				StringBuilder buffer = new StringBuilder(1024);
 				buffer.append('[');
 				for (Object element : (List) obj) {
-					
+
 					if (element == null) {
 						buffer.append("null");
 					} else if (element instanceof Number) {
 						buffer.append(element.toString());
-					} else { 
-						escapeString(buffer , element.toString() ); 
+					} else {
+						escapeString(buffer, element.toString());
 					}
 					buffer.append(',');
 				}
@@ -1093,33 +1093,31 @@ public class Context implements Visitor {
 			return;
 		}
 
-		try {
-			pushContext();
-			cx.result = null;
-			// do the call
-			if (function instanceof Function) {
+		// do the call
+		if (function instanceof Function) {
+			try {
+				pushContext();
 				callFunction(((Function) function), argValues);
-
-			} else {
-				if (function == null && call.function instanceof NodeVariable) {
-					String functionName = ((NodeVariable) call.function).name;
-					for (ObjectHandler handler : handlers) {
-						if (handler.acceptStaticCall(functionName, argValues)) {
-							cx.result = handler.staticCall(functionName, argValues);
-							break;
-						}
+			} finally {
+				popContext();
+			}
+		} else {
+			if (function == null && call.function instanceof NodeVariable) {
+				String functionName = ((NodeVariable) call.function).name;
+				for (ObjectHandler handler : handlers) {
+					if (handler.acceptStaticCall(functionName, argValues)) {
+						cx.result = handler.staticCall(functionName, argValues);
+						break;
 					}
-				} else {
-					for (ObjectHandler handler : handlers) {
-						if (handler.accept(function)) {
-							cx.result = handler.call(function, argValues);
-							break;
-						}
+				}
+			} else {
+				for (ObjectHandler handler : handlers) {
+					if (handler.accept(function)) {
+						cx.result = handler.call(function, argValues);
+						break;
 					}
 				}
 			}
-		} finally {
-			popContext();
 		}
 	}
 
