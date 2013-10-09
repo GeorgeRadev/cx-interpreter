@@ -1,6 +1,7 @@
 package cx;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import cx.ast.Node;
@@ -35,6 +36,7 @@ import cx.exception.CXException;
 import cx.exception.JumpBreak;
 import cx.exception.JumpContinue;
 import cx.exception.JumpReturn;
+import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
 import cx.runtime.Function;
 import cx.runtime.ObjectHandler;
@@ -43,6 +45,8 @@ public class Context implements Visitor {
 	private static final String THIS = "this";
 
 	private static final Long ZERO = 0L;
+	private int[] breakpoints = null;
+	private BreakPoint breakPoint = null;
 
 	private ContextFrame cx = null;
 	public SourcePosition position = null;
@@ -106,8 +110,25 @@ public class Context implements Visitor {
 		cx.set(varName, value);
 	}
 
+	public void setBreakpoints(int[] breakpointlines, BreakPoint breakPoint) {
+		if (breakpointlines != null) {
+			Arrays.sort(breakpointlines);
+		}
+		this.breakpoints = breakpointlines;
+		this.breakPoint = breakPoint;
+	}
+
+	private void setCurrentPosition(SourcePosition position) {
+		this.position = position;
+		if (breakpoints != null && breakPoint != null) {
+			if (Arrays.binarySearch(breakpoints, position.lineNo) >= 0) {
+				breakPoint.run(position.lineNo, cx);
+			}
+		}
+	}
+
 	public void visitBlock(NodeBlock paramBlockNode) {
-		position = paramBlockNode.position;
+		// setCurrentPosition(paramBlockNode.position);
 		try {
 			pushContext();
 
@@ -121,7 +142,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitVar(NodeVar varNode) {
-		position = varNode.position;
+		// setCurrentPosition(varNode.position);
 		// define variables in current context
 		for (NodeAssign node : varNode.vars) {
 			if (node.left instanceof NodeVariable) {
@@ -134,7 +155,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitNumber(NodeNumber numberNode) {
-		position = numberNode.position;
+		// setCurrentPosition(numberNode.position);
 		String value = numberNode.value;
 		// detect precision of the number
 		if (value.indexOf('.') >= 0 || value.indexOf('e') >= 0) {
@@ -157,12 +178,12 @@ public class Context implements Visitor {
 	}
 
 	public void visitVariable(NodeVariable variableNode) {
-		position = variableNode.position;
+		// setCurrentPosition(variableNode.position);
 		cx.result = cx.get(variableNode.name);
 	}
 
 	public void visitAssign(NodeAssign assignNode) {
-		position = assignNode.position;
+		setCurrentPosition(assignNode.position);
 		if (assignNode.left instanceof NodeVariable) {
 			String varName = ((NodeVariable) assignNode.left).name;
 			Object rhsObject = eval(assignNode.right);
@@ -178,7 +199,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitBinary(NodeBinary binaryNode) {
-		position = binaryNode.position;
+		// setCurrentPosition(binaryNode.position);
 		Object left = eval(binaryNode.left);
 		Object right = eval(binaryNode.right);
 
@@ -212,6 +233,9 @@ public class Context implements Visitor {
 				return;
 			case BIT_RIGHT:
 				cx.result = bitRIGHT(left, right);
+				return;
+			case BIT_RIGHTU:
+				cx.result = bitRIGHTU(left, right);
 				return;
 			case OR:
 				if (isTrue(left)) {
@@ -250,7 +274,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitSwitch(NodeSwitch switchNode) {
-		position = switchNode.position;
+		setCurrentPosition(switchNode.position);
 		Object value = eval(switchNode.value);
 
 		int executeIndex = switchNode.defaultIndex;
@@ -283,25 +307,109 @@ public class Context implements Visitor {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	public void visitFor(NodeFor paramForNode) {
-		position = paramForNode.position;
+		setCurrentPosition(paramForNode.position);
 		try {
 			pushContext();
-			eval(paramForNode.initialization);
-			Object localScrBoolean = eval(paramForNode.condition);
-			if (isTrue(localScrBoolean)) {
-				do {
-					try {
-						eval(paramForNode.body);
-					} catch (JumpBreak localBreakJump) {
-						// break
-						break;
-					} catch (JumpContinue localContinueJump) {
-						// continue
+			if (paramForNode.elements != null) {
+				// for ( iterator[NodeVariable] : elements)
+				if (paramForNode.iterator instanceof NodeVariable) {
+					final String varName = ((NodeVariable) paramForNode.iterator).name;
+					final Object elements = eval(paramForNode.elements);
+					if (elements instanceof List) {
+						final List list = (List) elements;
+						final Node node = paramForNode.body;
+						final boolean block = node instanceof NodeBlock;
+
+						for (Object e : list) {
+							cx.set(varName, e);
+							try {
+								if (block) {
+									for (Node statement : ((NodeBlock) node).statements) {
+										eval(statement);
+									}
+								} else {
+									eval(paramForNode.body);
+								}
+							} catch (JumpBreak localBreakJump) {
+								// break
+								break;
+							} catch (JumpContinue localContinueJump) {
+								// continue
+							}
+						}
+					}else if (elements instanceof Map) {
+						final Map map = (Map) elements;
+						final Node node = paramForNode.body;
+						final boolean block = node instanceof NodeBlock;
+
+						for (Object e : map.keySet()) {
+							cx.set(varName, e);
+							try {
+								if (block) {
+									for (Node statement : ((NodeBlock) node).statements) {
+										eval(statement);
+									}
+								} else {
+									eval(paramForNode.body);
+								}
+							} catch (JumpBreak localBreakJump) {
+								// break
+								break;
+							} catch (JumpContinue localContinueJump) {
+								// continue
+							}
+						}
+					} else if (elements instanceof ContextFrame) {
+						final ContextFrame cf = (ContextFrame) elements;
+						final Node node = paramForNode.body;
+						final boolean block = node instanceof NodeBlock;
+
+						for (String e : cf.frame.keySet()) {
+							cx.set(varName, e);
+							try {
+								if (block) {
+									for (Node statement : ((NodeBlock) node).statements) {
+										eval(statement);
+									}
+								} else {
+									eval(paramForNode.body);
+								}
+							} catch (JumpBreak localBreakJump) {
+								// break
+								break;
+							} catch (JumpContinue localContinueJump) {
+								// continue
+							}
+						}
 					}
-					eval(paramForNode.iterator);
-					localScrBoolean = eval(paramForNode.condition);
-				} while (isTrue(localScrBoolean));
+				}
+
+			} else {
+				eval(paramForNode.initialization);
+				Object condition = eval(paramForNode.condition);
+				if (isTrue(condition)) {
+					do {
+						try {
+							final Node node = paramForNode.body;
+							if (node instanceof NodeBlock) {
+								for (Node statement : ((NodeBlock) node).statements) {
+									eval(statement);
+								}
+							} else {
+								eval(paramForNode.body);
+							}
+						} catch (JumpBreak localBreakJump) {
+							// break
+							break;
+						} catch (JumpContinue localContinueJump) {
+							// continue
+						}
+						eval(paramForNode.iterator);
+						condition = eval(paramForNode.condition);
+					} while (isTrue(condition));
+				}
 			}
 		} finally {
 			popContext();
@@ -309,7 +417,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitWhile(NodeWhile paramWhileNode) {
-		position = paramWhileNode.position;
+		setCurrentPosition(paramWhileNode.position);
 		try {
 			pushContext();
 			Object localScrBoolean = eval(paramWhileNode.condition);
@@ -331,7 +439,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitIf(NodeIf paramIfNode) {
-		position = paramIfNode.position;
+		setCurrentPosition(paramIfNode.position);
 		try {
 			pushContext();
 			Object condition = eval(paramIfNode.condition);
@@ -348,7 +456,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitTernary(NodeTernary node) {
-		position = node.position;
+		setCurrentPosition(node.position);
 
 		Object condition = eval(node.condition);
 
@@ -360,7 +468,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitReturn(NodeReturn paramReturnNode) {
-		position = paramReturnNode.position;
+		setCurrentPosition(paramReturnNode.position);
 		cx.result = eval(paramReturnNode.expression);
 		throw new JumpReturn(cx.result);
 	}
@@ -415,8 +523,18 @@ public class Context implements Visitor {
 		return Integer.valueOf(number.intValue() * -1);
 	}
 
+	private Number complement(Number number) {
+		if (number instanceof Double) {
+			return Long.valueOf(~number.longValue());
+		}
+		if (number instanceof Long) {
+			return Long.valueOf(~number.longValue());
+		}
+		return Integer.valueOf(~number.intValue());
+	}
+
 	public void visitUnary(NodeUnary unary) {
-		position = unary.position;
+		// setCurrentPosition(unary.position);
 		Object result = eval(unary.expresion);
 		switch (unary.operator) {
 			case NOT:
@@ -469,6 +587,11 @@ public class Context implements Visitor {
 			case NEGATE:
 				if ((result instanceof Number)) {
 					cx.result = negate((Number) result);
+				}
+				return;
+			case COMPLEMENT:
+				if ((result instanceof Number)) {
+					cx.result = complement((Number) result);
 				}
 				return;
 			default:
@@ -895,9 +1018,25 @@ public class Context implements Visitor {
 		return null;
 	}
 
+	private Object bitRIGHTU(Object left, Object right) {
+		if (left == null && right == null) {
+			return null;
+		} else if (right == null) {
+			return left;
+		} else if (left instanceof Number && right instanceof Number) {
+			long l = ((Number) left).longValue() >>> ((Number) right).longValue();
+			if (l < Integer.MAX_VALUE) {
+				return Integer.valueOf((int) l);
+			} else {
+				return Long.valueOf(l);
+			}
+		}
+		return null;
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void visitArray(NodeArray arr) {
-		position = arr.position;
+		// setCurrentPosition(arr.position);
 		int len = arr.elements.size();
 		List result = new ArrayList(len);
 		for (Node node : arr.elements) {
@@ -907,7 +1046,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitObject(NodeObject object) {
-		position = object.position;
+		// setCurrentPosition(object.position);
 		String parentObjectName = object.parent;
 		final ContextFrame newObject;
 		if (parentObjectName != null && parentObjectName.length() > 0) {
@@ -949,11 +1088,45 @@ public class Context implements Visitor {
 				} else {
 					ix = Integer.parseInt(element.toString());
 				}
+				if (ix < 0) {
+					return;
+				}
 
 				while (ix >= list.size()) {
 					list.add(null);
 				}
 				list.set(ix, value);
+			} catch (Exception e) {
+				// not an integer index for addressing list
+			}
+			return;
+
+		} else if (obj instanceof String) {
+			final String str = ((String) obj);
+			try {
+				int ix;
+				Object _element = eval(element);
+				if (_element == null) {
+					if (element instanceof NodeVariable) {
+						_element = ((NodeVariable) element).name;
+					} else {
+						cx.result = null;
+						return;
+					}
+				}
+				if (_element instanceof Number) {
+					ix = ((Number) _element).intValue();
+				} else {
+					ix = Integer.parseInt(element.toString());
+				}
+				if (ix < 0) {
+					return;
+				}
+
+				while (ix >= str.length()) {
+					// list.add(null);
+				}
+				// s.set(ix, value);
 			} catch (Exception e) {
 				// not an integer index for addressing list
 			}
@@ -982,7 +1155,7 @@ public class Context implements Visitor {
 
 	@SuppressWarnings("rawtypes")
 	public void visitAccess(NodeAccess node) {
-		position = node.position;
+		// setCurrentPosition(node.position);
 		final Object obj = eval(node.object);
 		final Node element = node.element;
 
@@ -1020,6 +1193,35 @@ public class Context implements Visitor {
 				// not an integer index for addressing list
 			}
 			return;
+
+		} else if (obj instanceof String) {
+			final String str = ((String) obj);
+			try {
+				int ix;
+				Object _element = eval(element);
+				if (_element == null) {
+					if (element instanceof NodeVariable) {
+						_element = ((NodeVariable) element).name;
+						if ("length".equals(_element)) {
+							cx.result = str.length();
+							return;
+						}
+					}
+				}
+
+				if (_element instanceof Number) {
+					ix = ((Number) _element).intValue();
+				} else {
+					ix = Integer.parseInt(element.toString());
+				}
+
+				if (ix >= 0 && ix < str.length()) {
+					cx.result = Integer.valueOf(str.charAt(ix));
+					return;
+				}
+			} catch (Exception e) {
+				// not an integer index for addressing list
+			}
 		}
 
 		String _element;
@@ -1029,6 +1231,11 @@ public class Context implements Visitor {
 				if (obj instanceof Map) {
 					cx.result = ((Map) obj).size();
 					return;
+				}
+			} else {
+				Object newValue = eval(element);
+				if (newValue != null) {
+					_element = newValue.toString();
 				}
 			}
 		} else {
@@ -1049,7 +1256,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitFunction(NodeFunction function) {
-		position = function.position;
+		// setCurrentPosition(function.position);
 		String name = function.name;
 		Function result = new Function(cx, function);
 		if (name != null && name.length() > 0) {
@@ -1059,7 +1266,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitCall(NodeCall call) {
-		position = call.position;
+		setCurrentPosition(call.position);
 
 		Object function = eval(call.function);
 		List<Node> arguments = call.arguments.elements;
@@ -1122,7 +1329,7 @@ public class Context implements Visitor {
 	}
 
 	public Object callFunction(Function function, Object[] args) {
-		position = function.function.position;
+		setCurrentPosition(function.function.position);
 		final String[] argumentNames = function.function.argumentNames;
 		final int l = args.length;
 		if (l != argumentNames.length) {
@@ -1144,7 +1351,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitTry(NodeTry tryNode) {
-		position = tryNode.position;
+		// setCurrentPosition(tryNode.position);
 		boolean needFinally = true;
 		try {
 			eval(tryNode.tryBody);
@@ -1190,7 +1397,7 @@ public class Context implements Visitor {
 	}
 
 	public void visitThrow(NodeThrow throwNode) {
-		position = throwNode.position;
+		setCurrentPosition(throwNode.position);
 		Object exception = eval(throwNode.expresion);
 		throw new CXException(exception);
 	}

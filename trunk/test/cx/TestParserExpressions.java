@@ -31,6 +31,36 @@ public class TestParserExpressions extends TestCase {
 			assertEquals("a", ((NodeVariable) binary.left).name);
 			assertEquals("b", ((NodeVariable) binary.right).name);
 		}
+		{
+			parser = new Parser("(a+b+c);");
+			block = parser.parse();
+			NodeBinary binary = (NodeBinary) block.get(0);
+			assertEquals(binary.operator, Operator.ADD);
+			assertEquals("a", ((NodeVariable) ((NodeBinary) binary.left).left).name);
+			assertEquals(((NodeBinary) binary.left).operator, Operator.ADD);
+			assertEquals("b", ((NodeVariable) ((NodeBinary) binary.left).right).name);
+			assertEquals("c", ((NodeVariable) binary.right).name);
+		}
+		{
+			parser = new Parser("a^b^c;");
+			block = parser.parse();
+			NodeBinary binary = (NodeBinary) block.get(0);
+			assertEquals(binary.operator, Operator.BIT_XOR);
+			assertEquals("a", ((NodeVariable) ((NodeBinary) binary.left).left).name);
+			assertEquals(((NodeBinary) binary.left).operator, Operator.BIT_XOR);
+			assertEquals("b", ((NodeVariable) ((NodeBinary) binary.left).right).name);
+			assertEquals("c", ((NodeVariable) binary.right).name);
+		}
+		{
+			parser = new Parser("a|b|c;");
+			block = parser.parse();
+			NodeBinary binary = (NodeBinary) block.get(0);
+			assertEquals(binary.operator, Operator.BIT_OR);
+			assertEquals("a", ((NodeVariable) ((NodeBinary) binary.left).left).name);
+			assertEquals(((NodeBinary) binary.left).operator, Operator.BIT_OR);
+			assertEquals("b", ((NodeVariable) ((NodeBinary) binary.left).right).name);
+			assertEquals("c", ((NodeVariable) binary.right).name);
+		}
 	}
 
 	public void testBinaryExpressions() {
@@ -112,6 +142,12 @@ public class TestParserExpressions extends TestCase {
 			NodeBinary binary = (NodeBinary) block.get(0);
 			assertEquals(binary.operator, Operator.BIT_RIGHT);
 		}
+		{
+			parser = new Parser("a>>>b;");
+			block = parser.parse();
+			NodeBinary binary = (NodeBinary) block.get(0);
+			assertEquals(binary.operator, Operator.BIT_RIGHTU);
+		}
 	}
 
 	public void testUnaryExpressions() {
@@ -142,6 +178,14 @@ public class TestParserExpressions extends TestCase {
 			block = parser.parse();
 			NodeUnary preInc = (NodeUnary) block.get(0);
 			assertEquals(preInc.operator, Operator.NOT);
+			NodeVariable var = (NodeVariable) preInc.expresion;
+			assertEquals(var.name, "p");
+		}
+		{
+			parser = new Parser("~p;");
+			block = parser.parse();
+			NodeUnary preInc = (NodeUnary) block.get(0);
+			assertEquals(preInc.operator, Operator.COMPLEMENT);
 			NodeVariable var = (NodeVariable) preInc.expresion;
 			assertEquals(var.name, "p");
 		}

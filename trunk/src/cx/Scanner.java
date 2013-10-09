@@ -282,6 +282,8 @@ class Scanner {
 						return Token.NE;
 					}
 					return Token.NOT;
+				case '~':
+					return Token.COMPLEMENT;
 				case '<':
 					if (matchChar('=')) {
 						return Token.LE;
@@ -302,6 +304,13 @@ class Scanner {
 						if (matchChar('=')) {
 							op = Token.BIT_RIGHT;
 							return Token.ASSIGNOP;
+						}
+						if (matchChar('>')) {
+							if (matchChar('=')) {
+								op = Token.BIT_RIGHTU;
+								return Token.ASSIGNOP;
+							}
+							return Token.BIT_RIGHTU;
 						}
 						return Token.BIT_RIGHT;
 					}

@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeFor extends Node {
 	public Node initialization;
 	public Node condition;
@@ -8,8 +7,7 @@ public class NodeFor extends Node {
 	public Node elements;
 	public Node body;
 
-	public NodeFor(SourcePosition position, Node initialization, Node condition, Node iterator,
-			Node elements, Node body) {
+	public NodeFor(SourcePosition position, Node initialization, Node condition, Node iterator, Node elements, Node body) {
 		super(position);
 		this.initialization = initialization;
 		this.condition = condition;
