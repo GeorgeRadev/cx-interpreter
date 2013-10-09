@@ -5,7 +5,7 @@ import cx.ast.Visitor;
 
 public class StringHandler implements ObjectHandler {
 	public static enum StringMethod {
-		length, trim, substring, replace, indexOf, lastIndexOf, startsWith, endsWith, toLowerCase, toUpperCase;
+		trim, substring, replace, indexOf, lastIndexOf, startsWith, endsWith, toLowerCase, toUpperCase;
 
 		public static StringMethod parse(final String str) {
 			String guess = null;
@@ -17,12 +17,6 @@ public class StringHandler implements ObjectHandler {
 					if ('t' == str.charAt(0)) {
 						guess = "trim";
 						method = trim;
-					}
-					break;
-				case 6:
-					if ('l' == str.charAt(0)) {
-						guess = "length";
-						method = length;
 					}
 					break;
 				case 7:
@@ -209,8 +203,6 @@ public class StringHandler implements ObjectHandler {
 		switch (stringCall.method) {
 			case trim:
 				return stringCall.string.trim();
-			case length:
-				return stringCall.string.length();
 			case toLowerCase:
 				return stringCall.string.toLowerCase();
 			case toUpperCase:
@@ -222,14 +214,22 @@ public class StringHandler implements ObjectHandler {
 	}
 
 	public boolean acceptStaticCall(String method, Object[] args) {
-		return "toString".equals(method);
+		return "toString".equals(method) || "chr".equals(method);
 	}
 
 	public Object staticCall(String method, Object[] args) {
-		StringBuilder buffer = new StringBuilder();
-		for (Object obj : args) {
-			buffer.append(obj);
+		if ("toString".equals(method)) {
+			StringBuilder buffer = new StringBuilder();
+			for (Object obj : args) {
+				buffer.append(obj);
+			}
+			return buffer.toString();
+
+		} else if ("chr".equals(method)) {
+			if (args.length == 1) {
+				return String.valueOf((char) Context.toLong(args[0]).intValue());
+			}
 		}
-		return buffer.toString();
+		return null;
 	}
 }

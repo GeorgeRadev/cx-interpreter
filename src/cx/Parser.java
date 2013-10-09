@@ -633,6 +633,9 @@ public class Parser {
 				case BIT_RIGHT:
 					operator = Operator.BIT_RIGHT;
 					break;
+				case BIT_RIGHTU:
+					operator = Operator.BIT_RIGHTU;
+					break;
 				case BIT_OR:
 					operator = Operator.BIT_OR;
 					break;
@@ -677,31 +680,57 @@ public class Parser {
 	}
 
 	private Node parseLogicalExpr() {
+
 		Node localObject = parseBitExpr();
-		Token token = scanner.peekToken();
-		if (token == Token.OR) {
-			scanner.getToken();
-			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.OR, parseBitExpr());
-		} else if (token == Token.AND) {
-			scanner.getToken();
-			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.AND, parseBitExpr());
-		}
+		boolean more = false;
+		do {
+			Token token = scanner.peekToken();
+			switch (token) {
+				case OR:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.OR, parseBitExpr());
+					more = true;
+					break;
+				case AND:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.AND, parseBitExpr());
+					more = true;
+					break;
+				default:
+					more = false;
+			}
+		} while (more);
 		return localObject;
 	}
 
 	private Node parseBitExpr() {
 		Node localObject = parseRelationalExpr();
-		Token token = scanner.peekToken();
-		if (token == Token.BIT_OR) {
-			scanner.getToken();
-			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_OR, parseRelationalExpr());
-		} else if (token == Token.BIT_AND) {
-			scanner.getToken();
-			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_AND, parseRelationalExpr());
-		} else if (token == Token.BIT_XOR) {
-			scanner.getToken();
-			localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_XOR, parseRelationalExpr());
-		}
+		boolean more = false;
+		do {
+			Token token = scanner.peekToken();
+			switch (token) {
+				case BIT_OR:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_OR,
+							parseRelationalExpr());
+					more = true;
+					break;
+				case BIT_AND:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_AND,
+							parseRelationalExpr());
+					more = true;
+					break;
+				case BIT_XOR:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_XOR,
+							parseRelationalExpr());
+					more = true;
+					break;
+				default:
+					more = false;
+			}
+		} while (more);
 		return localObject;
 	}
 
@@ -751,6 +780,12 @@ public class Parser {
 				case BIT_RIGHT:
 					scanner.getToken();
 					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_RIGHT,
+							parseBinaryExpr1());
+					more = true;
+					break;
+				case BIT_RIGHTU:
+					scanner.getToken();
+					localObject = new NodeBinary(getSrcPos(), (Node) localObject, Operator.BIT_RIGHTU,
 							parseBinaryExpr1());
 					more = true;
 					break;
@@ -835,6 +870,10 @@ public class Parser {
 			case DECREMENT:
 				scanner.getToken();
 				localObject = new NodeUnary(getSrcPos(), Operator.DEC_PRE, parseUnaryExpr());
+				break;
+			case COMPLEMENT:
+				scanner.getToken();
+				localObject = new NodeUnary(getSrcPos(), Operator.COMPLEMENT, parseUnaryExpr());
 				break;
 			default:
 				localObject = parseAccessExpr();

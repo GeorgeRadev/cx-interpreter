@@ -12,6 +12,8 @@ public class TestHandlers extends TestCase {
 			cx.addHandler(new StringHandler());
 			cx.evaluate((new Parser("str = toString(5);")).parse());
 			assertEquals("5", cx.get("str").toString());
+			cx.evaluate((new Parser("str = chr(0x41);")).parse());
+			assertEquals("A", cx.get("str"));
 
 			cx.evaluate((new Parser("str = ' trim '; str = str.trim();")).parse());
 			assertEquals("trim", cx.get("str").toString());
