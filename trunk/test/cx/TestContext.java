@@ -252,6 +252,11 @@ public class TestContext extends TestCase {
 			cx.evaluate((new Parser("i=0; function inc(){i++;}; inc();")).parse());
 			assertEquals(1L, cx.get("i"));
 		}
+		{// call nonexistent function
+			Context cx = new Context();
+			cx.evaluate((new Parser("a = nonexistent('test');")).parse());
+			assertNull(cx.get("a"));
+		}
 	}
 
 	public void testFor() {

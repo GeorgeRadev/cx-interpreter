@@ -1229,8 +1229,8 @@ public class Context implements Visitor {
 			argValues[i] = eval(arguments.get(i));
 		}
 
+		// eval() function
 		if (call.function instanceof NodeVariable && "eval".equals(((NodeVariable) call.function).name)) {
-			// eval() function
 			if (argsize == 0) {
 				return;
 			}
@@ -1260,18 +1260,19 @@ public class Context implements Visitor {
 				popContext();
 			}
 		} else {
-			if (function == null && call.function instanceof NodeVariable) {
+			if (function != null) {
+				for (ObjectHandler handler : handlers) {
+					if (handler.accept(function)) {
+						cx.result = handler.call(function, argValues);
+						break;
+					}
+				}
+			} else if (call.function instanceof NodeVariable) {
+				cx.result = null;
 				String functionName = ((NodeVariable) call.function).name;
 				for (ObjectHandler handler : handlers) {
 					if (handler.acceptStaticCall(functionName, argValues)) {
 						cx.result = handler.staticCall(functionName, argValues);
-						break;
-					}
-				}
-			} else {
-				for (ObjectHandler handler : handlers) {
-					if (handler.accept(function)) {
-						cx.result = handler.call(function, argValues);
 						break;
 					}
 				}
