@@ -144,9 +144,11 @@ public class Context implements Visitor {
 	public void visitVar(NodeVar varNode) {
 		// setCurrentPosition(varNode.position);
 		// define variables in current context
-		for (NodeAssign node : varNode.vars) {
-			if (node.left instanceof NodeVariable) {
-				cx.frame.put(((NodeVariable) node.left).name, ZERO);
+		if (varNode.defineLocaly) {
+			for (NodeAssign node : varNode.vars) {
+				if (node.left instanceof NodeVariable) {
+					cx.frame.put(((NodeVariable) node.left).name, ZERO);
+				}
 			}
 		}
 		for (Node node : varNode.vars) {
@@ -157,24 +159,28 @@ public class Context implements Visitor {
 	public void visitNumber(NodeNumber numberNode) {
 		// setCurrentPosition(numberNode.position);
 		String value = numberNode.value;
-		// detect precision of the number
-		if (value.indexOf('.') >= 0 || value.indexOf('e') >= 0) {
-			cx.result = new Double(value);
-			return;
-		} else {
-			char isHex = (value.length() > 2 && value.charAt(0) == '0') ? value.charAt(1) : '\0';
-			long l;
-			if (isHex == 'x' || isHex == 'X') {
-				l = Long.parseLong(value.substring(2), 16);
-			} else {
-				l = Long.parseLong(value, 10);
-			}
-			if (l < Integer.MAX_VALUE) {
-				cx.result = Integer.valueOf((int) l);
-			} else {
-				cx.result = Long.valueOf(l);
-			}
+
+		// try hex
+		char hexChar;
+		if (value.length() > 2 && value.charAt(0) == '0' && ((hexChar = value.charAt(1)) == 'x' || hexChar == 'X')) {
+			try {
+				long l = Long.parseLong(value.substring(2), 16);
+				cx.result = l;
+				return;
+			} catch (Exception e) {}
 		}
+		// try long
+		try {
+			long l = Long.parseLong(value, 10);
+			cx.result = l;
+			return;
+		} catch (Exception e) {}
+		// try double
+		try {
+			cx.result = Double.valueOf(value);
+			return;
+		} catch (Exception e) {}
+		cx.result = null;
 	}
 
 	public void visitVariable(NodeVariable variableNode) {
@@ -194,7 +200,6 @@ public class Context implements Visitor {
 
 		} else if (assignNode.left == null) {
 			cx.result = null;
-			return;
 		}
 	}
 
@@ -313,75 +318,73 @@ public class Context implements Visitor {
 		try {
 			pushContext();
 			if (paramForNode.elements != null) {
-				// for ( iterator[NodeVariable] : elements)
-				if (paramForNode.iterator instanceof NodeVariable) {
-					final String varName = ((NodeVariable) paramForNode.iterator).name;
-					final Object elements = eval(paramForNode.elements);
-					if (elements instanceof List) {
-						final List list = (List) elements;
-						final Node node = paramForNode.body;
-						final boolean block = node instanceof NodeBlock;
+				// for ( element[NodeVariable] : elements)
+				final String varName = paramForNode.element.name;
+				final Object elements = eval(paramForNode.elements);
+				if (elements instanceof List) {
+					final List list = (List) elements;
+					final Node node = paramForNode.body;
+					final boolean block = node instanceof NodeBlock;
 
-						for (Object e : list) {
-							cx.set(varName, e);
-							try {
-								if (block) {
-									for (Node statement : ((NodeBlock) node).statements) {
-										eval(statement);
-									}
-								} else {
-									eval(paramForNode.body);
+					for (Object e : list) {
+						cx.set(varName, e);
+						try {
+							if (block) {
+								for (Node statement : ((NodeBlock) node).statements) {
+									eval(statement);
 								}
-							} catch (JumpBreak localBreakJump) {
-								// break
-								break;
-							} catch (JumpContinue localContinueJump) {
-								// continue
+							} else {
+								eval(paramForNode.body);
 							}
+						} catch (JumpBreak localBreakJump) {
+							// break
+							break;
+						} catch (JumpContinue localContinueJump) {
+							// continue
 						}
-					}else if (elements instanceof Map) {
-						final Map map = (Map) elements;
-						final Node node = paramForNode.body;
-						final boolean block = node instanceof NodeBlock;
+					}
+				} else if (elements instanceof Map) {
+					final Map map = (Map) elements;
+					final Node node = paramForNode.body;
+					final boolean block = node instanceof NodeBlock;
 
-						for (Object e : map.keySet()) {
-							cx.set(varName, e);
-							try {
-								if (block) {
-									for (Node statement : ((NodeBlock) node).statements) {
-										eval(statement);
-									}
-								} else {
-									eval(paramForNode.body);
+					for (Object e : map.keySet()) {
+						cx.set(varName, e);
+						try {
+							if (block) {
+								for (Node statement : ((NodeBlock) node).statements) {
+									eval(statement);
 								}
-							} catch (JumpBreak localBreakJump) {
-								// break
-								break;
-							} catch (JumpContinue localContinueJump) {
-								// continue
+							} else {
+								eval(paramForNode.body);
 							}
+						} catch (JumpBreak localBreakJump) {
+							// break
+							break;
+						} catch (JumpContinue localContinueJump) {
+							// continue
 						}
-					} else if (elements instanceof ContextFrame) {
-						final ContextFrame cf = (ContextFrame) elements;
-						final Node node = paramForNode.body;
-						final boolean block = node instanceof NodeBlock;
+					}
+				} else if (elements instanceof ContextFrame) {
+					final ContextFrame cf = (ContextFrame) elements;
+					final Node node = paramForNode.body;
+					final boolean block = node instanceof NodeBlock;
 
-						for (String e : cf.frame.keySet()) {
-							cx.set(varName, e);
-							try {
-								if (block) {
-									for (Node statement : ((NodeBlock) node).statements) {
-										eval(statement);
-									}
-								} else {
-									eval(paramForNode.body);
+					for (String e : cf.frame.keySet()) {
+						cx.set(varName, e);
+						try {
+							if (block) {
+								for (Node statement : ((NodeBlock) node).statements) {
+									eval(statement);
 								}
-							} catch (JumpBreak localBreakJump) {
-								// break
-								break;
-							} catch (JumpContinue localContinueJump) {
-								// continue
+							} else {
+								eval(paramForNode.body);
 							}
+						} catch (JumpBreak localBreakJump) {
+							// break
+							break;
+						} catch (JumpContinue localContinueJump) {
+							// continue
 						}
 					}
 				}
@@ -406,7 +409,9 @@ public class Context implements Visitor {
 						} catch (JumpContinue localContinueJump) {
 							// continue
 						}
-						eval(paramForNode.iterator);
+						for (Node node : paramForNode.iterator) {
+							eval(node);
+						}
 						condition = eval(paramForNode.condition);
 					} while (isTrue(condition));
 				}
@@ -447,7 +452,9 @@ public class Context implements Visitor {
 			if (isTrue(condition)) {
 				eval(paramIfNode.body);
 			} else {
-				eval(paramIfNode.elseBody);
+				if (paramIfNode.elseBody != null) {
+					eval(paramIfNode.elseBody);
+				}
 			}
 
 		} finally {
@@ -497,40 +504,28 @@ public class Context implements Visitor {
 		if (number instanceof Double) {
 			return new Double(number.doubleValue() + 1.0d);
 		}
-		if (number instanceof Long) {
-			return Long.valueOf(number.longValue() + 1L);
-		}
-		return Integer.valueOf(number.intValue() + 1);
+		return Long.valueOf(number.longValue() + 1L);
 	}
 
 	private Number decrement(Number number) {
 		if (number instanceof Double) {
 			return new Double(number.doubleValue() - 1.0d);
 		}
-		if (number instanceof Long) {
-			return Long.valueOf(number.longValue() - 1L);
-		}
-		return Integer.valueOf(number.intValue() - 1);
+		return Long.valueOf(number.longValue() - 1L);
 	}
 
 	private Number negate(Number number) {
 		if (number instanceof Double) {
 			return new Double(number.doubleValue() * -1.0d);
 		}
-		if (number instanceof Long) {
-			return Long.valueOf(number.longValue() * -1L);
-		}
-		return Integer.valueOf(number.intValue() * -1);
+		return Long.valueOf(number.longValue() * -1L);
 	}
 
 	private Number complement(Number number) {
 		if (number instanceof Double) {
 			return Long.valueOf(~number.longValue());
 		}
-		if (number instanceof Long) {
-			return Long.valueOf(~number.longValue());
-		}
-		return Integer.valueOf(~number.intValue());
+		return Long.valueOf(~number.longValue());
 	}
 
 	public void visitUnary(NodeUnary unary) {
@@ -844,11 +839,7 @@ public class Context implements Visitor {
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() + ((Number) right).longValue();
-				if (l < Integer.MAX_VALUE) {
-					return Integer.valueOf((int) l);
-				} else {
-					return Long.valueOf(l);
-				}
+				return Long.valueOf(l);
 			}
 		} else if (left instanceof String) {
 			return (String) left + toString(right);
@@ -870,11 +861,7 @@ public class Context implements Visitor {
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() - ((Number) right).longValue();
-				if (l < Integer.MAX_VALUE) {
-					return Integer.valueOf((int) l);
-				} else {
-					return Long.valueOf(l);
-				}
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -891,11 +878,7 @@ public class Context implements Visitor {
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() * ((Number) right).longValue();
-				if (l < Integer.MAX_VALUE) {
-					return Integer.valueOf((int) l);
-				} else {
-					return Long.valueOf(l);
-				}
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -912,11 +895,7 @@ public class Context implements Visitor {
 				return new Double(d);
 			} else {
 				long l = ((Number) left).longValue() / ((Number) right).longValue();
-				if (l < Integer.MAX_VALUE) {
-					return Integer.valueOf((int) l);
-				} else {
-					return Long.valueOf(l);
-				}
+				return Long.valueOf(l);
 			}
 		}
 		return null;
@@ -929,11 +908,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() % ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -945,11 +920,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() | ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -961,11 +932,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() & ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -977,11 +944,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() ^ ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -993,11 +956,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() << ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -1009,11 +968,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() >> ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -1025,11 +980,7 @@ public class Context implements Visitor {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
 			long l = ((Number) left).longValue() >>> ((Number) right).longValue();
-			if (l < Integer.MAX_VALUE) {
-				return Integer.valueOf((int) l);
-			} else {
-				return Long.valueOf(l);
-			}
+			return Long.valueOf(l);
 		}
 		return null;
 	}
@@ -1216,7 +1167,7 @@ public class Context implements Visitor {
 				}
 
 				if (ix >= 0 && ix < str.length()) {
-					cx.result = Integer.valueOf(str.charAt(ix));
+					cx.result = Long.valueOf(str.charAt(ix));
 					return;
 				}
 			} catch (Exception e) {

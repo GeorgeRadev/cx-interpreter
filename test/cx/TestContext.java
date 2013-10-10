@@ -53,6 +53,7 @@ public class TestContext extends TestCase {
 		}
 
 		static int lines = 0;
+
 		public Object staticCall(String method, Object[] args) {
 			switch (args.length) {
 				case 0:
@@ -80,7 +81,7 @@ public class TestContext extends TestCase {
 
 	public void testHandler() {
 		{
-			Context cx = new Context();  
+			Context cx = new Context();
 			PrintHandler printHandler = new PrintHandler();
 			cx.addHandler(printHandler);
 			cx.evaluate((new Parser("print('hi '+'world');")).parse());
@@ -94,14 +95,14 @@ public class TestContext extends TestCase {
 			PrintHandler printHandler = new PrintHandler();
 			cx.addHandler(printHandler);
 			cx.evaluate((new Parser("a = 5; eval('a++;');")).parse());
-			assertEquals(6, ((Number) cx.get("a")).intValue());
+			assertEquals(6L, cx.get("a"));
 		}
 		{
 			Context cx = new Context();
 			PrintHandler printHandler = new PrintHandler();
 			cx.addHandler(printHandler);
 			cx.evaluate((new Parser("a = 5; inc = eval('function (x){return ++x;};'); a = inc(a);")).parse());
-			assertEquals(6, ((Number) cx.get("a")).intValue());
+			assertEquals(6L, cx.get("a"));
 		}
 	}
 
@@ -114,24 +115,24 @@ public class TestContext extends TestCase {
 
 			cx.set("f", Integer.valueOf(1));
 			cx.evaluate(block);
-			assertEquals(1, ((Number) cx.get("f")).intValue());
+			assertEquals(1L, cx.get("f"));
 
 			cx.set("f", Integer.valueOf(2));
 			cx.evaluate(block);
-			assertEquals(0, ((Number) cx.get("f")).intValue());
+			assertEquals(0L, cx.get("f"));
 
 			cx.set("f", Integer.valueOf(3));
 			cx.evaluate(block);
-			assertEquals(2, ((Number) cx.get("f")).intValue());
+			assertEquals(2L, cx.get("f"));
 
 			cx.set("f", Integer.valueOf(4));
 			cx.evaluate(block);
-			assertEquals(1, ((Number) cx.get("f")).intValue());
+			assertEquals(1L, cx.get("f"));
 
 			for (int i = 5; i < 20; i++) {
 				cx.set("f", Integer.valueOf(i));
 				cx.evaluate(block);
-				assertEquals(10, ((Number) cx.get("f")).intValue());
+				assertEquals(10L, cx.get("f"));
 			}
 		}
 	}
@@ -141,21 +142,21 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{j = 3;}")).parse());
-			assertEquals(2, ((Number) cx.get("i")));
+			assertEquals(2L, cx.get("i"));
 			assertNull(cx.get("j"));
 		}
 		{
 			Context cx = new Context();
 			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{var j = 3;}")).parse());
-			assertEquals(2, ((Number) cx.get("i")));
+			assertEquals(2L, cx.get("i"));
 			assertNull(cx.get("j"));
 		}
 		{
 			Context cx = new Context();
 			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("i = 2;{var i = 3;}")).parse());
-			assertEquals(2, ((Number) cx.get("i")));
+			assertEquals(2L, cx.get("i"));
 		}
 	}
 
@@ -172,7 +173,7 @@ public class TestContext extends TestCase {
 		{// with finally
 			Context cx = new Context();
 			Parser parser = new Parser(
-					"var f = 0; try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Integer e){arg = 'integer';}catch(String e){arg = 'string';}finally{f = 42;}");
+					"var f = 0; try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Long e){arg = 'integer';}catch(String e){arg = 'string';}finally{f = 42;}");
 			parser.supportTryCatchThrow = true;
 			List<Node> block = parser.parse();
 
@@ -199,7 +200,7 @@ public class TestContext extends TestCase {
 		{// just catch
 			Context cx = new Context();
 			Parser parser = new Parser(
-					"try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Integer e){arg = 'integer';}catch(String e){arg = 'string';}");
+					"try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Long e){arg = 'integer';}catch(String e){arg = 'string';}");
 			parser.supportTryCatchThrow = true;
 			List<Node> block = parser.parse();
 
@@ -239,17 +240,17 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			List<Node> block = (new Parser("obj = {n:42, inc:function(){this.n+=42;}}; obj.inc(); i=obj.n;")).parse();
 			cx.evaluate(block);
-			assertEquals(84, ((Number) cx.get("i")));
+			assertEquals(84L, cx.get("i"));
 		}
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("function inc(a){return a+5;}; i=inc(5);")).parse());
-			assertEquals(10, ((Number) cx.get("i")));
+			assertEquals(10L, cx.get("i"));
 		}
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("i=0; function inc(){i++;}; inc();")).parse());
-			assertEquals(1, ((Number) cx.get("i")));
+			assertEquals(1L, cx.get("i"));
 		}
 	}
 
@@ -260,21 +261,21 @@ public class TestContext extends TestCase {
 			@SuppressWarnings("rawtypes")
 			List arr = (List) cx.get("array");
 			assertEquals(4, arr.size());
-			assertEquals(1, arr.get(0));
-			assertEquals(2, arr.get(1));
-			assertEquals(3, arr.get(2));
-			assertEquals(4, arr.get(3));
+			assertEquals(1L, arr.get(0));
+			assertEquals(2L, arr.get(1));
+			assertEquals(3L, arr.get(2));
+			assertEquals(4L, arr.get(3));
 		}
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("s=0; array = [0,1,2,3]; for(e:array){s+=e;}")).parse());
-			assertEquals(6, ((Number) cx.get("s")).intValue());
+			assertEquals(6L, cx.get("s"));
 		}
 		{
 			Context cx = new Context();
 			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("s=0; obj = {a:0,b:1,c:2,d:3}; for(e:obj){s+=obj[e];}")).parse());
-			assertEquals(6, ((Number) cx.get("s")).intValue());
+			assertEquals(6L, cx.get("s"));
 		}
 	}
 
@@ -284,7 +285,7 @@ public class TestContext extends TestCase {
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'}; obj.a++; obj.b += ' more';")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
 			assertEquals(2, obj.frame.size());
-			assertEquals(2, obj.get("a"));
+			assertEquals(2L, obj.get("a"));
 			assertEquals("string more", obj.get("b"));
 		}
 		{
@@ -292,7 +293,7 @@ public class TestContext extends TestCase {
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'};")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
 			assertEquals(2, obj.frame.size());
-			assertEquals(1, obj.get("a"));
+			assertEquals(1L, obj.get("a"));
 			assertEquals("string", obj.get("b"));
 		}
 	}
@@ -307,8 +308,8 @@ public class TestContext extends TestCase {
 			assertEquals(2, arr.size());
 			List arr1 = (List) arr.get(0);
 			List arr2 = (List) arr.get(1);
-			assertEquals(0, arr1.get(0));
-			assertEquals(3, arr2.get(0));
+			assertEquals(0L, arr1.get(0));
+			assertEquals(3L, arr2.get(0));
 		}
 		{
 			Context cx = new Context();
@@ -316,9 +317,9 @@ public class TestContext extends TestCase {
 			cx.evaluate(block);
 			List arr = (List) cx.get("arr");
 			assertEquals(3, arr.size());
-			assertEquals(2, arr.get(0));
-			assertEquals(2, arr.get(1));
-			assertEquals(3, arr.get(2));
+			assertEquals(2L, arr.get(0));
+			assertEquals(2L, arr.get(1));
+			assertEquals(3L, arr.get(2));
 		}
 		{
 			Context cx = new Context();
@@ -329,7 +330,7 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("arr = 'abcdef'; arr=arr[3];")).parse());
-			assertEquals((int) 'd', ((Integer) cx.get("arr")).intValue());
+			assertEquals((int) 'd', ((Number) cx.get("arr")).intValue());
 		}
 	}
 

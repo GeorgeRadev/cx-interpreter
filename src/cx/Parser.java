@@ -160,7 +160,7 @@ public class Parser {
 				}
 				break;
 			case VAR:
-				node = parseVar();
+				node = parseVar(true);
 				break;
 			case L_CURLY:
 				// test if the following is a Object declaration or a block
@@ -450,9 +450,10 @@ public class Parser {
 	private Node parseFor() {
 		if (isDebug) System.out.println("parseFor()");
 		SourcePosition localSourcePosition = getSrcPos();
-		Node initialization = null;
+		NodeVar initialization = null;
 		Node condition = null;
-		Node iterator = null;
+		List<Node> iterator = null;
+		NodeVariable element = null;
 		Node elements = null;
 		Node body;
 		scanner.getToken();// eat 'for'
@@ -475,7 +476,7 @@ public class Parser {
 					token = scanner.getToken();
 				}
 			}
-			iterator = new NodeVariable(scanner.getSrcPos(), scanner.getString());
+			element = new NodeVariable(scanner.getSrcPos(), scanner.getString());
 			scanner.getToken();// get :
 			elements = parseExpression();
 			if (!scanner.matchToken(Token.R_PAREN)) {
@@ -484,7 +485,7 @@ public class Parser {
 		} else {
 			Token token = scanner.peekToken();
 			if (token == Token.VAR) {
-				initialization = parseVar();
+				initialization = parseVar(true);
 				if (!scanner.matchToken(Token.SEMICOLON)) {
 					handleError("expected ';' in 'for(...;...' !", scanner.getSrcPos());
 				}
@@ -492,7 +493,7 @@ public class Parser {
 				initialization = null;
 				scanner.getToken();
 			} else {
-				initialization = parseArgumentList(Token.SEMICOLON);
+				initialization = parseVar(false);
 				if (!scanner.matchToken(Token.SEMICOLON)) {
 					handleError("expected ';' in 'for(...;...' !", scanner.getSrcPos());
 				}
@@ -505,7 +506,7 @@ public class Parser {
 				handleError("expected second ';' in 'for(...;...;...' !", scanner.getSrcPos());
 			}
 			if (scanner.peekToken() != Token.R_PAREN) {
-				iterator = parseArgumentList(Token.R_PAREN);
+				iterator = parseArgumentList(Token.R_PAREN).elements;
 			}
 			if (!scanner.matchToken(Token.R_PAREN)) {
 				handleError("expected ')' in 'for(;;)' !", scanner.getSrcPos());
@@ -517,7 +518,7 @@ public class Parser {
 		} else {
 			body = parseStatement();
 		}
-		return new NodeFor(localSourcePosition, (Node) initialization, (Node) condition, iterator, elements, body);
+		return new NodeFor(localSourcePosition, initialization, (Node) condition, iterator, element, elements, body);
 	}
 
 	private Node parseIf() {
@@ -555,10 +556,13 @@ public class Parser {
 		return handleError("Missing '('", scanner.getSrcPos());
 	}
 
-	private Node parseVar() {
+	private NodeVar parseVar(boolean eatPrefix) {
 		if (isDebug) System.out.println("parseVar()");
-		scanner.getToken();// eat 'var'
-		NodeVar vars = new NodeVar(getSrcPos());
+		if (eatPrefix) {
+			// eat 'var'
+			scanner.getToken();
+		}
+		NodeVar vars = new NodeVar(getSrcPos(), eatPrefix);
 
 		Token current = scanner.peekToken();
 		do {

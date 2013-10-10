@@ -247,16 +247,17 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeVar var = (NodeVar) block.get(0);
 			assertEquals(3, var.vars.size());
-			assertEquals("i", ((NodeVariable) var.vars.get(0).left).name);
-			assertEquals("j", ((NodeVariable) var.vars.get(1).left).name);
-			assertEquals("k", ((NodeVariable) var.vars.get(2).left).name);
+			assertTrue(var.defineLocaly);
+			assertEquals("i", ((NodeVariable) ((NodeAssign) var.vars.get(0)).left).name);
+			assertEquals("j", ((NodeVariable) ((NodeAssign) var.vars.get(1)).left).name);
+			assertEquals("k", ((NodeVariable) ((NodeAssign) var.vars.get(2)).left).name);
 		}
 		{
 			parser = new Parser("var i;");
 			block = parser.parse();
 			NodeVar var = (NodeVar) block.get(0);
 			assertEquals(1, var.vars.size());
-			NodeAssign assign = var.vars.get(0);
+			NodeAssign assign = (NodeAssign) var.vars.get(0);
 			assertEquals("i", ((NodeVariable) assign.left).name);
 			assertNull(assign.right);
 		}
@@ -265,7 +266,7 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeVar var = (NodeVar) block.get(0);
 			assertEquals(1, var.vars.size());
-			NodeAssign assign = var.vars.get(0);
+			NodeAssign assign = (NodeAssign) var.vars.get(0);
 			assertEquals("i", ((NodeVariable) assign.left).name);
 			assertNotNull(assign.right);
 		}
@@ -420,7 +421,8 @@ public class TestParser extends TestCase {
 			NodeFor nodeFor = (NodeFor) block.get(0);
 			assertNull(nodeFor.initialization);
 			assertNull(nodeFor.condition);
-			assertNotNull(nodeFor.iterator);
+			assertNull(nodeFor.iterator);
+			assertNotNull(nodeFor.element);
 			assertNotNull(nodeFor.elements);
 			assertNull(nodeFor.body);
 		}
@@ -430,7 +432,8 @@ public class TestParser extends TestCase {
 			NodeFor nodeFor = (NodeFor) block.get(0);
 			assertNull(nodeFor.initialization);
 			assertNull(nodeFor.condition);
-			assertNotNull(nodeFor.iterator);
+			assertNull(nodeFor.iterator);
+			assertNotNull(nodeFor.element);
 			assertNotNull(nodeFor.elements);
 			assertNull(nodeFor.body);
 		}
@@ -441,6 +444,7 @@ public class TestParser extends TestCase {
 			assertNull(nodeFor.initialization);
 			assertNull(nodeFor.condition);
 			assertNull(nodeFor.iterator);
+			assertNull(nodeFor.element);
 			assertNull(nodeFor.body);
 			assertNull(nodeFor.elements);
 		}
