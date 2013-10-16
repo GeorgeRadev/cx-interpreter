@@ -290,4 +290,20 @@ public class TestMD5 extends TestCase {
 		}
 		return buf.toString();
 	}
+
+	public void testMD5class() {
+		Context cx = new Context();
+		cx.addHandler(new StringHandler());
+		cx.evaluate((new Parser(new File("md5class.cx"))).parse());
+
+		cx.evaluate((new Parser("digest = MD5.digest('hello');")).parse());
+		assertEquals("5d41402abc4b2a76b9719d911017c592", cx.get("digest"));
+
+		cx.evaluate((new Parser("digest = MD5.digest('0123456789012345678901234567890123456789012345678901234567');")).parse());
+		assertEquals("66f6bb54a54f967caa2607ad2990ecb4", cx.get("digest"));
+
+		cx.evaluate((new Parser(
+				"digest = MD5.digest('01234567890123456789012345678901234567890123456789012345678901234567890123456789');")).parse());
+		assertEquals("0faef1f4cb01d560d59016a2d5e91da6", cx.get("digest"));
+	}
 }

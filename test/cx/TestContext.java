@@ -238,7 +238,13 @@ public class TestContext extends TestCase {
 		}
 		{
 			Context cx = new Context();
-			List<Node> block = (new Parser("obj = {n:42, inc:function(){this.n+=42;}}; obj.inc(); i=obj.n;")).parse();
+			List<Node> block = (new Parser("obj = {n:42, inc:function(){n+=42;}}; obj.inc(); i=obj.n;")).parse();
+			cx.evaluate(block);
+			assertEquals(84L, cx.get("i"));
+		}
+		{
+			Context cx = new Context();
+			List<Node> block = (new Parser("obj = {n:42, inc:function(){n+=42;}}; obj.inc(); i=obj['n'];")).parse();
 			cx.evaluate(block);
 			assertEquals(84L, cx.get("i"));
 		}
@@ -255,6 +261,9 @@ public class TestContext extends TestCase {
 		{// call nonexistent function
 			Context cx = new Context();
 			cx.evaluate((new Parser("a = nonexistent('test');")).parse());
+			assertNull(cx.get("a"));
+
+			cx.evaluate((new Parser("a = none.nonexistent('test');")).parse());
 			assertNull(cx.get("a"));
 		}
 	}
@@ -281,6 +290,8 @@ public class TestContext extends TestCase {
 			cx.set("i", Integer.valueOf(0xCAFE));
 			cx.evaluate((new Parser("s=0; obj = {a:0,b:1,c:2,d:3}; for(e:obj){s+=obj[e];}")).parse());
 			assertEquals(6L, cx.get("s"));
+			cx.evaluate((new Parser("s+=obj['d'];")).parse());
+			assertEquals(9L, cx.get("s"));
 		}
 	}
 
