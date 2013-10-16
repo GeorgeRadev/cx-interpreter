@@ -554,9 +554,9 @@ public class TestParser extends TestCase {
 			NodeCall call = (NodeCall) block.get(0);
 			NodeAccess access = (NodeAccess) call.function;
 			NodeVariable object = (NodeVariable) access.object;
-			NodeVariable element = (NodeVariable) access.element;
+			NodeString element = (NodeString) access.element;
 			assertEquals("obj", object.name);
-			assertEquals("call", element.name);
+			assertEquals("call", element.value);
 			NodeArray params = (NodeArray) call.arguments;
 			assertEquals(3, params.elements.size());
 			List<Node> args = params.elements;
@@ -568,9 +568,9 @@ public class TestParser extends TestCase {
 			NodeCall call = (NodeCall) block.get(0);
 			NodeAccess access = (NodeAccess) call.function;
 			NodeVariable object = (NodeVariable) access.object;
-			NodeVariable element = (NodeVariable) access.element;
+			NodeString element = (NodeString) access.element;
 			assertEquals("obj", object.name);
-			assertEquals("call", element.name);
+			assertEquals("call", element.value);
 			NodeArray params = (NodeArray) call.arguments;
 			assertEquals(2, params.elements.size());
 			List<Node> args = params.elements;
@@ -592,7 +592,7 @@ public class TestParser extends TestCase {
 			NodeAccess chain2 = (NodeAccess) chain1.object;
 			assertEquals("i", ((NodeVariable) chain2.element).name);
 			NodeAccess chain3 = (NodeAccess) chain2.object;
-			assertEquals("subarray", ((NodeVariable) chain3.element).name);
+			assertEquals("subarray", ((NodeString) chain3.element).value);
 			assertEquals("array", ((NodeVariable) chain3.object).name);
 		}
 		{
@@ -639,9 +639,9 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeAccess access = (NodeAccess) block.get(0);
 			NodeVariable object = (NodeVariable) access.object;
-			NodeVariable element = (NodeVariable) access.element;
+			NodeString element = (NodeString) access.element;
 			assertEquals("object", object.name);
-			assertEquals("element", element.name);
+			assertEquals("element", element.value);
 		}
 
 		{
@@ -650,11 +650,11 @@ public class TestParser extends TestCase {
 			NodeAccess access = (NodeAccess) block.get(0);
 			NodeAccess accessParent = (NodeAccess) access.object;
 			NodeVariable object = (NodeVariable) accessParent.object;
-			NodeVariable element = (NodeVariable) accessParent.element;
-			NodeVariable subelement = (NodeVariable) access.element;
+			NodeString element = (NodeString) accessParent.element;
+			NodeString subelement = (NodeString) access.element;
 			assertEquals("object", object.name);
-			assertEquals("element", element.name);
-			assertEquals("subelement", subelement.name);
+			assertEquals("element", element.value);
+			assertEquals("subelement", subelement.value);
 		}
 
 	}

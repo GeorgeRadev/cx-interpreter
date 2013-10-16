@@ -907,6 +907,12 @@ public class Parser {
 				Node parentNode = localNode;
 				token = scanner.getToken();
 				localNode = parsePrimaryExpr();
+				if (localNode instanceof NodeVariable) {
+					// convert access name to string
+					// to differ obj.element as obj["element"]
+					// (not as obj[element] )
+					localNode = new NodeString(localNode.position, ((NodeVariable) localNode).name);
+				}
 				Node access = new NodeAccess(getSrcPos(), parentNode, localNode);
 				localNode = access;
 				continue;

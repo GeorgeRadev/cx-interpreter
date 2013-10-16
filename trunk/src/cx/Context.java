@@ -42,7 +42,7 @@ import cx.runtime.Function;
 import cx.runtime.ObjectHandler;
 
 public class Context implements Visitor {
-	private static final String THIS = "this";
+	// private static final String THIS = "this";
 
 	private static final Long ZERO = 0L;
 	private int[] breakpoints = null;
@@ -1082,19 +1082,33 @@ public class Context implements Visitor {
 				// not an integer index for addressing list
 			}
 			return;
-		}
 
-		String _element;
-		if (element instanceof NodeVariable) {
-			_element = ((NodeVariable) element).name;
-		} else {
-			_element = eval(element).toString();
-		}
-		if (obj instanceof Map) {
+		} else if (obj instanceof Map) {
+			String _element;
+			if (element instanceof NodeVariable) {
+				_element = ((NodeVariable) element).name;
+			} else {
+				_element = eval(element).toString();
+			}
 			((Map) obj).put(_element, value);
+
 		} else if (obj instanceof ContextFrame) {
+			String _element;
+			if (element instanceof NodeVariable) {
+				_element = ((NodeVariable) element).name;
+			} else {
+				_element = eval(element).toString();
+			}
 			((ContextFrame) obj).set(_element, value);
+
 		} else {
+			String _element;
+			if (element instanceof NodeVariable) {
+				_element = ((NodeVariable) element).name;
+			} else {
+				_element = eval(element).toString();
+			}
+
 			for (ObjectHandler handler : handlers) {
 				if (handler.accept(obj)) {
 					handler.set(obj, _element, value);
@@ -1113,26 +1127,25 @@ public class Context implements Visitor {
 		cx.result = null;
 		if (obj instanceof List) {
 			final List list = ((List) obj);
-			try {
-				int ix;
-				Object _element = eval(element);
-				if (_element == null) {
-					if (element instanceof NodeVariable) {
-						_element = ((NodeVariable) element).name;
-						if ("length".equals(_element)) {
-							cx.result = list.size();
-							return;
-						}
-					} else {
-						cx.result = null;
-						return;
-					}
-				}
 
+			if (element instanceof NodeString) {
+				String _element = ((NodeString) element).value;
+				if ("length".equals(_element)) {
+					cx.result = list.size();
+					return;
+				}
+			}
+
+			try {
+				final int ix;
+				Object _element = eval(element);
 				if (_element instanceof Number) {
 					ix = ((Number) _element).intValue();
-				} else {
+				} else if (_element != null) {
 					ix = Integer.parseInt(element.toString());
+				} else {
+					cx.result = null;
+					return;
 				}
 
 				if (ix >= 0 && ix < list.size()) {
@@ -1147,61 +1160,106 @@ public class Context implements Visitor {
 
 		} else if (obj instanceof String) {
 			final String str = ((String) obj);
-			try {
-				int ix;
-				Object _element = eval(element);
-				if (_element == null) {
-					if (element instanceof NodeVariable) {
-						_element = ((NodeVariable) element).name;
-						if ("length".equals(_element)) {
-							cx.result = str.length();
-							return;
-						}
-					}
-				}
 
-				if (_element instanceof Number) {
-					ix = ((Number) _element).intValue();
-				} else {
-					ix = Integer.parseInt(element.toString());
-				}
-
-				if (ix >= 0 && ix < str.length()) {
-					cx.result = Long.valueOf(str.charAt(ix));
+			if (element instanceof NodeString) {
+				String _element = ((NodeString) element).value;
+				if ("length".equals(_element)) {
+					cx.result = str.length();
 					return;
 				}
-			} catch (Exception e) {
-				// not an integer index for addressing list
-			}
-		}
+				try {
+					int ix = Integer.parseInt(element.toString());
+					if (ix >= 0 && ix < str.length()) {
+						cx.result = Long.valueOf(str.charAt(ix));
+						return;
+					}
+				} catch (Exception e) {
+					// not an integer index for addressing list
+				}
+			} else {
+				Object _element = eval(element);
+				try {
+					if (_element instanceof Number) {
+						int ix = ((Number) _element).intValue();
+						if (ix >= 0 && ix < str.length()) {
+							cx.result = Long.valueOf(str.charAt(ix));
+							return;
+						}
+					} else if (_element != null) {
+						int ix = Integer.parseInt(element.toString());
+						if (ix >= 0 && ix < str.length()) {
+							cx.result = Long.valueOf(str.charAt(ix));
+							return;
+						}
+					} else {
+						cx.result = null;
+						return;
+					}
 
-		String _element;
-		if (element instanceof NodeVariable) {
-			_element = ((NodeVariable) element).name;
-			if ("length".equals(_element)) {
-				if (obj instanceof Map) {
+				} catch (Exception e) {
+					// not an integer index for addressing list
+				}
+			}
+
+		} else if (obj instanceof Map) {
+			if (element instanceof NodeString) {
+				String _element = ((NodeString) element).value;
+				if ("length".equals(_element)) {
 					cx.result = ((Map) obj).size();
 					return;
 				}
-			} else {
-				Object newValue = eval(element);
-				if (newValue != null) {
-					_element = newValue.toString();
-				}
+				cx.result = ((Map) obj).get(_element);
+				return;
 			}
-		} else {
-			_element = eval(element).toString();
-		}
-		if (obj instanceof Map) {
-			cx.result = ((Map) obj).get(_element);
+
+			Object _element = eval(element);
+			if (_element != null) {
+				cx.result = ((Map) obj).get(_element);
+				return;
+			} else {
+				cx.result = null;
+				return;
+			}
+
 		} else if (obj instanceof ContextFrame) {
-			cx.result = ((ContextFrame) obj).get(_element);
-		} else {
-			for (ObjectHandler handler : handlers) {
-				if (handler.accept(obj)) {
-					cx.result = handler.get(obj, _element);
-					break;
+			if (element instanceof NodeString) {
+				String _element = ((NodeString) element).value;
+				if ("length".equals(_element)) {
+					cx.result = ((ContextFrame) obj).frame.size();
+					return;
 				}
+				cx.result = ((ContextFrame) obj).frame.get(_element);
+				return;
+			}
+
+			Object _element = eval(element);
+			if (_element != null) {
+				cx.result = ((ContextFrame) obj).frame.get(_element);
+				return;
+			} else {
+				cx.result = null;
+				return;
+			}
+		}
+
+		for (ObjectHandler handler : handlers) {
+			if (handler.accept(obj)) {
+				String _element;
+				if (element instanceof NodeString) {
+					_element = ((NodeString) element).value;
+				} else if (element instanceof NodeVariable) {
+					_element = ((NodeVariable) element).name;
+				} else {
+					Object newValue = eval(element);
+					if (newValue != null) {
+						_element = newValue.toString();
+					} else {
+						cx.result = null;
+						return;
+					}
+				}
+				cx.result = handler.get(obj, _element);
+				break;
 			}
 		}
 	}
@@ -1253,11 +1311,16 @@ public class Context implements Visitor {
 
 		// do the call
 		if (function instanceof Function) {
+			ContextFrame previousFrame = cx;
 			try {
-				pushContext();
-				callFunction(((Function) function), argValues);
+				Function func = (Function) function;
+				cx = new ContextFrame(func.thiz);
+				if (cx != null) {
+					callFunction(((Function) function), argValues);
+				}
 			} finally {
-				popContext();
+				previousFrame.result = cx.result;
+				cx = previousFrame;
 			}
 		} else {
 			if (function != null) {
@@ -1276,6 +1339,8 @@ public class Context implements Visitor {
 						break;
 					}
 				}
+			} else {
+				cx.result = null;
 			}
 		}
 	}
@@ -1288,10 +1353,12 @@ public class Context implements Visitor {
 			return null;
 		}
 		// add this
-		cx.frame.put(THIS, function.thiz);
+		// cx.frame.put(THIS, function.thiz);
 		// add parameters
-		for (int i = 0; i < l; i++) {
-			cx.frame.put(argumentNames[i], args[i]);
+		if (l > 0) {
+			for (int i = 0; i < l; i++) {
+				cx.frame.put(argumentNames[i], args[i]);
+			}
 		}
 		// execute
 		try {
