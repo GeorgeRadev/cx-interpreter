@@ -34,15 +34,13 @@ public class ContextFrame {
 
 	public ContextFrame set(String varName, Object value) {
 		ContextFrame ccx = this;
-		Object result;
 		do {
-			result = ccx.frame.get(varName);
-			if (result != null) {
+			if (ccx.frame.containsKey(varName)) {
 				ccx.frame.put(varName, value);
 				return this;
 			}
 			ccx = ccx.parent;
-		} while (result == null && ccx != null);
+		} while (ccx != null);
 		frame.put(varName, value);
 		return this;
 	}

@@ -85,7 +85,7 @@ public class Context implements Visitor {
 		return cx.result;
 	}
 
-	private final Object eval(final Node paramNode) {
+	private Object eval(Node paramNode) {
 		if (paramNode != null) {
 			paramNode.accept(this);
 		} else {
@@ -94,7 +94,7 @@ public class Context implements Visitor {
 		return cx.result;
 	}
 
-	private final Object eval(final List<Node> paramNode) {
+	private Object eval(List<Node> paramNode) {
 		if (paramNode != null) {
 			for (int i = 0, l = paramNode.size(); i < l; ++i) {
 				eval(paramNode.get(i));

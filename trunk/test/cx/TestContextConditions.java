@@ -3,6 +3,17 @@ package cx;
 import junit.framework.TestCase;
 
 public class TestContextConditions extends TestCase {
+
+	public void testIfConditions() {
+		Context cx = new Context();
+		cx.evaluate((new Parser("b = 0; if(b)b=1; else b=2;")).parse());
+		assertEquals(2L, cx.get("b"));
+		cx.evaluate((new Parser("b = null; if(b) b=1; else b=2;")).parse());
+		assertEquals(2L, cx.get("b"));
+		cx.evaluate((new Parser("b = 1; if(b)b=1; else b=2;")).parse());
+		assertEquals(1L, cx.get("b"));
+	}
+
 	public void testMixingConditions() {
 		{// null = false = 0 = 0.0 = ""
 			Context cx = new Context();
