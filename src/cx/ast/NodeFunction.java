@@ -26,6 +26,6 @@ public class NodeFunction extends Node {
 	}
 
 	public String toString() {
-		return "function " + name + "(" + arrayToString(argumentNames) + ")" + body;
+		return "function " + name + "(" + explode(argumentNames, ',') + "){" + explode(body, ';') + ";}";
 	}
 }

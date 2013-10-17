@@ -25,7 +25,7 @@ public class NodeSwitch extends Node {
 	}
 
 	public String toString() {
-		return "switch(" + value + "){" + arrayToString(caseValues) + arrayToString(caseValueIndexes)
+		return "switch (" + value + "){" + arrayToString(caseValues) + arrayToString(caseValueIndexes)
 				+ arrayToString(caseStatements) + "}";
 	}
 }

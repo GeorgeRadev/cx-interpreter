@@ -360,20 +360,24 @@ public class Parser {
 	private Node parseTry() {
 		if (isDebug) System.out.println("parseTry");
 		SourcePosition localSourcePosition = getSrcPos();
-		Node tryBody = null;
-		Node finallyBody = null;
+		List<Node> tryBody = null;
+		List<Node> finallyBody = null;
 		scanner.getToken();// eat 'try'
 
 		Token token = scanner.peekToken();
 
 		if (token == Token.L_CURLY) {
 			scanner.getToken();
-			tryBody = parseBlock();
+			tryBody = parseBlock().statements;
 		} else {
 			if (scanner.matchToken(Token.SEMICOLON)) {
 				tryBody = null;
 			} else {
-				tryBody = parseStatement();
+				Node node = parseStatement();
+				if (node != null) {
+					tryBody = new ArrayList<Node>(1);
+					tryBody.add(node);
+				}
 			}
 		}
 
@@ -423,12 +427,16 @@ public class Parser {
 				token = scanner.peekToken();
 				if (token == Token.L_CURLY) {
 					scanner.getToken();
-					finallyBody = parseBlock();
+					finallyBody = parseBlock().statements;
 				} else {
 					if (scanner.matchToken(Token.SEMICOLON)) {
 						finallyBody = null;
 					} else {
-						finallyBody = parseStatement();
+						Node node = parseStatement();
+						if (node != null) {
+							finallyBody = new ArrayList<Node>(1);
+							finallyBody.add(node);
+						}
 					}
 				}
 				break;
@@ -455,7 +463,7 @@ public class Parser {
 		List<Node> iterator = null;
 		NodeVariable element = null;
 		Node elements = null;
-		Node body;
+		List<Node> body = null;
 		scanner.getToken();// eat 'for'
 
 		if (!scanner.matchToken(Token.L_PAREN)) {
@@ -514,9 +522,13 @@ public class Parser {
 		}
 
 		if (scanner.matchToken(Token.L_CURLY)) {
-			body = parseBlock();
+			body = parseBlock().statements;
 		} else {
-			body = parseStatement();
+			Node node = parseStatement();
+			if (node != null) {
+				body = new ArrayList<Node>(1);
+				body.add(node);
+			}
 		}
 		return new NodeFor(localSourcePosition, initialization, (Node) condition, iterator, element, elements, body);
 	}
@@ -532,23 +544,29 @@ public class Parser {
 				handleError("Missing ')'", scanner.getSrcPos());
 			}
 
-			Node trueNode = null;
+			List<Node> trueNode = null;
 			if (scanner.matchToken(Token.L_CURLY)) {
 				// parse block
-				trueNode = parseBlock();
+				trueNode = parseBlock().statements;
 			} else {
-				trueNode = parseStatement();
-
+				Node node = parseStatement();
+				if (node != null) {
+					trueNode = new ArrayList<Node>(1);
+					trueNode.add(node);
+				}
 			}
 
-			Node elseNode = null;
+			List<Node> elseNode = null;
 			if (scanner.matchToken(Token.ELSE)) {
 				if (scanner.matchToken(Token.L_CURLY)) {
 					// parse block
-					elseNode = parseBlock();
+					elseNode = parseBlock().statements;
 				} else {
-					elseNode = parseStatement();
-
+					Node node = parseStatement();
+					if (node != null) {
+						elseNode = new ArrayList<Node>(1);
+						elseNode.add(node);
+					}
 				}
 			}
 			return new NodeIf(localSourcePosition, condition, trueNode, elseNode);
@@ -614,7 +632,7 @@ public class Parser {
 		} else if (token == Token.ASSIGNOP) {
 
 			scanner.getToken();
-			Operator operator = Operator.NOP;
+			Operator operator = null;
 			switch (scanner.getOperator()) {
 				case ADD:
 					operator = Operator.ADD;
@@ -937,7 +955,7 @@ public class Parser {
 				if (!scanner.matchToken(Token.R_PAREN)) {
 					handleError("Missing ')'", getSrcPos());
 				}
-				Node call = new NodeCall(getSrcPos(), parentNode, argiments);
+				Node call = new NodeCall(getSrcPos(), parentNode, argiments.elements);
 				localNode = call;
 				continue;
 			}

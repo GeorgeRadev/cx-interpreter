@@ -9,10 +9,10 @@ public class NodeFor extends Node {
 	public List<Node> iterator;
 	public NodeVariable element;
 	public Node elements;
-	public Node body;
+	public List<Node> body;
 
 	public NodeFor(SourcePosition position, NodeVar initialization, Node condition, List<Node> iterator,
-			NodeVariable element, Node elements, Node body) {
+			NodeVariable element, Node elements, List<Node> body) {
 		super(position);
 		this.initialization = initialization;
 		this.condition = condition;
@@ -28,9 +28,10 @@ public class NodeFor extends Node {
 
 	public String toString() {
 		if (elements != null) {
-			return "for(" + element + ":" + elements + ")" + body;
+			return "for(" + element + ":" + elements + "){" + explode(body, ';') + ";}";
 		} else {
-			return "for(" + initialization + ";" + condition + ";" + iterator + ")" + body;
+			return "for(" + initialization + ";" + condition + ";" + explode(iterator, ',') + "){" + explode(body, ';')
+					+ ";}";
 		}
 	}
 }

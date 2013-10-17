@@ -1,12 +1,13 @@
 package cx.ast;
 
+import java.util.List;
 
 public class NodeIf extends Node {
 	public Node condition;
-	public Node body;
-	public Node elseBody;
+	public List<Node> body;
+	public List<Node> elseBody;
 
-	public NodeIf(SourcePosition position, Node condition, Node trueNode, Node elseNode) {
+	public NodeIf(SourcePosition position, Node condition, List<Node> trueNode, List<Node> elseNode) {
 		super(position);
 		this.condition = condition;
 		this.body = trueNode;
@@ -18,6 +19,10 @@ public class NodeIf extends Node {
 	}
 
 	public String toString() {
-		return "if(" + condition + ")" + body + ((elseBody == null) ? "" : (" else " + elseBody));
+		if (elseBody == null) {
+			return "if(" + condition + "){" + explode(body, ';') + ";}";
+		} else {
+			return "if(" + condition + "){" + explode(body, ';') + ";} else {" + explode(elseBody, ';') + ";";
+		}
 	}
 }

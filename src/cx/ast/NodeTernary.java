@@ -18,6 +18,6 @@ public class NodeTernary extends Node {
 	}
 
 	public String toString() {
-		return "(" + condition + "?" + trueValue + ":" + falseValue;
+		return "(" + condition + ")?(" + trueValue + "):(" + falseValue + ")";
 	}
 }

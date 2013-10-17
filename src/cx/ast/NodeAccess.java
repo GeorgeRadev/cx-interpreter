@@ -16,6 +16,6 @@ public class NodeAccess extends Node {
 	}
 
 	public String toString() {
-		return object + "." + element;
+		return object + "[" + element + "]";
 	}
 }
