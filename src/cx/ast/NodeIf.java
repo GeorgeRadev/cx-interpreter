@@ -22,7 +22,7 @@ public class NodeIf extends Node {
 		if (elseBody == null) {
 			return "if(" + condition + "){" + explode(body, ';') + ";}";
 		} else {
-			return "if(" + condition + "){" + explode(body, ';') + ";} else {" + explode(elseBody, ';') + ";";
+			return "if(" + condition + "){" + explode(body, ';') + ";} else {" + explode(elseBody, ';') + ";}";
 		}
 	}
 }
