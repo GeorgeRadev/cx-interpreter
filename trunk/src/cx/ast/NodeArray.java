@@ -23,6 +23,6 @@ public class NodeArray extends Node {
 	}
 
 	public String toString() {
-		return elements.toString();
+		return "[" + explode(elements, ',') + "]";
 	}
 }

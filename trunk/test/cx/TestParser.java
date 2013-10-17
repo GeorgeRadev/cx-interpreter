@@ -8,7 +8,6 @@ import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
 import cx.ast.NodeAssign;
-import cx.ast.NodeBlock;
 import cx.ast.NodeBreak;
 import cx.ast.NodeCall;
 import cx.ast.NodeContinue;
@@ -498,7 +497,7 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeIf nodeIf = (NodeIf) block.get(0);
 			assertEquals("a", ((NodeVariable) nodeIf.condition).name);
-			assertTrue(nodeIf.body instanceof NodeBlock);
+			assertNotNull(nodeIf.body);
 			assertNull(nodeIf.elseBody);
 		}
 		{
@@ -514,16 +513,16 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeIf nodeIf = (NodeIf) block.get(0);
 			assertTrue(nodeIf.condition instanceof NodeTrue);
-			assertTrue(nodeIf.body == null);
-			assertTrue(nodeIf.elseBody instanceof NodeBlock);
+			assertNull(nodeIf.body);
+			assertNotNull(nodeIf.elseBody);
 		}
 		{
 			parser = new Parser("if(true){a;}else{b;}");
 			block = parser.parse();
 			NodeIf nodeIf = (NodeIf) block.get(0);
 			assertTrue(nodeIf.condition instanceof NodeTrue);
-			assertTrue(nodeIf.body instanceof NodeBlock);
-			assertTrue(nodeIf.elseBody instanceof NodeBlock);
+			assertNotNull(nodeIf.body);
+			assertNotNull(nodeIf.elseBody);
 		}
 	}
 
@@ -535,18 +534,16 @@ public class TestParser extends TestCase {
 			block = parser.parse();
 			NodeCall call = (NodeCall) block.get(0);
 			NodeVariable method = (NodeVariable) call.function;
-			NodeArray params = (NodeArray) call.arguments;
 			assertEquals("call", method.name);
-			assertEquals(0, params.elements.size());
+			assertEquals(0, call.arguments.size());
 		}
 		{
 			parser = new Parser("call(1,a,b=c);");
 			block = parser.parse();
 			NodeCall call = (NodeCall) block.get(0);
 			NodeVariable method = (NodeVariable) call.function;
-			NodeArray params = (NodeArray) call.arguments;
 			assertEquals("call", method.name);
-			assertEquals(3, params.elements.size());
+			assertEquals(3, call.arguments.size());
 		}
 		{
 			parser = new Parser("obj.call(1,a,);");
@@ -557,9 +554,8 @@ public class TestParser extends TestCase {
 			NodeString element = (NodeString) access.element;
 			assertEquals("obj", object.name);
 			assertEquals("call", element.value);
-			NodeArray params = (NodeArray) call.arguments;
-			assertEquals(3, params.elements.size());
-			List<Node> args = params.elements;
+			assertEquals(3, call.arguments.size());
+			List<Node> args = call.arguments;
 			assertNull(args.get(2));
 		}
 		{
@@ -571,9 +567,8 @@ public class TestParser extends TestCase {
 			NodeString element = (NodeString) access.element;
 			assertEquals("obj", object.name);
 			assertEquals("call", element.value);
-			NodeArray params = (NodeArray) call.arguments;
-			assertEquals(2, params.elements.size());
-			List<Node> args = params.elements;
+			assertEquals(2, call.arguments.size());
+			List<Node> args = call.arguments;
 			assertNull(args.get(0));
 			assertNull(args.get(1));
 		}

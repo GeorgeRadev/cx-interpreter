@@ -1,11 +1,12 @@
 package cx.ast;
 
+import java.util.List;
 
 public class NodeCall extends Node {
 	public final Node function;
-	public final NodeArray arguments;
+	public final List<Node> arguments;
 
-	public NodeCall(SourcePosition position, Node object, NodeArray paramListNode) {
+	public NodeCall(SourcePosition position, Node object, List<Node> paramListNode) {
 		super(position);
 		this.function = object;
 		arguments = paramListNode;
@@ -16,6 +17,6 @@ public class NodeCall extends Node {
 	}
 
 	public String toString() {
-		return function + "" + arguments;
+		return function + "(" + explode(arguments, ',') + ")";
 	}
 }

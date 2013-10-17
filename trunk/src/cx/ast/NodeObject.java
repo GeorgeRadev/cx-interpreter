@@ -25,6 +25,10 @@ public class NodeObject extends Node {
 	}
 
 	public String toString() {
-		return "{parent:" + parent + "; " + object + "}";
+		if (parent != null) {
+			return "new parent " + object;
+		} else {
+			return "" + object;
+		}
 	}
 }

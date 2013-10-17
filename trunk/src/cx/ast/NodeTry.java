@@ -1,15 +1,17 @@
 package cx.ast;
 
+import java.util.List;
+
 
 public class NodeTry extends Node {
-	public Node tryBody;
+	public List<Node> tryBody;
 	public final String[] exceptionTypes;
 	public final String[] exceptionNames;
 	public final Node[] exceptionBodies;
-	public Node finallyBody;
+	public List<Node> finallyBody;
 
-	public NodeTry(SourcePosition position, Node tryBody, String[] exceptionTypes, String[] exceptionNames,
-			Node[] exceptionBodies, Node finallyBody) {
+	public NodeTry(SourcePosition position, List<Node> tryBody, String[] exceptionTypes, String[] exceptionNames,
+			Node[] exceptionBodies, List<Node> finallyBody) {
 		super(position);
 		this.tryBody = tryBody;
 		this.exceptionTypes = exceptionTypes;

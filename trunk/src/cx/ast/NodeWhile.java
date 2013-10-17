@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeWhile extends Node {
 	public Node condition;
 	public Node body;
@@ -19,7 +18,7 @@ public class NodeWhile extends Node {
 
 	public String toString() {
 		if (isDoWhile) {
-			return "do{" + body + "}while(" + condition + ")";
+			return "do {" + body + "} while(" + condition + ")";
 		} else {
 			return "while(" + condition + "){" + body + "}";
 		}

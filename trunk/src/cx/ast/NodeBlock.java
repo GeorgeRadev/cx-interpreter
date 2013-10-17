@@ -23,6 +23,6 @@ public class NodeBlock extends Node {
 		visitor.visitBlock(this);
 	}
 	public String toString() {
-		return statements.toString();
+		return "{" + explode(statements, ';') + ";}";
 	}
 }

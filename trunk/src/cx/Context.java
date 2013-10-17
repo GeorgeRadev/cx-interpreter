@@ -85,9 +85,20 @@ public class Context implements Visitor {
 		return cx.result;
 	}
 
-	private Object eval(Node paramNode) {
+	private final Object eval(final Node paramNode) {
 		if (paramNode != null) {
 			paramNode.accept(this);
+		} else {
+			cx.result = null;
+		}
+		return cx.result;
+	}
+
+	private final Object eval(final List<Node> paramNode) {
+		if (paramNode != null) {
+			for (int i = 0, l = paramNode.size(); i < l; ++i) {
+				eval(paramNode.get(i));
+			}
 		} else {
 			cx.result = null;
 		}
@@ -132,11 +143,7 @@ public class Context implements Visitor {
 		// setCurrentPosition(paramBlockNode.position);
 		try {
 			pushContext();
-
-			for (Node statement : paramBlockNode.statements) {
-				eval(statement);
-			}
-
+			eval(paramBlockNode.statements);
 		} finally {
 			popContext();
 		}
@@ -324,19 +331,11 @@ public class Context implements Visitor {
 				final Object elements = eval(paramForNode.elements);
 				if (elements instanceof List) {
 					final List list = (List) elements;
-					final Node node = paramForNode.body;
-					final boolean block = node instanceof NodeBlock;
 
 					for (Object e : list) {
 						cx.set(varName, e);
 						try {
-							if (block) {
-								for (Node statement : ((NodeBlock) node).statements) {
-									eval(statement);
-								}
-							} else {
-								eval(paramForNode.body);
-							}
+							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
 							// break
 							break;
@@ -346,19 +345,11 @@ public class Context implements Visitor {
 					}
 				} else if (elements instanceof Map) {
 					final Map map = (Map) elements;
-					final Node node = paramForNode.body;
-					final boolean block = node instanceof NodeBlock;
 
 					for (Object e : map.keySet()) {
 						cx.set(varName, e);
 						try {
-							if (block) {
-								for (Node statement : ((NodeBlock) node).statements) {
-									eval(statement);
-								}
-							} else {
-								eval(paramForNode.body);
-							}
+							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
 							// break
 							break;
@@ -368,19 +359,11 @@ public class Context implements Visitor {
 					}
 				} else if (elements instanceof ContextFrame) {
 					final ContextFrame cf = (ContextFrame) elements;
-					final Node node = paramForNode.body;
-					final boolean block = node instanceof NodeBlock;
 
 					for (String e : cf.frame.keySet()) {
 						cx.set(varName, e);
 						try {
-							if (block) {
-								for (Node statement : ((NodeBlock) node).statements) {
-									eval(statement);
-								}
-							} else {
-								eval(paramForNode.body);
-							}
+							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
 							// break
 							break;
@@ -396,23 +379,14 @@ public class Context implements Visitor {
 				if (isTrue(condition)) {
 					do {
 						try {
-							final Node node = paramForNode.body;
-							if (node instanceof NodeBlock) {
-								for (Node statement : ((NodeBlock) node).statements) {
-									eval(statement);
-								}
-							} else {
-								eval(paramForNode.body);
-							}
+							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
 							// break
 							break;
 						} catch (JumpContinue localContinueJump) {
 							// continue
 						}
-						for (Node node : paramForNode.iterator) {
-							eval(node);
-						}
+						eval(paramForNode.iterator);
 						condition = eval(paramForNode.condition);
 					} while (isTrue(condition));
 				}
@@ -1279,7 +1253,7 @@ public class Context implements Visitor {
 		setCurrentPosition(call.position);
 
 		Object function = eval(call.function);
-		List<Node> arguments = call.arguments.elements;
+		List<Node> arguments = call.arguments;
 
 		// evaluate arguments left to right
 		int argsize = arguments.size();
@@ -1354,7 +1328,7 @@ public class Context implements Visitor {
 		for (int i = l; i < argumentNames.length; i++) {
 			cx.frame.put(argumentNames[i], null);
 		}
-		//add arguments in context
+		// add arguments in context
 		cx.frame.put(ARGUMENTS, argValues);
 		// execute
 		try {

@@ -19,6 +19,6 @@ public class NodeBinary extends Node {
 	}
 
 	public String toString() {
-		return "" + left + " " + operator + " " + right;
+		return "(" + left + ") " + operator + " (" + right + ")";
 	}
 }
