@@ -12,6 +12,18 @@ public class TestContextConditions extends TestCase {
 		assertEquals(2L, cx.get("b"));
 		cx.evaluate((new Parser("b = 1; if(b)b=1; else b=2;")).parse());
 		assertEquals(1L, cx.get("b"));
+		cx.evaluate((new Parser("b = ''; if(b)b=1; else b=2;")).parse());
+		assertEquals(2L, cx.get("b"));
+		cx.evaluate((new Parser("b = 'b'; if(b)b=1; else b=2;")).parse());
+		assertEquals(1L, cx.get("b"));
+		cx.evaluate((new Parser("b = 0.0; if(b)b=1; else b=2;")).parse());
+		assertEquals(2L, cx.get("b"));
+		cx.evaluate((new Parser("b = 0.1; if(b)b=1; else b=2;")).parse());
+		assertEquals(1L, cx.get("b"));
+		cx.evaluate((new Parser("b = false; if(b)b=1; else b=2;")).parse());
+		assertEquals(2L, cx.get("b"));
+		cx.evaluate((new Parser("b = true; if(b)b=1; else b=2;")).parse());
+		assertEquals(1L, cx.get("b"));
 	}
 
 	public void testMixingConditions() {
