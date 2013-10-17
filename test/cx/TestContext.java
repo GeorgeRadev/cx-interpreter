@@ -222,7 +222,20 @@ public class TestContext extends TestCase {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	public void testFunction() {
+		{// arguments
+			Context cx = new Context();
+			cx.evaluate((new Parser("function f(num){ return  arguments;};")).parse());
+			cx.evaluate((new Parser("result=f();")).parse());
+			assertEquals(0, ((List) cx.get("result")).size());
+
+			cx.evaluate((new Parser("result=f(1,2,3,4,5);")).parse());
+			List args = (List) cx.get("result");
+			assertEquals(5, args.size());
+			assertEquals(1L, args.get(0));
+			assertEquals(5L, args.get(4));
+		}
 		{// Factorial calculating
 			Context cx = new Context();
 			cx.evaluate((new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );};")).parse());

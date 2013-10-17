@@ -43,6 +43,7 @@ import cx.runtime.ObjectHandler;
 
 public class Context implements Visitor {
 	// private static final String THIS = "this";
+	private static final String ARGUMENTS = "arguments";
 
 	private static final Long ZERO = 0L;
 	private int[] breakpoints = null;
@@ -1282,9 +1283,9 @@ public class Context implements Visitor {
 
 		// evaluate arguments left to right
 		int argsize = arguments.size();
-		Object[] argValues = new Object[argsize];
+		List<Object> argValues = new ArrayList<Object>(argsize);
 		for (int i = 0; i < argsize; i++) {
-			argValues[i] = eval(arguments.get(i));
+			argValues.add(eval(arguments.get(i)));
 		}
 
 		// eval() function
@@ -1292,18 +1293,12 @@ public class Context implements Visitor {
 			if (argsize == 0) {
 				return;
 			}
-			String code;
-			if (argsize == 1) {
-				code = toString(argValues[0]);
-			} else {
-				StringBuilder codebuf = new StringBuilder(4096);
-				for (int i = 0; i < argsize; i++) {
-					codebuf.append(toString(argValues[i]));
-				}
-				code = codebuf.toString();
+			StringBuilder codebuf = new StringBuilder(4096);
+			for (Object foreval : argValues) {
+				codebuf.append(toString(foreval));
 			}
 
-			Parser parser = new Parser(code);
+			Parser parser = new Parser(codebuf.toString());
 			List<Node> evalCode = parser.parse();
 			evaluate(evalCode);
 			return;
@@ -1326,7 +1321,7 @@ public class Context implements Visitor {
 			if (function != null) {
 				for (ObjectHandler handler : handlers) {
 					if (handler.accept(function)) {
-						cx.result = handler.call(function, argValues);
+						cx.result = handler.call(function, argValues.toArray());
 						break;
 					}
 				}
@@ -1334,8 +1329,9 @@ public class Context implements Visitor {
 				cx.result = null;
 				String functionName = ((NodeVariable) call.function).name;
 				for (ObjectHandler handler : handlers) {
-					if (handler.acceptStaticCall(functionName, argValues)) {
-						cx.result = handler.staticCall(functionName, argValues);
+					Object[] args = argValues.toArray();
+					if (handler.acceptStaticCall(functionName, args)) {
+						cx.result = handler.staticCall(functionName, args);
 						break;
 					}
 				}
@@ -1345,21 +1341,21 @@ public class Context implements Visitor {
 		}
 	}
 
-	public Object callFunction(Function function, Object[] args) {
+	public Object callFunction(Function function, List<Object> argValues) {
 		setCurrentPosition(function.function.position);
 		final String[] argumentNames = function.function.argumentNames;
-		final int l = args.length;
-		if (l != argumentNames.length) {
-			return null;
-		}
+		final int l = Math.min(argumentNames.length, argValues.size());
 		// add this
 		// cx.frame.put(THIS, function.thiz);
 		// add parameters
-		if (l > 0) {
-			for (int i = 0; i < l; i++) {
-				cx.frame.put(argumentNames[i], args[i]);
-			}
+		for (int i = 0; i < l; i++) {
+			cx.frame.put(argumentNames[i], argValues.get(i));
 		}
+		for (int i = l; i < argumentNames.length; i++) {
+			cx.frame.put(argumentNames[i], null);
+		}
+		//add arguments in context
+		cx.frame.put(ARGUMENTS, argValues);
 		// execute
 		try {
 			evaluate(function.function.body);
