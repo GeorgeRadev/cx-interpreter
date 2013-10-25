@@ -101,7 +101,7 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			PrintHandler printHandler = new PrintHandler();
 			cx.addHandler(printHandler);
-			cx.evaluate((new Parser("a = 5; inc = eval('function (x){return ++x;};'); a = inc(a);")).parse());
+			cx.evaluate((new Parser("a = 5; inc = eval('function _(x){return ++x;};'); a = inc(a);")).parse());
 			assertEquals(6L, cx.get("a"));
 		}
 	}
@@ -226,7 +226,7 @@ public class TestContext extends TestCase {
 	public void testFunction() {
 		{// arguments
 			Context cx = new Context();
-			cx.evaluate((new Parser("function f(num){ return  arguments;};")).parse());
+			cx.evaluate((new Parser("function f(num){ return  arguments;}")).parse());
 			cx.evaluate((new Parser("result=f();")).parse());
 			assertEquals(0, ((List) cx.get("result")).size());
 
@@ -238,7 +238,7 @@ public class TestContext extends TestCase {
 		}
 		{// Factorial calculating
 			Context cx = new Context();
-			cx.evaluate((new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );};")).parse());
+			cx.evaluate((new Parser("function fact(num){ return  (num == 0) ? 1 : num * fact( num - 1 );}")).parse());
 			List<Node> block = (new Parser("f=fact(f);")).parse();
 
 			long f = 1;

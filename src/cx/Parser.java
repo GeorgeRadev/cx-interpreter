@@ -76,7 +76,17 @@ public class Parser {
 				if (token == Token.EOF || token == Token.ERROR) {
 					break;
 				}
-				Node localNode = parseStatement();
+				Node localNode;
+				if (token == Token.FUNCTION) {
+					scanner.getToken();
+					localNode = parseFunction();
+					// nameless functions are discarded
+					if (((NodeFunction) localNode).name == null) {
+						localNode = null;
+					}
+				} else {
+					localNode = parseStatement();
+				}
 				if (localNode != null) {
 					statements.add(localNode);
 				}
@@ -1002,7 +1012,7 @@ public class Parser {
 		return null;
 	}
 
-	private Node parseFunction() {
+	private NodeFunction parseFunction() {
 		if (isDebug) System.out.println("parseFunction()");
 		SourcePosition position = scanner.getSrcPos();
 		String functionName;
