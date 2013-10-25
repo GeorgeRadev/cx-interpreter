@@ -206,18 +206,18 @@ public class TestParser extends TestCase {
 			// OK, expression after , is empty
 		}
 		{
-			parser = new Parser("function(a){};");
+			parser = new Parser("function f(a){};");
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
-			assertNull(function.name);
+			assertEquals("f", function.name);
 			assertEquals(1, function.argumentNames.length);
 			assertEquals(0, function.body.size());
 		}
 		{
-			parser = new Parser("function(a,b,c){a++;return a+b+c;};");
+			parser = new Parser("function b(a,b,c){a++;return a+b+c;};");
 			block = parser.parse();
 			NodeFunction function = (NodeFunction) block.get(0);
-			assertNull(function.name);
+			assertEquals("b", function.name);
 			assertEquals(3, function.argumentNames.length);
 			assertEquals(2, function.body.size());
 		}
@@ -228,6 +228,19 @@ public class TestParser extends TestCase {
 			assertEquals("func", function.name);
 			assertEquals(0, function.argumentNames.length);
 			assertEquals(0, function.body.size());
+		}
+		{
+			parser = new Parser("function func(){}");
+			block = parser.parse();
+			NodeFunction function = (NodeFunction) block.get(0);
+			assertEquals("func", function.name);
+			assertEquals(0, function.argumentNames.length);
+			assertEquals(0, function.body.size());
+		}
+		{// skip anonymous functions as statement
+			parser = new Parser("function (){}");
+			block = parser.parse();
+			assertEquals(0, block.size());
 		}
 	}
 
