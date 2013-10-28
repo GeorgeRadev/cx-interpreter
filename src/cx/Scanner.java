@@ -146,7 +146,7 @@ class Scanner {
 				strToken.append(getChar());
 				for (c = getChar(); (('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'f'))
 						|| (('A' <= c) && (c <= 'F')); c = getChar()) {
-					strToken.append(c); 
+					strToken.append(c);
 				}
 				srcIdx--;
 				String value = strToken.toString();

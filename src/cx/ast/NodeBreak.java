@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeBreak extends Node {
 	public NodeBreak(SourcePosition position) {
 		super(position);

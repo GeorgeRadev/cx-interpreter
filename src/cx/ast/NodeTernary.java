@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeTernary extends Node {
 	public final Node condition;
 	public final Node trueValue;

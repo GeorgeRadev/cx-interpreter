@@ -17,10 +17,18 @@ public class NodeWhile extends Node {
 	}
 
 	public String toString() {
-		if (isDoWhile) {
-			return "do {" + body + "} while(" + condition + ")";
+		String bodystr;
+		if (body == null) {
+			bodystr = isDoWhile ? "" : ";";
+		} else if (body instanceof NodeBlock) {
+			bodystr = body.toString();
 		} else {
-			return "while(" + condition + "){" + body + "}";
+			bodystr = body.toString() + ";";
+		}
+		if (isDoWhile) {
+			return "do " + bodystr + " while(" + condition + ")";
+		} else {
+			return "while(" + condition + ") " + bodystr;
 		}
 	}
 }

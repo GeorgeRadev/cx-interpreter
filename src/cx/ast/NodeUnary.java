@@ -18,9 +18,9 @@ public class NodeUnary extends Node {
 
 	public String toString() {
 		if (operator == Operator.DEC_POST || operator == Operator.INC_POST) {
-			return "(" + expresion + ")" + operator;
+			return expresion + " " + operator;
 		} else {
-			return operator + " (" + expresion + ")";
+			return operator + " " + expresion;
 		}
 	}
 }

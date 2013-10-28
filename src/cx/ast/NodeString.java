@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeString extends Node {
 	public final String value;
 
@@ -14,6 +13,6 @@ public class NodeString extends Node {
 	}
 
 	public String toString() {
-		return "'" + value + "'";
+		return "'" + escapeString(value) + "'";
 	}
 }

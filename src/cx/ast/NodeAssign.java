@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeAssign extends Node {
 	public final Node left;
 	public final Node right;

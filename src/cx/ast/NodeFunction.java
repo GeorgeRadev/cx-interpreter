@@ -2,14 +2,12 @@ package cx.ast;
 
 import java.util.List;
 
-
 public class NodeFunction extends Node {
 	public final String name;
 	public final String[] argumentNames;
 	public final List<Node> body;
 
-	public NodeFunction(SourcePosition position, String functionName, NodeArray paramListNode,
-			NodeBlock paramBlockNode) {
+	public NodeFunction(SourcePosition position, String functionName, NodeArray paramListNode, NodeBlock paramBlockNode) {
 		super(position);
 		name = functionName;
 		List<Node> args = paramListNode.elements;

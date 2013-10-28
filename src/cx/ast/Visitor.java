@@ -2,7 +2,6 @@ package cx.ast;
 
 import cx.runtime.ObjectHandler;
 
-
 public abstract interface Visitor {
 
 	// cardinal types

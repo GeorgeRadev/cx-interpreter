@@ -2,7 +2,6 @@ package cx.ast;
 
 import java.util.List;
 
-
 public class NodeFor extends Node {
 	public NodeVar initialization;
 	public Node condition;

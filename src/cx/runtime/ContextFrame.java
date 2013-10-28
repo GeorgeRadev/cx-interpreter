@@ -55,10 +55,13 @@ public class ContextFrame {
 		StringBuilder result = new StringBuilder("{\n");
 		for (int i = 0; i < _keys.size(); i++) {
 			Object key = _keys.get(i);
-			result.append(key).append(" = ");
-			result.append(frame.get(key)).append("\n");
+			result.append(key).append(" : ");
+			result.append(frame.get(key)).append(",\n");
 		}
-		result.append("}");
+		if (_keys.size() > 0) {
+			result.setLength(result.length() - 2);
+		}
+		result.append("\n}");
 		return result.toString();
 	}
 

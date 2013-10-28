@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeAccess extends Node {
 	public final Node object;
 	public final Node element;

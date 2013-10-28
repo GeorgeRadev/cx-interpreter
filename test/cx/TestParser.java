@@ -98,7 +98,6 @@ public class TestParser extends TestCase {
 		}
 	}
 
-
 	public void testMultipleExpressions() {
 		Parser parser;
 		List<Node> block;
