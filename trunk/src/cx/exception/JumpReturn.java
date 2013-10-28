@@ -1,6 +1,5 @@
 package cx.exception;
 
-
 public class JumpReturn extends ScriptException {
 	public final Object value;
 

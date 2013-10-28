@@ -21,6 +21,6 @@ public class NodeVar extends Node {
 	}
 
 	public String toString() {
-		return (defineLocaly ? "var " : "") + vars.toString();
+		return (defineLocaly ? "var " : "") + explode(vars, ',');
 	}
 }

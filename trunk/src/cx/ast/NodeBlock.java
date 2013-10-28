@@ -10,7 +10,6 @@ public class NodeBlock extends Node {
 
 	public final List<Node> statements = new ArrayList<Node>();
 
-
 	public void add(Node paramNode) {
 		statements.add(paramNode);
 	}
@@ -22,6 +21,7 @@ public class NodeBlock extends Node {
 	public void accept(Visitor visitor) {
 		visitor.visitBlock(this);
 	}
+
 	public String toString() {
 		return "{" + explode(statements, ';') + ";}";
 	}

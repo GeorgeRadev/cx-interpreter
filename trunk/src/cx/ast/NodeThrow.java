@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeThrow extends Node {
 	public final Node expresion;
 

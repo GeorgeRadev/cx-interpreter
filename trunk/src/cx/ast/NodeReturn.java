@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeReturn extends Node {
 	public final Node expression;
 

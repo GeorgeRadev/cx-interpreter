@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeVariable extends Node {
 	public final String name;
 

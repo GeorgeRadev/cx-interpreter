@@ -2,7 +2,6 @@ package cx.ast;
 
 import java.util.List;
 
-
 public class NodeTry extends Node {
 	public List<Node> tryBody;
 	public final String[] exceptionTypes;
@@ -26,13 +25,22 @@ public class NodeTry extends Node {
 
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("try{").append(tryBody).append('}');
+		buf.append("try {\n").append(explode(tryBody, ';')).append(";\n}");
 		for (int i = 0, l = exceptionTypes.length; i < l; i++) {
 			buf.append("catch(").append(exceptionTypes[i]).append(' ');
-			buf.append(exceptionNames[i]).append("){");
-			buf.append(exceptionBodies[i]).append('}');
+			buf.append(exceptionNames[i]).append(')');
+			Node body = exceptionBodies[i];
+			if (body == null) {
+				buf.append("{}");
+			} else if (body instanceof NodeBlock) {
+				buf.append(body);
+			} else {
+				buf.append("{").append(body).append(";}");
+			}
 		}
-		buf.append("finally{").append(finallyBody).append('}');
+		if (finallyBody != null) {
+			buf.append("finally{").append(finallyBody).append('}');
+		}
 		return buf.toString();
 
 	}

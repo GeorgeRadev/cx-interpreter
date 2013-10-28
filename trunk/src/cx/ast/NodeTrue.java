@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeTrue extends Node {
 	public NodeTrue(SourcePosition position) {
 		super(position);

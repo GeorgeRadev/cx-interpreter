@@ -1,6 +1,5 @@
 package cx.ast;
 
-
 public class NodeNumber extends NodeString {
 	public final String value;
 	public final Number number;
