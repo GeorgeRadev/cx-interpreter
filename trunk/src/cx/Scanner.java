@@ -185,9 +185,9 @@ class Scanner {
 			if ((c == '"') || (c == '\'')) {
 				char stringOpening = c;
 				for (c = getChar(); c != stringOpening; c = getChar()) {
-					if ((isLineEnd(c)) || (c == 0)) {
+					if (c == 0) {
 						srcIdx--;
-						error = "Missing quote";
+						error = "End of file reached with no string termination(" + c + ")!";
 						return Token.ERROR;
 					}
 					if (c == '\\') {

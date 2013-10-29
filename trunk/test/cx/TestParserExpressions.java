@@ -247,6 +247,28 @@ public class TestParserExpressions extends TestCase {
 		Parser parser;
 		List<Node> block;
 		{
+			try {
+				// no " termination
+				parser = new Parser("\"string\nwith new\' line \t and tab");
+				block = parser.parse();
+				fail();
+			} catch (Exception e) {
+				// ok
+			}
+		}
+		{
+			parser = new Parser("'string\nwith new\" line \t and tab';");
+			block = parser.parse();
+			NodeString var = (NodeString) block.get(0);
+			assertEquals(var.value, "string\nwith new\" line \t and tab");
+		}
+		{
+			parser = new Parser("\"string\nwith new\' line \t and tab\";");
+			block = parser.parse();
+			NodeString var = (NodeString) block.get(0);
+			assertEquals(var.value, "string\nwith new\' line \t and tab");
+		}
+		{
 			parser = new Parser("0x123;");
 			block = parser.parse();
 			NodeNumber var = (NodeNumber) block.get(0);
