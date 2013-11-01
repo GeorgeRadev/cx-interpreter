@@ -224,6 +224,16 @@ public class TestContext extends TestCase {
 
 	@SuppressWarnings("rawtypes")
 	public void testFunction() {
+		{// return function
+			Context cx = new Context();
+			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);")).parse());
+			assertEquals(84L, cx.get("result"));
+		}
+		{// return function
+			Context cx = new Context();
+			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} result = g(42)(42);")).parse());
+			assertEquals(84L, cx.get("result"));
+		}
 		{// arguments
 			Context cx = new Context();
 			cx.evaluate((new Parser("function f(num){ return  arguments;}")).parse());

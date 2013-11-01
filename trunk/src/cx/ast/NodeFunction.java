@@ -24,6 +24,10 @@ public class NodeFunction extends Node {
 	}
 
 	public String toString() {
-		return "function " + name + "(" + explode(argumentNames, ',') + "){" + explode(body, ';') + ";}";
+		if (name == null) {
+			return "function(" + explode(argumentNames, ',') + "){" + explode(body, ';') + ";}";
+		} else {
+			return "function " + name + "(" + explode(argumentNames, ',') + "){" + explode(body, ';') + ";}";
+		}
 	}
 }
