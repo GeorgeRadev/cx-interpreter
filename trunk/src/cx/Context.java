@@ -496,6 +496,23 @@ public class Context implements Visitor {
 		return Long.valueOf(number.longValue() * -1L);
 	}
 
+	private Number absolute(Number number) {
+		if (number instanceof Double) {
+			double d = number.doubleValue();
+			if (d < 0) {
+				return new Double(-d);
+			} else {
+				return number;
+			}
+		}
+		long l = number.longValue();
+		if (l < 0) {
+			return Long.valueOf(-l);
+		} else {
+			return number;
+		}
+	}
+
 	private Number complement(Number number) {
 		if (number instanceof Double) {
 			return Long.valueOf(~number.longValue());
@@ -557,6 +574,11 @@ public class Context implements Visitor {
 			case NEGATE:
 				if ((result instanceof Number)) {
 					cx.result = negate((Number) result);
+				}
+				return;
+			case ABSOLUTE:
+				if ((result instanceof Number)) {
+					cx.result = absolute((Number) result);
 				}
 				return;
 			case COMPLEMENT:

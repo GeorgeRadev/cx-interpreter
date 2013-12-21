@@ -27,8 +27,7 @@
 			   source="1.5"
 			   nowarn="false"
 			   fork="true"
-			   memoryInitialSize="128m"
-			   memoryMaximumSize="128m">
+			   includeantruntime="false">
 			<classpath>
 				<fileset dir="${lib.dir}">
 					<include name="*.jar"/>
@@ -54,8 +53,7 @@
 			   source="1.5"
 			   nowarn="false"
 			   fork="true"
-			   memoryInitialSize="128m"
-			   memoryMaximumSize="128m">
+			   includeantruntime="false">
 			<classpath>
 				<pathelement path="${build.dir}"/>
 				<fileset dir="${lib.dir}">
