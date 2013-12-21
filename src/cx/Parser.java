@@ -885,7 +885,7 @@ public class Parser {
 		switch (token) {
 			case ADD:
 				scanner.getToken();
-				localObject = parseUnaryExpr();
+				localObject = new NodeUnary(getSrcPos(), Operator.ABSOLUTE, parseUnaryExpr());
 				break;
 			case SUB:
 				scanner.getToken();

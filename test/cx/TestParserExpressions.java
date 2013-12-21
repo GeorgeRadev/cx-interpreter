@@ -156,89 +156,105 @@ public class TestParserExpressions extends TestCase {
 		{
 			parser = new Parser("+p;");
 			block = parser.parse();
-			NodeVariable var = (NodeVariable) block.get(0);
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.ABSOLUTE);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
-			parser = new Parser("+ + +p;");
+			parser = new Parser("+ + p;");
 			block = parser.parse();
-			NodeVariable var = (NodeVariable) block.get(0);
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.ABSOLUTE);
+			NodeUnary unary2 = (NodeUnary) unary.expresion;
+			assertEquals(unary2.operator, Operator.ABSOLUTE);
+			NodeVariable var = (NodeVariable) unary2.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("-p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.NEGATE);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.NEGATE);
+			NodeVariable var = (NodeVariable) unary.expresion;
+			assertEquals(var.name, "p");
+		}
+		{
+			parser = new Parser("- - p;");
+			block = parser.parse();
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.NEGATE);
+			NodeUnary unary2 = (NodeUnary) unary.expresion;
+			assertEquals(unary2.operator, Operator.NEGATE);
+			NodeVariable var = (NodeVariable) unary2.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("!p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.NOT);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.NOT);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("~p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.COMPLEMENT);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.COMPLEMENT);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("++p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.INC_PRE);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.INC_PRE);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("--p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.DEC_PRE);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.DEC_PRE);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("p++;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.INC_POST);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.INC_POST);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("p--;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.DEC_POST);
-			NodeVariable var = (NodeVariable) preInc.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.DEC_POST);
+			NodeVariable var = (NodeVariable) unary.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("++++p;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.INC_PRE);
-			NodeUnary preInc2 = (NodeUnary) preInc.expresion;
-			assertEquals(preInc2.operator, Operator.INC_PRE);
-			NodeVariable var = (NodeVariable) preInc2.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.INC_PRE);
+			NodeUnary unary2 = (NodeUnary) unary.expresion;
+			assertEquals(unary2.operator, Operator.INC_PRE);
+			NodeVariable var = (NodeVariable) unary2.expresion;
 			assertEquals(var.name, "p");
 		}
 		{
 			parser = new Parser("++p++;");
 			block = parser.parse();
-			NodeUnary preInc = (NodeUnary) block.get(0);
-			assertEquals(preInc.operator, Operator.INC_PRE);
-			NodeUnary preInc2 = (NodeUnary) preInc.expresion;
-			assertEquals(preInc2.operator, Operator.INC_POST);
-			NodeVariable var = (NodeVariable) preInc2.expresion;
+			NodeUnary unary = (NodeUnary) block.get(0);
+			assertEquals(unary.operator, Operator.INC_PRE);
+			NodeUnary unary2 = (NodeUnary) unary.expresion;
+			assertEquals(unary2.operator, Operator.INC_POST);
+			NodeVariable var = (NodeVariable) unary2.expresion;
 			assertEquals(var.name, "p");
 		}
 	}

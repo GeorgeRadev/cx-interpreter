@@ -438,6 +438,20 @@ public class TestContext extends TestCase {
 		Parser parser;
 		List<Node> block;
 		{
+			parser = new Parser("i = 1; i = +i;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(1L, cx.get("i"));
+		}
+		{
+			parser = new Parser("var i = -1; i = +i;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(1L, cx.get("i"));
+		}
+		{
 			parser = new Parser("a/=2;");
 			block = parser.parse();
 			Context cx = new Context();
