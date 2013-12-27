@@ -22,7 +22,7 @@ public class TestBuilder extends TestCase {
 	public void testBuilder() {
 		{
 			JSONBuilder builder = new JSONBuilder();
-			assertEquals("", builder.toString());
+			assertEquals("null", builder.toString());
 		}
 		{
 			JSONBuilder builder = new JSONBuilder();
