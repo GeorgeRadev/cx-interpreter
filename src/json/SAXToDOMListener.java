@@ -11,13 +11,20 @@ public class SAXToDOMListener implements JSONSAXListener {
 	Map<String, Object> currentMap;
 	List<Object> currentList;
 	String key;
+	Object currentValue;
 
 	public SAXToDOMListener() {
 		reset();
 	}
 
 	public Object getObject() {
-		return currentMap == null ? currentList : currentMap;
+		if (currentMap != null) {
+			return currentMap;
+		}
+		if (currentList != null) {
+			return currentList;
+		}
+		return currentValue;
 	}
 
 	public Map<String, Object> getMap() {
@@ -81,8 +88,10 @@ public class SAXToDOMListener implements JSONSAXListener {
 		if (key != null) {
 			currentMap.put(key, value);
 			key = null;
-		} else {
+		} else if (currentList != null) {
 			currentList.add(value);
+		} else {
+			currentValue = value;
 		}
 	}
 
@@ -90,8 +99,10 @@ public class SAXToDOMListener implements JSONSAXListener {
 		if (key != null) {
 			currentMap.put(key, value);
 			key = null;
-		} else {
+		} else if (currentList != null) {
 			currentList.add(value);
+		} else {
+			currentValue = value;
 		}
 	}
 
@@ -99,8 +110,10 @@ public class SAXToDOMListener implements JSONSAXListener {
 		if (key != null) {
 			currentMap.put(key, value);
 			key = null;
-		} else {
+		} else if (currentList != null) {
 			currentList.add(value);
+		} else {
+			currentValue = value;
 		}
 	}
 
@@ -108,8 +121,10 @@ public class SAXToDOMListener implements JSONSAXListener {
 		if (key != null) {
 			currentMap.put(key, value);
 			key = null;
-		} else {
+		} else if (currentList != null) {
 			currentList.add(value);
+		} else {
+			currentValue = value;
 		}
 	}
 }

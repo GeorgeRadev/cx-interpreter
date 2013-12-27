@@ -184,7 +184,10 @@ public class JSONSAXParser {
 		// recognizes boolean, long, double, string, array, object
 		int i = scanWhitespace();
 
-		if (i == '{') {
+		if (i == -1) {
+			return i;
+
+		} else if (i == '{') {
 			// new object
 			scanObject();
 			i = readChar();
@@ -257,7 +260,7 @@ public class JSONSAXParser {
 			do {
 				i = readChar();
 				if (i == -1) {
-					throw syntaxError("Unexpected end of stream.");
+					break;
 				} else if (!Character.isLetter((char) i)) {
 					break;
 				} else {

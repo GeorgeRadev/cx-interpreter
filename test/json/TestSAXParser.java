@@ -38,6 +38,39 @@ public class TestSAXParser extends TestCase {
 		}
 	}
 
+	public void testCardinalTypes() throws IOException, Exception {
+
+		listener.reset();
+		JSONSAXParser.parse("null", listener);
+		Object obj = listener.getObject();
+		assertNull(obj);
+
+		listener.reset();
+		JSONSAXParser.parse("4", listener);
+		obj = listener.getObject();
+		assertEquals(4L, ((Number) obj).longValue());
+
+		listener.reset();
+		JSONSAXParser.parse("3.14", listener);
+		obj = listener.getObject();
+		assertEquals(3.14f, ((Number) obj).floatValue());
+
+		listener.reset();
+		JSONSAXParser.parse("'string'", listener);
+		obj = listener.getObject();
+		assertEquals("string", obj);
+
+		listener.reset();
+		JSONSAXParser.parse("'null'", listener);
+		obj = listener.getObject();
+		assertEquals("null", obj);
+
+		listener.reset();
+		JSONSAXParser.parse("null", listener);
+		obj = listener.getObject();
+		assertNull(obj);
+	}
+
 	@SuppressWarnings("unchecked")
 	public void testMap1() throws IOException, Exception {
 		String json = "{\"stock\": {\"warehouse\": 300, \"retail\": 20 } }";

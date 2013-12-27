@@ -3,10 +3,12 @@ package json;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+
 import junit.framework.TestCase;
 
 public class TestDOMParser extends TestCase {
@@ -25,11 +27,32 @@ public class TestDOMParser extends TestCase {
 	public void testBorders() {
 		JSONDOMParser parser = new JSONDOMParser();
 		String json = "";
-		@SuppressWarnings("unchecked")
-		Map<String, Object> map = (Map<String, Object>) parser.parse(json);
+		Object map = parser.parse(json);
 		if (map != null) {
 			fail();
 		}
+	}
+
+	public void testCardinalTypes() throws IOException, Exception {
+		JSONDOMParser parser = new JSONDOMParser();
+
+		Object obj = parser.parse("null");
+		assertNull(obj);
+
+		obj = parser.parse("4");
+		assertEquals(4L, ((Number) obj).longValue());
+
+		obj = parser.parse("3.14");
+		assertEquals(3.14f, ((Number) obj).floatValue());
+
+		obj = parser.parse("'string'");
+		assertEquals("string", obj);
+
+		obj = parser.parse("'null'");
+		assertEquals("null", obj);
+
+		obj = parser.parse("null");
+		assertNull(obj);
 	}
 
 	@SuppressWarnings("unchecked")
