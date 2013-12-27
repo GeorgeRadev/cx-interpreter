@@ -93,6 +93,7 @@
 
 		<jar destfile="${build.jar}">
 			<fileset dir="${build.dir}"/>
+			<fileset dir="${src.dir}"/>
 		</jar>
 	</target>
 
