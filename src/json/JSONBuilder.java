@@ -9,53 +9,53 @@ import java.util.Map;
 public class JSONBuilder {
 	final StringBuilder builder;
 
-	private static String EMPTY = "";
+	private static String NULL = "null";
 	private static Map<String, String> reservedJSWords = new HashMap<String, String>(64);
 	static {
-		reservedJSWords.put("break", EMPTY);
-		reservedJSWords.put("case", EMPTY);
-		reservedJSWords.put("catch", EMPTY);
-		reservedJSWords.put("class", EMPTY);
-		reservedJSWords.put("continue", EMPTY);
-		reservedJSWords.put("debugger", EMPTY);
-		reservedJSWords.put("default", EMPTY);
-		reservedJSWords.put("delete", EMPTY);
-		reservedJSWords.put("do", EMPTY);
-		reservedJSWords.put("else", EMPTY);
-		reservedJSWords.put("enum", EMPTY);
-		reservedJSWords.put("export", EMPTY);
-		reservedJSWords.put("extends", EMPTY);
-		reservedJSWords.put("false", EMPTY);
-		reservedJSWords.put("finally", EMPTY);
-		reservedJSWords.put("for", EMPTY);
-		reservedJSWords.put("function", EMPTY);
-		reservedJSWords.put("if", EMPTY);
-		reservedJSWords.put("implements", EMPTY);
-		reservedJSWords.put("import", EMPTY);
-		reservedJSWords.put("in", EMPTY);
-		reservedJSWords.put("instanceof", EMPTY);
-		reservedJSWords.put("interface", EMPTY);
-		reservedJSWords.put("let", EMPTY);
-		reservedJSWords.put("new", EMPTY);
-		reservedJSWords.put("null", EMPTY);
-		reservedJSWords.put("package", EMPTY);
-		reservedJSWords.put("private", EMPTY);
-		reservedJSWords.put("protected", EMPTY);
-		reservedJSWords.put("public", EMPTY);
-		reservedJSWords.put("return", EMPTY);
-		reservedJSWords.put("static", EMPTY);
-		reservedJSWords.put("super", EMPTY);
-		reservedJSWords.put("switch", EMPTY);
-		reservedJSWords.put("this", EMPTY);
-		reservedJSWords.put("throw", EMPTY);
-		reservedJSWords.put("true", EMPTY);
-		reservedJSWords.put("try", EMPTY);
-		reservedJSWords.put("typeof", EMPTY);
-		reservedJSWords.put("var", EMPTY);
-		reservedJSWords.put("void", EMPTY);
-		reservedJSWords.put("while", EMPTY);
-		reservedJSWords.put("with", EMPTY);
-		reservedJSWords.put("yield", EMPTY);
+		reservedJSWords.put("break", NULL);
+		reservedJSWords.put("case", NULL);
+		reservedJSWords.put("catch", NULL);
+		reservedJSWords.put("class", NULL);
+		reservedJSWords.put("continue", NULL);
+		reservedJSWords.put("debugger", NULL);
+		reservedJSWords.put("default", NULL);
+		reservedJSWords.put("delete", NULL);
+		reservedJSWords.put("do", NULL);
+		reservedJSWords.put("else", NULL);
+		reservedJSWords.put("enum", NULL);
+		reservedJSWords.put("export", NULL);
+		reservedJSWords.put("extends", NULL);
+		reservedJSWords.put("false", NULL);
+		reservedJSWords.put("finally", NULL);
+		reservedJSWords.put("for", NULL);
+		reservedJSWords.put("function", NULL);
+		reservedJSWords.put("if", NULL);
+		reservedJSWords.put("implements", NULL);
+		reservedJSWords.put("import", NULL);
+		reservedJSWords.put("in", NULL);
+		reservedJSWords.put("instanceof", NULL);
+		reservedJSWords.put("interface", NULL);
+		reservedJSWords.put("let", NULL);
+		reservedJSWords.put("new", NULL);
+		reservedJSWords.put("null", NULL);
+		reservedJSWords.put("package", NULL);
+		reservedJSWords.put("private", NULL);
+		reservedJSWords.put("protected", NULL);
+		reservedJSWords.put("public", NULL);
+		reservedJSWords.put("return", NULL);
+		reservedJSWords.put("static", NULL);
+		reservedJSWords.put("super", NULL);
+		reservedJSWords.put("switch", NULL);
+		reservedJSWords.put("this", NULL);
+		reservedJSWords.put("throw", NULL);
+		reservedJSWords.put("true", NULL);
+		reservedJSWords.put("try", NULL);
+		reservedJSWords.put("typeof", NULL);
+		reservedJSWords.put("var", NULL);
+		reservedJSWords.put("void", NULL);
+		reservedJSWords.put("while", NULL);
+		reservedJSWords.put("with", NULL);
+		reservedJSWords.put("yield", NULL);
 	}
 
 	public JSONBuilder() {
@@ -66,6 +66,11 @@ public class JSONBuilder {
 		builder = new StringBuilder(size);
 	}
 
+	public final JSONBuilder reset() {
+		builder.setLength(0);
+		return this;
+	}
+	
 	public final JSONBuilder startObject() {
 		builder.append('{');
 		return this;
@@ -161,7 +166,7 @@ public class JSONBuilder {
 
 	public String toString() {
 		if (builder.length() <= 0) {
-			return EMPTY;
+			return NULL;
 		}
 		final int len = builder.length() - 1;
 		if (builder.charAt(len) == ',') {
@@ -240,8 +245,10 @@ public class JSONBuilder {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static final void objectToJSON(JSONBuilder builder, Object obj) {
-		if (obj instanceof Map) {
+	public static final void objectToJSON(JSONBuilder builder, Object obj) {
+		if(obj == null){
+			builder.addValue(NULL);
+		}else if (obj instanceof Map) {
 			builder.startObject();
 			for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) obj).entrySet()) {
 				builder.addKey(entry.getKey().toString());
