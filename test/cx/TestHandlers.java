@@ -1,11 +1,54 @@
 package cx;
 
 import junit.framework.TestCase;
+import cx.runtime.ObjectHandler;
 import cx.runtime.DateHandler;
 import cx.runtime.MathHandler;
 import cx.runtime.StringHandler;
 
 public class TestHandlers extends TestCase {
+
+	public static class TestClass {
+		String method1;
+
+		public String method1(String value) {
+			method1 = value;
+			return value;
+		}
+
+		long method2;
+
+		public long method2(long value) {
+			method2 = value;
+			return value;
+		}
+
+		public long method3() { 
+			return 42L;
+		}
+	}
+	
+	public void testClassHandler() { 
+			Context cx = new Context();
+			TestClass instance = new TestClass();
+			cx.addHandler(new ObjectHandler(instance, "obj"));
+			
+			cx.evaluate((new Parser("str = obj.method1(5);")).parse());
+			assertEquals("5", cx.get("str").toString());
+			assertEquals("5", instance.method1);
+
+			cx.evaluate((new Parser("str = obj.method1('test');")).parse());
+			assertEquals("test", cx.get("str").toString());
+			assertEquals("test", instance.method1);
+			
+			cx.evaluate((new Parser("l = obj.method2(5);")).parse());
+			assertEquals(5L, cx.get("l") );		 
+			assertEquals(5L, instance.method2 );
+			
+			cx.evaluate((new Parser("l = obj.method3();")).parse());
+			assertEquals(42L, cx.get("l") );	
+	}
+	
 	public void testStringHandler() {
 		{
 			Context cx = new Context();

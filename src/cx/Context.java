@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -39,7 +40,7 @@ import cx.exception.JumpReturn;
 import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
 import cx.runtime.Function;
-import cx.runtime.ObjectHandler;
+import cx.runtime.ClassHandler;
 
 public class Context implements Visitor {
 	// private static final String THIS = "this";
@@ -60,9 +61,9 @@ public class Context implements Visitor {
 		return cx.toString();
 	}
 
-	private final List<ObjectHandler> handlers = new ArrayList<ObjectHandler>();
+	private final List<ClassHandler> handlers = new ArrayList<ClassHandler>();
 
-	public void addHandler(ObjectHandler handler) {
+	public void addHandler(ClassHandler handler) {
 		if (handler != null) {
 			handlers.add(handler);
 			handler.init(this);
@@ -591,7 +592,7 @@ public class Context implements Visitor {
 	}
 
 	@SuppressWarnings("rawtypes")
-	boolean isTrue(Object obj) {
+	public static boolean isTrue(Object obj) {
 		if (obj == null) {
 			return false;
 		} else if (obj instanceof Boolean) {
@@ -1106,7 +1107,7 @@ public class Context implements Visitor {
 				_element = eval(element).toString();
 			}
 
-			for (ObjectHandler handler : handlers) {
+			for (ClassHandler handler : handlers) {
 				if (handler.accept(obj)) {
 					handler.set(obj, _element, value);
 					break;
@@ -1239,7 +1240,7 @@ public class Context implements Visitor {
 			}
 		}
 
-		for (ObjectHandler handler : handlers) {
+		for (ClassHandler handler : handlers) {
 			if (handler.accept(obj)) {
 				String _element;
 				if (element instanceof NodeString) {
@@ -1315,7 +1316,7 @@ public class Context implements Visitor {
 			}
 		} else {
 			if (function != null) {
-				for (ObjectHandler handler : handlers) {
+				for (ClassHandler handler : handlers) {
 					if (handler.accept(function)) {
 						cx.result = handler.call(function, argValues.toArray());
 						break;
@@ -1324,7 +1325,7 @@ public class Context implements Visitor {
 			} else if (call.function instanceof NodeVariable) {
 				cx.result = null;
 				String functionName = ((NodeVariable) call.function).name;
-				for (ObjectHandler handler : handlers) {
+				for (ClassHandler handler : handlers) {
 					Object[] args = argValues.toArray();
 					if (handler.acceptStaticCall(functionName, args)) {
 						cx.result = handler.staticCall(functionName, args);

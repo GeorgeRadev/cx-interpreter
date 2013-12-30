@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.Visitor;
 import cx.runtime.ContextFrame;
-import cx.runtime.ObjectHandler;
+import cx.runtime.ClassHandler;
 
 public class TestContext extends TestCase {
 
@@ -25,7 +25,7 @@ public class TestContext extends TestCase {
 		}
 	}
 
-	private static class PrintHandler implements ObjectHandler {
+	private static class PrintHandler implements ClassHandler {
 		public String value = "";
 
 		public boolean accept(Object object) {
