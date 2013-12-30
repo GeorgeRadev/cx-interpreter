@@ -3,7 +3,7 @@ package cx.runtime;
 import cx.Context;
 import cx.ast.Visitor;
 
-public class StringHandler implements ObjectHandler {
+public class StringHandler implements ClassHandler {
 	public static enum StringMethod {
 		trim, substring, replace, indexOf, lastIndexOf, startsWith, endsWith, toLowerCase, toUpperCase;
 

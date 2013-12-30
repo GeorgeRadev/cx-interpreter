@@ -6,7 +6,7 @@ import java.util.TimeZone;
 import cx.Context;
 import cx.ast.Visitor;
 
-public class DateHandler implements ObjectHandler {
+public class DateHandler implements ClassHandler {
 	public static enum DateMethod {
 		year, month, day, hour, minute, second, millisecond, zone, time;
 

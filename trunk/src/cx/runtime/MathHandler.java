@@ -3,7 +3,7 @@ package cx.runtime;
 import cx.Context;
 import cx.ast.Visitor;
 
-public class MathHandler implements ObjectHandler {
+public class MathHandler implements ClassHandler {
 
 	public void init(Visitor cx) {
 		// defines global object for math operations
