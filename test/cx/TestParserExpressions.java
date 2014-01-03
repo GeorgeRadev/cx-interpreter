@@ -1,6 +1,7 @@
 package cx;
 
 import java.util.List;
+
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.NodeBinary;

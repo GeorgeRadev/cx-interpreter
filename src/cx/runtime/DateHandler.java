@@ -3,10 +3,11 @@ package cx.runtime;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
+
 import cx.Context;
 import cx.ast.Visitor;
 
-public class DateHandler implements ClassHandler {
+public class DateHandler implements Handler {
 	public static enum DateMethod {
 		year, month, day, hour, minute, second, millisecond, zone, time;
 
@@ -71,6 +72,7 @@ public class DateHandler implements ClassHandler {
 			return method;
 		}
 	}
+
 	TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("GMT");
 
 	private static class DateCall {
@@ -83,7 +85,8 @@ public class DateHandler implements ClassHandler {
 		}
 	}
 
-	public void init(Visitor cx) {}
+	public void init(Visitor cx) {
+	}
 
 	public boolean accept(Object object) {
 		return object instanceof Calendar;
@@ -100,7 +103,7 @@ public class DateHandler implements ClassHandler {
 			if (method != null) {
 				switch (method) {
 					case year:
-						calendar.set(Calendar.DATE, l.intValue());
+						calendar.set(Calendar.YEAR, l.intValue());
 						break;
 					case month:
 						calendar.set(Calendar.MONTH, l.intValue() - 1);

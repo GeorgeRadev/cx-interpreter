@@ -3,7 +3,7 @@ package cx.runtime;
 import cx.Context;
 import cx.ast.Visitor;
 
-public class StringHandler implements ClassHandler {
+public class StringHandler implements Handler {
 	public static enum StringMethod {
 		trim, substring, replace, indexOf, lastIndexOf, startsWith, endsWith, toLowerCase, toUpperCase;
 
@@ -83,13 +83,15 @@ public class StringHandler implements ClassHandler {
 		}
 	}
 
-	public void init(Visitor cx) {}
+	public void init(Visitor cx) {
+	}
 
 	public boolean accept(Object object) {
 		return object instanceof String || object instanceof StringCall;
 	}
 
-	public void set(Object object, String variable, Object value) {}
+	public void set(Object object, String variable, Object value) {
+	}
 
 	public Object get(Object thiz, String variable) {
 		StringMethod method = StringMethod.parse(variable);

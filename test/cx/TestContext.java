@@ -1,11 +1,12 @@
 package cx;
 
 import java.util.List;
+
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.Visitor;
 import cx.runtime.ContextFrame;
-import cx.runtime.ClassHandler;
+import cx.runtime.Handler;
 
 public class TestContext extends TestCase {
 
@@ -25,14 +26,15 @@ public class TestContext extends TestCase {
 		}
 	}
 
-	private static class PrintHandler implements ClassHandler {
+	private static class PrintHandler implements Handler {
 		public String value = "";
 
 		public boolean accept(Object object) {
 			return false;
 		}
 
-		public void set(Object thiz, String method, Object value) {}
+		public void set(Object thiz, String method, Object value) {
+		}
 
 		public Object get(Object thiz, String method) {
 			return null;
@@ -68,7 +70,8 @@ public class TestContext extends TestCase {
 						System.out.println(str);
 						value = value + str;
 						lines++;
-						if (lines > 50000) System.exit(0);
+						if (lines > 50000)
+							System.exit(0);
 						return value;
 					}
 					break;
@@ -76,7 +79,8 @@ public class TestContext extends TestCase {
 			return null;
 		}
 
-		public void init(Visitor cx) {}
+		public void init(Visitor cx) {
+		}
 	}
 
 	public void testHandler() {
@@ -110,7 +114,8 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser(
-					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};")).parse());
+					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};"))
+					.parse());
 			List<Node> block = (new Parser("f=test(f);")).parse();
 
 			cx.set("f", Integer.valueOf(1));
@@ -226,7 +231,8 @@ public class TestContext extends TestCase {
 	public void testFunction() {
 		{// return function
 			Context cx = new Context();
-			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);")).parse());
+			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);"))
+					.parse());
 			assertEquals(84L, cx.get("result"));
 		}
 		{// return function

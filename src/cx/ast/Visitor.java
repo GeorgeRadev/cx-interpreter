@@ -1,6 +1,6 @@
 package cx.ast;
 
-import cx.runtime.ClassHandler;
+import cx.runtime.Handler;
 
 public abstract interface Visitor {
 
@@ -70,5 +70,5 @@ public abstract interface Visitor {
 
 	public void set(String varName, Object value);
 
-	public void addHandler(ClassHandler handler);
+	public void addHandler(Handler handler);
 }

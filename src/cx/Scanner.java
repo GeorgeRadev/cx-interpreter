@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import cx.ast.SourcePosition;
 import cx.exception.ParserException;
 
@@ -56,7 +57,9 @@ class Scanner {
 		if (tokenStack.isEmpty()) {
 			Token token = getTokenInternal();
 			currentSourcePosition = getSrcPosInternal();
-			if (isDebug) System.out.println("Token: " + token);
+			if (isDebug) {
+				System.out.println("Token: " + token);
+			}
 			return token;
 		} else {
 			strToken.setLength(0);
@@ -74,11 +77,15 @@ class Scanner {
 		if (n > tokenStack.size()) {
 			while (n + READ_AHEAD_TOKENS > tokenStack.size()) {
 				Token token = getTokenInternal();
-				if (isDebug) System.out.println("Token: " + token);
+				if (isDebug) {
+					System.out.println("Token: " + token);
+				}
 				tokenStack.add(token);
 				stringStack.add(strToken.length() == 0 ? "" : strToken.toString());
 				positionStack.add(getSrcPosInternal());
-				if (token == Token.EOF) break;
+				if (token == Token.EOF) {
+					break;
+				}
 			}
 		}
 		return tokenStack.get(n - 1);
@@ -105,7 +112,9 @@ class Scanner {
 
 	protected Token getTokenInternal() {
 		strToken.setLength(0);
-		if (srcIdx >= srcLength) return Token.EOF;
+		if (srcIdx >= srcLength) {
+			return Token.EOF;
+		}
 		while (true) {
 			char c = getChar();
 			while (true) {
@@ -397,7 +406,9 @@ class Scanner {
 	}
 
 	private final char getChar() {
-		if (srcIdx >= srcLength) return ZERO;
+		if (srcIdx >= srcLength) {
+			return ZERO;
+		}
 		char c = src[srcIdx];
 		srcIdx++;
 		if ((c == '\n') && (lastlineidx < srcIdx)) {

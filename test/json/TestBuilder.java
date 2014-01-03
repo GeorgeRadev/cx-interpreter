@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import junit.framework.TestCase;
 
 public class TestBuilder extends TestCase {
@@ -41,7 +42,8 @@ public class TestBuilder extends TestCase {
 		}
 		{
 			JSONBuilder builder = new JSONBuilder();
-			builder.startObject().addKeyValue("key", "value").addKeyValue("for", "while").addKeyValue("int", 5).endObject();
+			builder.startObject().addKeyValue("key", "value").addKeyValue("for", "while").addKeyValue("int", 5)
+					.endObject();
 			assertEquals("{key:\"value\",\"for\":\"while\",int:5}", builder.toString());
 		}
 		{

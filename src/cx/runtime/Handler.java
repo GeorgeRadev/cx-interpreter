@@ -2,7 +2,7 @@ package cx.runtime;
 
 import cx.ast.Visitor;
 
-public interface ClassHandler {
+public interface Handler {
 	// init() is called when a handler was added to a visitor
 
 	void init(Visitor cx);

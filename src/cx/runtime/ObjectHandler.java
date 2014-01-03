@@ -10,7 +10,7 @@ import cx.ast.Visitor;
 /**
  * does not handles overwritten methods
  */
-public class ObjectHandler implements ClassHandler {
+public class ObjectHandler implements Handler {
 	private final Object thizz;
 	private final String name;
 	private final Map<String, Method> methodsMap;
@@ -21,7 +21,7 @@ public class ObjectHandler implements ClassHandler {
 
 		// get all public methods and cache them
 		Method[] methods = thizz.getClass().getMethods();
-		methodsMap = new HashMap<String, Method>(methods.length << 1);
+		methodsMap = new HashMap<String, Method>(methods.length + 8);
 		for (Method method : methods) {
 			methodsMap.put(method.getName(), method);
 		}
@@ -31,7 +31,6 @@ public class ObjectHandler implements ClassHandler {
 	public void init(Visitor cx) {
 		cx.set(name, this);
 	}
-
 
 	@Override
 	public boolean acceptStaticCall(String method, Object[] args) {
@@ -110,6 +109,7 @@ public class ObjectHandler implements ClassHandler {
 
 	/**
 	 * Convert value to a class type
+	 * 
 	 * @param type
 	 * @param value
 	 * @return
@@ -129,6 +129,10 @@ public class ObjectHandler implements ClassHandler {
 			return (float) Context.toDouble(value);
 		} else if (type.isAssignableFrom(boolean.class) || type.isAssignableFrom(Boolean.class)) {
 			return Context.isTrue(value);
+		} else if (type.isAssignableFrom(value.getClass())) {
+			return value;
+		} else if (value instanceof ContextFrame && type.isAssignableFrom(((ContextFrame) value).frame.getClass())) {
+			return ((ContextFrame) value).frame;
 		} else {
 			return null;
 		}
