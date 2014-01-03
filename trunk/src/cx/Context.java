@@ -40,7 +40,7 @@ import cx.exception.JumpReturn;
 import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
 import cx.runtime.Function;
-import cx.runtime.ClassHandler;
+import cx.runtime.Handler;
 
 public class Context implements Visitor {
 	// private static final String THIS = "this";
@@ -61,9 +61,9 @@ public class Context implements Visitor {
 		return cx.toString();
 	}
 
-	private final List<ClassHandler> handlers = new ArrayList<ClassHandler>();
+	private final List<Handler> handlers = new ArrayList<Handler>();
 
-	public void addHandler(ClassHandler handler) {
+	public void addHandler(Handler handler) {
 		if (handler != null) {
 			handlers.add(handler);
 			handler.init(this);
@@ -176,19 +176,22 @@ public class Context implements Visitor {
 				long l = Long.parseLong(value.substring(2), 16);
 				cx.result = l;
 				return;
-			} catch (Exception e) {}
+			} catch (Exception e) {
+			}
 		}
 		// try long
 		try {
 			long l = Long.parseLong(value, 10);
 			cx.result = l;
 			return;
-		} catch (Exception e) {}
+		} catch (Exception e) {
+		}
 		// try double
 		try {
 			cx.result = Double.valueOf(value);
 			return;
-		} catch (Exception e) {}
+		} catch (Exception e) {
+		}
 		cx.result = null;
 	}
 
@@ -298,8 +301,8 @@ public class Context implements Visitor {
 				Object caseValue = switchNode.caseValues[i];
 				if (caseValue != null) {
 					if ((value instanceof Double && caseValue instanceof Double && value.equals(caseValue))
-							|| (value instanceof Number && caseValue instanceof Number && ((Number) value).longValue() == ((Number) caseValue).longValue())
-							|| (value.toString().equals(caseValue.toString()))) {
+							|| (value instanceof Number && caseValue instanceof Number && ((Number) value).longValue() == ((Number) caseValue)
+									.longValue()) || (value.toString().equals(caseValue.toString()))) {
 						executeIndex = i;
 						break;
 					}
@@ -621,7 +624,8 @@ public class Context implements Visitor {
 		} else {
 			try {
 				return Parser.parseNumber(obj.toString()).longValue();
-			} catch (NumberFormatException e) {}
+			} catch (NumberFormatException e) {
+			}
 		}
 		return null;
 	}
@@ -638,7 +642,8 @@ public class Context implements Visitor {
 		} else {
 			try {
 				return Parser.parseNumber(obj.toString()).doubleValue();
-			} catch (NumberFormatException e) {}
+			} catch (NumberFormatException e) {
+			}
 		}
 		return Double.NaN;
 	}
@@ -1107,7 +1112,7 @@ public class Context implements Visitor {
 				_element = eval(element).toString();
 			}
 
-			for (ClassHandler handler : handlers) {
+			for (Handler handler : handlers) {
 				if (handler.accept(obj)) {
 					handler.set(obj, _element, value);
 					break;
@@ -1240,7 +1245,7 @@ public class Context implements Visitor {
 			}
 		}
 
-		for (ClassHandler handler : handlers) {
+		for (Handler handler : handlers) {
 			if (handler.accept(obj)) {
 				String _element;
 				if (element instanceof NodeString) {
@@ -1316,7 +1321,7 @@ public class Context implements Visitor {
 			}
 		} else {
 			if (function != null) {
-				for (ClassHandler handler : handlers) {
+				for (Handler handler : handlers) {
 					if (handler.accept(function)) {
 						cx.result = handler.call(function, argValues.toArray());
 						break;
@@ -1325,7 +1330,7 @@ public class Context implements Visitor {
 			} else if (call.function instanceof NodeVariable) {
 				cx.result = null;
 				String functionName = ((NodeVariable) call.function).name;
-				for (ClassHandler handler : handlers) {
+				for (Handler handler : handlers) {
 					Object[] args = argValues.toArray();
 					if (handler.acceptStaticCall(functionName, args)) {
 						cx.result = handler.staticCall(functionName, args);

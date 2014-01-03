@@ -298,7 +298,9 @@ public class JSONSAXParser {
 	}
 
 	public static long toLong(String str, int i) {
-		if (str == null) return i;
+		if (str == null) {
+			return i;
+		}
 		try {
 			return Long.parseLong(str, 10);
 		} catch (NumberFormatException numberformatexception) {
@@ -311,7 +313,9 @@ public class JSONSAXParser {
 	}
 
 	public static double toDouble(String s, double d) {
-		if (s == null) return d;
+		if (s == null) {
+			return d;
+		}
 		try {
 			return Double.valueOf(s).doubleValue();
 		} catch (NumberFormatException numberformatexception) {

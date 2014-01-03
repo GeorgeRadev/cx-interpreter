@@ -70,7 +70,7 @@ public class JSONBuilder {
 		builder.setLength(0);
 		return this;
 	}
-	
+
 	public final JSONBuilder startObject() {
 		builder.append('{');
 		return this;
@@ -246,9 +246,9 @@ public class JSONBuilder {
 
 	@SuppressWarnings("unchecked")
 	public static final void objectToJSON(JSONBuilder builder, Object obj) {
-		if(obj == null){
+		if (obj == null) {
 			builder.addValue(NULL);
-		}else if (obj instanceof Map) {
+		} else if (obj instanceof Map) {
 			builder.startObject();
 			for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) obj).entrySet()) {
 				builder.addKey(entry.getKey().toString());

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -92,7 +93,9 @@ public class Parser {
 				}
 			}
 
-			if (scanner.getErrorCode() != null) handleError(scanner.getErrorCode(), scanner.getSrcPos());
+			if (scanner.getErrorCode() != null) {
+				handleError(scanner.getErrorCode(), scanner.getSrcPos());
+			}
 			return statements;
 
 		} catch (StackOverflowError localStackOverflowError) {
@@ -208,7 +211,9 @@ public class Parser {
 	}
 
 	private NodeBlock parseBlock() {
-		if (isDebug) System.out.println("parseBlock()");
+		if (isDebug) {
+			System.out.println("parseBlock()");
+		}
 		NodeBlock localBlockNode = new NodeBlock(getSrcPos());
 		Node localNode = null;
 		Token i = scanner.peekToken();
@@ -224,7 +229,9 @@ public class Parser {
 	}
 
 	private Node parseDoWhile() {
-		if (isDebug) System.out.println("parseDoWhile()");
+		if (isDebug) {
+			System.out.println("parseDoWhile()");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		Node body = null;
 		Node condition = null;
@@ -264,7 +271,9 @@ public class Parser {
 	}
 
 	private Node parseWhile() {
-		if (isDebug) System.out.println("parseWhile()");
+		if (isDebug) {
+			System.out.println("parseWhile()");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		Node condition = null;
 		Node body;
@@ -288,7 +297,9 @@ public class Parser {
 	}
 
 	private Node parseSwitch() {
-		if (isDebug) System.out.println("parseSwitch()");
+		if (isDebug) {
+			System.out.println("parseSwitch()");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		Node switchValue = null;
 		scanner.getToken();// eat 'switch'
@@ -368,7 +379,9 @@ public class Parser {
 	}
 
 	private Node parseTry() {
-		if (isDebug) System.out.println("parseTry");
+		if (isDebug) {
+			System.out.println("parseTry");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		List<Node> tryBody = null;
 		List<Node> finallyBody = null;
@@ -466,7 +479,9 @@ public class Parser {
 	}
 
 	private Node parseFor() {
-		if (isDebug) System.out.println("parseFor()");
+		if (isDebug) {
+			System.out.println("parseFor()");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		NodeVar initialization = null;
 		Node condition = null;
@@ -544,7 +559,9 @@ public class Parser {
 	}
 
 	private Node parseIf() {
-		if (isDebug) System.out.println("parseIf()");
+		if (isDebug) {
+			System.out.println("parseIf()");
+		}
 		SourcePosition localSourcePosition = getSrcPos();
 		scanner.getToken();// eat "if"
 
@@ -585,7 +602,9 @@ public class Parser {
 	}
 
 	private NodeVar parseVar(boolean eatPrefix) {
-		if (isDebug) System.out.println("parseVar()");
+		if (isDebug) {
+			System.out.println("parseVar()");
+		}
 		if (eatPrefix) {
 			// eat 'var'
 			scanner.getToken();
@@ -1013,7 +1032,9 @@ public class Parser {
 	}
 
 	private NodeFunction parseFunction() {
-		if (isDebug) System.out.println("parseFunction()");
+		if (isDebug) {
+			System.out.println("parseFunction()");
+		}
 		SourcePosition position = scanner.getSrcPos();
 		String functionName;
 		NodeArray localListNode;
@@ -1141,7 +1162,9 @@ public class Parser {
 	}
 
 	private NodeArray parseArray() {
-		if (isDebug) System.out.println("parseArray()");
+		if (isDebug) {
+			System.out.println("parseArray()");
+		}
 		// deals with [ expression, ...]
 		NodeArray result = new NodeArray(getSrcPos());
 		Token token = scanner.peekToken();
@@ -1175,7 +1198,9 @@ public class Parser {
 	}
 
 	private void parseObject(NodeObject result) {
-		if (isDebug) System.out.println("parseObject()");
+		if (isDebug) {
+			System.out.println("parseObject()");
+		}
 		// deals with: new parent { key:value, ...}
 		Token token;
 		Node element = null;

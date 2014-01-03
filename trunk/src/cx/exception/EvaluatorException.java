@@ -3,7 +3,8 @@ package cx.exception;
 import cx.ast.SourcePosition;
 
 public class EvaluatorException extends ParserException {
-	public EvaluatorException() {}
+	public EvaluatorException() {
+	}
 
 	public EvaluatorException(String paramString) {
 		super(paramString);

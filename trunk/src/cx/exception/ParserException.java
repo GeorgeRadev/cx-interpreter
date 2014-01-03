@@ -5,7 +5,8 @@ import cx.ast.SourcePosition;
 public class ParserException extends ScriptException {
 	SourcePosition position;
 
-	public ParserException() {}
+	public ParserException() {
+	}
 
 	public ParserException(String paramString) {
 		super(paramString);

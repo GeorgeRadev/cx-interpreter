@@ -1,9 +1,12 @@
 package cx;
 
+import java.util.List;
+import java.util.Map;
+
 import junit.framework.TestCase;
-import cx.runtime.ObjectHandler;
 import cx.runtime.DateHandler;
 import cx.runtime.MathHandler;
+import cx.runtime.ObjectHandler;
 import cx.runtime.StringHandler;
 
 public class TestHandlers extends TestCase {
@@ -23,32 +26,54 @@ public class TestHandlers extends TestCase {
 			return value;
 		}
 
-		public long method3() { 
+		public long method3() {
 			return 42L;
 		}
-	}
-	
-	public void testClassHandler() { 
-			Context cx = new Context();
-			TestClass instance = new TestClass();
-			cx.addHandler(new ObjectHandler(instance, "obj"));
-			
-			cx.evaluate((new Parser("str = obj.method1(5);")).parse());
-			assertEquals("5", cx.get("str").toString());
-			assertEquals("5", instance.method1);
 
-			cx.evaluate((new Parser("str = obj.method1('test');")).parse());
-			assertEquals("test", cx.get("str").toString());
-			assertEquals("test", instance.method1);
-			
-			cx.evaluate((new Parser("l = obj.method2(5);")).parse());
-			assertEquals(5L, cx.get("l") );		 
-			assertEquals(5L, instance.method2 );
-			
-			cx.evaluate((new Parser("l = obj.method3();")).parse());
-			assertEquals(42L, cx.get("l") );	
+		public Object methodList(List<?> list, int i) {
+			try {
+				return list.get(i);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		public Object methodMap(Map<?, ?> map, Object key) {
+			try {
+				return map.get(key);
+			} catch (Exception e) {
+				return null;
+			}
+		}
 	}
-	
+
+	public void testClassHandler() {
+		Context cx = new Context();
+		TestClass instance = new TestClass();
+		cx.addHandler(new ObjectHandler(instance, "obj"));
+
+		cx.evaluate((new Parser("str = obj.method1(5);")).parse());
+		assertEquals("5", cx.get("str").toString());
+		assertEquals("5", instance.method1);
+
+		cx.evaluate((new Parser("str = obj.method1('test');")).parse());
+		assertEquals("test", cx.get("str").toString());
+		assertEquals("test", instance.method1);
+
+		cx.evaluate((new Parser("l = obj.method2(5);")).parse());
+		assertEquals(5L, cx.get("l"));
+		assertEquals(5L, instance.method2);
+
+		cx.evaluate((new Parser("l = obj.method3();")).parse());
+		assertEquals(42L, cx.get("l"));
+
+		cx.evaluate((new Parser("l = obj.methodList([1,2,3],1);")).parse());
+		assertEquals(2L, cx.get("l"));
+
+		cx.evaluate((new Parser("l = obj.methodMap({a:1, b:2,c:3},'b');")).parse());
+		assertEquals(2L, cx.get("l"));
+	}
+
 	public void testStringHandler() {
 		{
 			Context cx = new Context();
@@ -140,14 +165,16 @@ public class TestHandlers extends TestCase {
 			Context cx = new Context();
 			cx.addHandler(new DateHandler());
 			cx.evaluate((new Parser(
-					"var date = newDate(); date.year=2013; date.month=07;date.day=08 ;var datestr = formatDate(date,'yyyy-MM-dd');")).parse());
+					"var date = newDate(); date.year=2013; date.month=07;date.day=08 ;var datestr = formatDate(date,'yyyy-MM-dd');"))
+					.parse());
 			assertEquals("2013-07-08", cx.get("datestr"));
 		}
 		{
 			Context cx = new Context();
 			cx.addHandler(new DateHandler());
 			cx.evaluate((new Parser(
-					"var date = newDate('08/07/2013','dd/MM/yyyy'); var datestr = formatDate(date,'yyyy-MM-dd');")).parse());
+					"var date = newDate('08/07/2013','dd/MM/yyyy'); var datestr = formatDate(date,'yyyy-MM-dd');"))
+					.parse());
 			assertEquals("2013-07-08", cx.get("datestr"));
 		}
 	}

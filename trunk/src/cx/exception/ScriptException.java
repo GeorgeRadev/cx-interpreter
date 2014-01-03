@@ -1,7 +1,8 @@
 package cx.exception;
 
 public abstract class ScriptException extends RuntimeException {
-	public ScriptException() {}
+	public ScriptException() {
+	}
 
 	public ScriptException(String paramString) {
 		super(paramString);

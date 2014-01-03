@@ -2,6 +2,7 @@ package cx;
 
 import java.io.File;
 import java.util.List;
+
 import junit.framework.TestCase;
 import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
@@ -76,7 +77,8 @@ public class TestMD5 extends TestCase {
 		assertEquals(ii(-1, -2, -3, -4, -5, -6, -7), ((Number) cx.get("digest")).longValue());
 
 		cx.evaluate((new Parser(
-				"arr1 = [-1,-2,-3,-4];arr2 = [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16];md5cycle(arr1,arr2);")).parse());
+				"arr1 = [-1,-2,-3,-4];arr2 = [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16];md5cycle(arr1,arr2);"))
+				.parse());
 		long[] arr1 = new long[] { -1, -2, -3, -4 };
 		long[] arr2 = new long[] { -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16 };
 		md5cycle(arr1, arr2);
@@ -92,7 +94,8 @@ public class TestMD5 extends TestCase {
 		// state =1732584193,-271733879,-1732584194,271733878
 		// tail =1819043176,32879,0,0,0,0,0,0,0,0,0,0,0,0,40,0
 		cx.evaluate((new Parser(
-				"arr1 = [1732584193,-271733879,-1732584194,271733878];arr2 = [1819043176,32879,0,0,0,0,0,0,0,0,0,0,0,0,40,0];md5cycle(arr1,arr2);")).parse());
+				"arr1 = [1732584193,-271733879,-1732584194,271733878];arr2 = [1819043176,32879,0,0,0,0,0,0,0,0,0,0,0,0,40,0];md5cycle(arr1,arr2);"))
+				.parse());
 		arr1 = new long[] { 1732584193, -271733879, -1732584194, 271733878 };
 		arr2 = new long[] { 1819043176, 32879, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0 };
 		md5cycle(arr1, arr2);
@@ -139,7 +142,8 @@ public class TestMD5 extends TestCase {
 		assertEquals("66f6bb54a54f967caa2607ad2990ecb4", cx.get("digest"));
 
 		cx.evaluate((new Parser(
-				"digest = md5('01234567890123456789012345678901234567890123456789012345678901234567890123456789');")).parse());
+				"digest = md5('01234567890123456789012345678901234567890123456789012345678901234567890123456789');"))
+				.parse());
 		assertEquals("0faef1f4cb01d560d59016a2d5e91da6", cx.get("digest"));
 	}
 
@@ -299,11 +303,13 @@ public class TestMD5 extends TestCase {
 		cx.evaluate((new Parser("digest = MD5.digest('hello');")).parse());
 		assertEquals("5d41402abc4b2a76b9719d911017c592", cx.get("digest"));
 
-		cx.evaluate((new Parser("digest = MD5.digest('0123456789012345678901234567890123456789012345678901234567');")).parse());
+		cx.evaluate((new Parser("digest = MD5.digest('0123456789012345678901234567890123456789012345678901234567');"))
+				.parse());
 		assertEquals("66f6bb54a54f967caa2607ad2990ecb4", cx.get("digest"));
 
 		cx.evaluate((new Parser(
-				"digest = MD5.digest('01234567890123456789012345678901234567890123456789012345678901234567890123456789');")).parse());
+				"digest = MD5.digest('01234567890123456789012345678901234567890123456789012345678901234567890123456789');"))
+				.parse());
 		assertEquals("0faef1f4cb01d560d59016a2d5e91da6", cx.get("digest"));
 	}
 }
