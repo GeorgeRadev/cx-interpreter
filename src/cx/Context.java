@@ -106,6 +106,17 @@ public class Context implements Visitor {
 		return cx.result;
 	}
 
+	private Object eval(Node[] paramNode) {
+		if (paramNode != null) {
+			for (int i = 0, l = paramNode.length; i < l; ++i) {
+				eval(paramNode[i]);
+			}
+		} else {
+			cx.result = null;
+		}
+		return cx.result;
+	}
+
 	private void pushContext() {
 		cx = new ContextFrame(cx);
 	}
@@ -429,7 +440,9 @@ public class Context implements Visitor {
 			Object condition = eval(paramIfNode.condition);
 
 			if (isTrue(condition)) {
-				eval(paramIfNode.body);
+				if (paramIfNode.body != null) {
+					eval(paramIfNode.body);
+				}
 			} else {
 				if (paramIfNode.elseBody != null) {
 					eval(paramIfNode.elseBody);
