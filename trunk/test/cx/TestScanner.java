@@ -61,12 +61,13 @@ public class TestScanner extends TestCase {
 		assertEquals(Token.EOF, scanner.peekToken(5));
 		assertEquals(Token.EOF, scanner.peekToken(5));
 
-		scanner = new Scanner("obj.5?^;");
+		scanner = new Scanner("obj.5?^??;");
 		scanner.setDebugMode(true);
 		assertEquals(Token.NAME, scanner.getToken());
 		assertEquals(Token.NUMBER, scanner.getToken());
 		assertEquals(Token.QUESTION, scanner.getToken());
 		assertEquals(Token.BIT_XOR, scanner.getToken());
+		assertEquals(Token.NULL_VALUE, scanner.getToken());
 
 		scanner = new Scanner("0.0;");
 		scanner.setDebugMode(true);

@@ -571,28 +571,28 @@ public class Parser {
 				handleError("Missing ')'", scanner.getSrcPos());
 			}
 
-			List<Node> trueNode = null;
+			Node[] trueNode = null;
 			if (scanner.matchToken(Token.L_CURLY)) {
 				// parse block
-				trueNode = parseBlock().statements;
+				List<Node> statements = parseBlock().statements;
+				trueNode = statements.toArray(new Node[statements.size()]);
 			} else {
 				Node node = parseStatement();
 				if (node != null) {
-					trueNode = new ArrayList<Node>(1);
-					trueNode.add(node);
+					trueNode = new Node[] { node };
 				}
 			}
 
-			List<Node> elseNode = null;
+			Node[] elseNode = null;
 			if (scanner.matchToken(Token.ELSE)) {
 				if (scanner.matchToken(Token.L_CURLY)) {
 					// parse block
-					elseNode = parseBlock().statements;
+					List<Node> statements = parseBlock().statements;
+					elseNode = statements.toArray(new Node[statements.size()]);
 				} else {
 					Node node = parseStatement();
 					if (node != null) {
-						elseNode = new ArrayList<Node>(1);
-						elseNode.add(node);
+						elseNode = new Node[] { node };
 					}
 				}
 			}
@@ -716,9 +716,7 @@ public class Parser {
 	private Node parseTernaryExpr() {
 		Node condition = parseLogicalExpr();
 		Token token = scanner.peekToken();
-		if (token != Token.QUESTION) {
-			return condition;
-		} else {
+		if (token == Token.QUESTION) {
 			token = scanner.getToken();
 			Node trueValue = parseExpression();
 			token = scanner.getToken();
@@ -727,6 +725,14 @@ public class Parser {
 			}
 			Node falseValue = parseExpression();
 			return new NodeTernary(getSrcPos(), condition, trueValue, falseValue);
+
+		} else if (token == Token.NULL_VALUE) {
+			token = scanner.getToken();
+			Node nullValue = parseExpression();
+			return new NodeIf(getSrcPos(), condition, null, new Node[] { nullValue });
+
+		} else {
+			return condition;
 		}
 	}
 

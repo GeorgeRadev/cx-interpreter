@@ -240,6 +240,9 @@ class Scanner {
 				case ':':
 					return Token.COLON;
 				case '?':
+					if (matchChar('?')) {
+						return Token.NULL_VALUE;
+					}
 					return Token.QUESTION;
 				case '^':
 					if (matchChar('=')) {

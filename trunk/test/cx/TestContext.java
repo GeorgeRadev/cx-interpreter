@@ -438,6 +438,41 @@ public class TestContext extends TestCase {
 			cx.evaluate(block);
 			assertEquals(4, ((Number) cx.get("a")).intValue());
 		}
+		{
+			parser = new Parser("a = true ? 1 : 2;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(1L, ((Number) cx.get("a")).longValue());
+		}
+		{
+			parser = new Parser("a = 3 ?? 5;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(3L, ((Number) cx.get("a")).longValue());
+		}
+		{
+			parser = new Parser("a = 'a' ?? 5;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals("a", cx.get("a"));
+		}
+		{
+			parser = new Parser("a = null ?? 5;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(5L, ((Number) cx.get("a")).longValue());
+		}
+		{
+			parser = new Parser("b = null; a = b ?? 5;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(5L, ((Number) cx.get("a")).longValue());
+		}
 	}
 
 	public void testArithmetic() {
