@@ -3,6 +3,8 @@ package cx.exception;
 import cx.ast.SourcePosition;
 
 public class ParserException extends ScriptException {
+	private static final long serialVersionUID = 0xC0DE51DECA5E0020L;
+
 	SourcePosition position;
 
 	public ParserException() {

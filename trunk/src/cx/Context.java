@@ -43,7 +43,6 @@ import cx.runtime.Function;
 import cx.runtime.Handler;
 
 public class Context implements Visitor {
-	// private static final String THIS = "this";
 	private static final String ARGUMENTS = "arguments";
 
 	private static final Long ZERO = 0L;
