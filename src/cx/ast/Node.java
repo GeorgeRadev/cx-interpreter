@@ -6,8 +6,8 @@ import java.util.Map;
 
 public abstract class Node {
 	public SourcePosition position;
-
 	private static final String EMPTY = "";
+	private static final String NULL = "null";
 	public Node() {
 		position = null;
 	}
@@ -56,6 +56,8 @@ public abstract class Node {
 		for (T e : list) {
 			if (e != null) {
 				result.append(e.toString());
+			} else {
+				result.append(NULL);
 			}
 			result.append(separator);
 		}
