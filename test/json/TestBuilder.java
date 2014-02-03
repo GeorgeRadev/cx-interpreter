@@ -21,6 +21,7 @@ public class TestBuilder extends TestCase {
 	}
 
 	public void testBuilder() {
+		assertEquals(JSONBuilder.NULL, JSONBuilder.objectToJSON(null));
 		{
 			JSONBuilder builder = new JSONBuilder();
 			assertEquals("null", builder.toString());

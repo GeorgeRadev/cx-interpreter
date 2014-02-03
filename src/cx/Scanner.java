@@ -30,8 +30,8 @@ class Scanner {
 
 	static {
 		escapes.put(Character.valueOf('"'), Character.valueOf('"'));
+		escapes.put(Character.valueOf('\''), Character.valueOf('\''));
 		escapes.put(Character.valueOf('\\'), Character.valueOf('\\'));
-		escapes.put(Character.valueOf('/'), Character.valueOf('/'));
 		escapes.put(Character.valueOf('b'), Character.valueOf('\b'));
 		escapes.put(Character.valueOf('f'), Character.valueOf('\f'));
 		escapes.put(Character.valueOf('n'), Character.valueOf('\n'));
