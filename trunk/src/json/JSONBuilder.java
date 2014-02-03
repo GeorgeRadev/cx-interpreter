@@ -9,8 +9,8 @@ import java.util.Map;
 public class JSONBuilder {
 	final StringBuilder builder;
 
-	private static String NULL = "null";
-	private static Map<String, String> reservedJSWords = new HashMap<String, String>(64);
+	public static final String NULL = "null";
+	private static final Map<String, String> reservedJSWords = new HashMap<String, String>(64);
 	static {
 		reservedJSWords.put("break", NULL);
 		reservedJSWords.put("case", NULL);
@@ -239,9 +239,13 @@ public class JSONBuilder {
 	}
 
 	public static final String objectToJSON(Object obj) {
-		JSONBuilder builder = new JSONBuilder();
-		objectToJSON(builder, obj);
-		return builder.toString();
+		if (obj == null) {
+			return NULL;
+		} else {
+			JSONBuilder builder = new JSONBuilder();
+			objectToJSON(builder, obj);
+			return builder.toString();
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -268,6 +272,5 @@ public class JSONBuilder {
 		} else {
 			builder.addValue(obj.toString());
 		}
-
 	}
 }

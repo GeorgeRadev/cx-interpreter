@@ -7,6 +7,7 @@ import java.util.Map;
 public abstract class Node {
 	public SourcePosition position;
 
+	private static final String EMPTY = "";
 	public Node() {
 		position = null;
 	}
@@ -19,7 +20,7 @@ public abstract class Node {
 
 	public static final <T> String arrayToString(T[] array) {
 		if (array == null) {
-			return "";
+			return EMPTY;
 		}
 		if (array.length <= 0) {
 			return "[]";
@@ -36,7 +37,7 @@ public abstract class Node {
 
 	public static final <T> String explode(T[] array, char separator) {
 		if (array == null || array.length <= 0) {
-			return "";
+			return EMPTY;
 		}
 		StringBuilder result = new StringBuilder(256);
 		for (int i = 0, l = array.length; i < l; i++) {
@@ -49,7 +50,7 @@ public abstract class Node {
 
 	public static final <T> String explode(List<T> list, char separator) {
 		if (list == null || list.size() <= 0) {
-			return "";
+			return EMPTY;
 		}
 		StringBuilder result = new StringBuilder(256);
 		for (T e : list) {
@@ -62,31 +63,31 @@ public abstract class Node {
 		return result.toString();
 	}
 
-	/* this one should be the same as in the Scanner class */
-	private static Map<Character, Character> escapes = new HashMap<Character, Character>(16);
+	/* this one should contain same entries as Scanner class */
+	private static Map<Character, String> escapes = new HashMap<Character, String>(16);
 	static {
-		escapes.put(Character.valueOf('"'), Character.valueOf('"'));
-		escapes.put(Character.valueOf('\\'), Character.valueOf('\\'));
-		escapes.put(Character.valueOf('/'), Character.valueOf('/'));
-		escapes.put(Character.valueOf('b'), Character.valueOf('\b'));
-		escapes.put(Character.valueOf('f'), Character.valueOf('\f'));
-		escapes.put(Character.valueOf('n'), Character.valueOf('\n'));
-		escapes.put(Character.valueOf('r'), Character.valueOf('\r'));
-		escapes.put(Character.valueOf('t'), Character.valueOf('\t'));
+		escapes.put(Character.valueOf('"'), "\\\"");
+		escapes.put(Character.valueOf('\''), "\\\'");
+		escapes.put(Character.valueOf('\\'), "\\\\");
+		escapes.put(Character.valueOf('\b'), "\\b");
+		escapes.put(Character.valueOf('\f'), "\\f");
+		escapes.put(Character.valueOf('\n'), "\\n");
+		escapes.put(Character.valueOf('\r'), "\\r");
+		escapes.put(Character.valueOf('\t'), "\\t");
 	}
 
 	public static final <T> String escapeString(String string) {
 		int len;
 		if (string == null || (len = string.length()) <= 0) {
-			return "";
+			return EMPTY;
 		}
 
 		StringBuilder result = new StringBuilder(len + 256);
 		for (int i = 0; i < len; i++) {
 			final char c = string.charAt(i);
-			if (escapes.containsKey(c)) {
-				result.append('\\');
-				result.append(c);
+			final String esc = escapes.get(c);
+			if (esc != null) {
+				result.append(esc);
 
 			} else if (c > 0x7f) {
 				result.append('\\');

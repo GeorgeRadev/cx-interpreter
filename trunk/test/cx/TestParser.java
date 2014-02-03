@@ -585,6 +585,19 @@ public class TestParser extends TestCase {
 			assertNull(args.get(0));
 			assertNull(args.get(1));
 		}
+		{
+			parser = new Parser("core.findKey(null);");
+			block = parser.parse();
+			NodeCall call = (NodeCall) block.get(0);
+			NodeAccess access = (NodeAccess) call.function;
+			NodeVariable object = (NodeVariable) access.object;
+			NodeString element = (NodeString) access.element;
+			assertEquals("core", object.name);
+			assertEquals("findKey", element.value);
+			assertEquals(1, call.arguments.size());
+			List<Node> args = call.arguments;
+			assertNull(args.get(0));
+		}
 	}
 
 	public void testIndexing() {
@@ -865,5 +878,11 @@ public class TestParser extends TestCase {
 		} catch (ParserException e) {
 			// ok
 		}
+	}
+
+	public void testEscapeString() {
+		assertEquals("findKeys", Node.escapeString("findKeys"));
+		assertEquals("find\\nKeys", Node.escapeString("find\nKeys"));
+		assertEquals("\\\"\\\\ \\b\\f\\n\\r\\t", Node.escapeString("\"\\ \b\f\n\r\t"));
 	}
 }

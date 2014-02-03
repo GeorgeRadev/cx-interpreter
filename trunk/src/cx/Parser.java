@@ -1091,17 +1091,18 @@ public class Parser {
 	}
 
 	private NodeArray parseArgumentList(Token terminatingToken) {
-		Token token;
+		Token token, prevtoken = terminatingToken;
 		NodeArray result = new NodeArray(getSrcPos());
 		Node element = null;
 		do {
 			token = scanner.peekToken();
 			if (token == terminatingToken) {
-				if (element != null) {
+				if (prevtoken != terminatingToken) {
 					result.add(element);
 				}
 				return result;
 			}
+			prevtoken = token;
 			if (token == Token.COMMA) {
 				token = scanner.getToken();
 				result.add(element);
@@ -1109,6 +1110,7 @@ public class Parser {
 				token = scanner.peekToken();
 				if (token == terminatingToken) {
 					result.add(element);
+					return result;
 				}
 				continue;
 			}
