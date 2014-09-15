@@ -3,7 +3,6 @@ package cx;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.NodeAccess;
@@ -18,6 +17,7 @@ import cx.ast.NodeIf;
 import cx.ast.NodeNumber;
 import cx.ast.NodeObject;
 import cx.ast.NodeReturn;
+import cx.ast.NodeSQL;
 import cx.ast.NodeString;
 import cx.ast.NodeSwitch;
 import cx.ast.NodeTernary;
@@ -108,13 +108,13 @@ public class TestParser extends TestCase {
 			assertEquals(3, block.size());
 		}
 		{
-			parser = new Parser("'string'.length(); system.out.print(m,b[5], 'm+p=', m+p);"
-					+ "array.subarray[i][j]++; /*comment*/ function empty(){};"
-					+ "function a(b, arg, c){ var b = arg % 4, c= 'string'.length(); return b?true:false;};"
+			parser = new Parser("'string'.length(); system.out.print(m,b[5], 'm+p=', m+p);\n"
+					+ "array.subarray[i][j]++; /*comment*/ function empty(){};\n"
+					+ "function a(b, arg, c){ var b = arg % 4, c= 'string'.length(); return b?true:false;};\n"
 					+ "function empty(){}  //  another comment   \n ;"
-					+ "var m = 12*(5-6); n = -12* 5-6 ; p = a(m, null); for(i=0, l=5;i<l;i++)m*=i;"
-					+ "for(;i==0;--i); for(i:array) {array[i]++;} system.out.print(m,b[5], m+p);"
-					+ "for(;i==0;--i) array.subarray[i][j]++;");
+					+ "var m = 12*(5-6); n = -12* 5-6 ; p = a(m, null); for(i=0, l=5;i<l;i++)m*=i;\n"
+					+ "for(;i==0;--i); for(i:array) {array[i]++;} system.out.print(m,b[5], m+p);\n"
+					+ "for(;i==0;--i) array.subarray[i][j]++;\n");
 			block = parser.parse();
 			assertEquals(14, block.size());
 		}
@@ -884,5 +884,15 @@ public class TestParser extends TestCase {
 		assertEquals("findKeys", Node.escapeString("findKeys"));
 		assertEquals("find\\nKeys", Node.escapeString("find\nKeys"));
 		assertEquals("\\\"\\\\ \\b\\f\\n\\r\\t", Node.escapeString("\"\\ \b\f\n\r\t"));
+	}
+
+	public void testSQLStringEscape() {
+		{
+			List<Node> block = new Parser("sql := update 'table' set 'id' = 'id' + 1;").parse();
+			NodeSQL n = (NodeSQL) block.get(0);
+			assertEquals(n.left.toString(), "sql");
+			String sqlString = Node.explode(n.rightStr, ' ');
+			assertEquals(sqlString, "update table set id = id + 1");
+		}
 	}
 }

@@ -1,7 +1,8 @@
 package cx;
 
+import java.util.Calendar;
 import java.util.List;
-
+import java.util.TimeZone;
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.Visitor;
@@ -531,6 +532,38 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.evaluate(new Parser("i=0;str='test'+i;").parse());
 			assertEquals("test0", cx.get("str").toString());
+		}
+	}
+
+	public void testSQLStringEscape() {
+		{
+			Context cx = new Context();
+			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+			cal.set(Calendar.ZONE_OFFSET, 0);
+			cal.setTimeInMillis(0);
+			cx.set("datestr", cal);
+			cx.evaluate(new Parser("sql := select 'id' where 'updated' = datestr;").parse());
+			String sql = cx.get("sql").toString();
+			assertEquals("select id where updated = '1970-01-01 02:00:00' ", sql);
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate(new Parser("a = 4; sql := update 'schema'.'table' set 'id' = 'id' + a;").parse());
+			String sql = cx.get("sql").toString();
+			assertEquals("update schema . table set id = id + 4 ", sql);
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate(new Parser("date = 'test'; sql := update 'table' set date = 0;").parse());
+			String sql = cx.get("sql").toString();
+			// date is reserved word
+			assertEquals("update table set date = 0 ", sql);
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate(new Parser("s = 'value'; sql := select 'id' where 'name' = s and 'city' = \"'NY'\";").parse());
+			String sql = cx.get("sql").toString();
+			assertEquals("select id where name = 'value' and city = 'NY' ", sql);
 		}
 	}
 }

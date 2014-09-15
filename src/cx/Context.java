@@ -1,10 +1,12 @@
 package cx;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
-
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -21,6 +23,7 @@ import cx.ast.NodeIf;
 import cx.ast.NodeNumber;
 import cx.ast.NodeObject;
 import cx.ast.NodeReturn;
+import cx.ast.NodeSQL;
 import cx.ast.NodeString;
 import cx.ast.NodeSwitch;
 import cx.ast.NodeTernary;
@@ -52,7 +55,14 @@ public class Context implements Visitor {
 	private ContextFrame cx = null;
 	public SourcePosition position = null;
 
+	public final DateFormat sqlDateFormater;
+
 	public Context() {
+		this("yyyy-MM-dd HH:mm:ss");
+	}
+
+	public Context(String sqlDateFormat) {
+		sqlDateFormater = new SimpleDateFormat(sqlDateFormat);
 		cx = new ContextFrame();
 	}
 
@@ -186,22 +196,19 @@ public class Context implements Visitor {
 				long l = Long.parseLong(value.substring(2), 16);
 				cx.result = l;
 				return;
-			} catch (Exception e) {
-			}
+			} catch (Exception e) {}
 		}
 		// try long
 		try {
 			long l = Long.parseLong(value, 10);
 			cx.result = l;
 			return;
-		} catch (Exception e) {
-		}
+		} catch (Exception e) {}
 		// try double
 		try {
 			cx.result = Double.valueOf(value);
 			return;
-		} catch (Exception e) {
-		}
+		} catch (Exception e) {}
 		cx.result = null;
 	}
 
@@ -311,8 +318,8 @@ public class Context implements Visitor {
 				Object caseValue = switchNode.caseValues[i];
 				if (caseValue != null) {
 					if ((value instanceof Double && caseValue instanceof Double && value.equals(caseValue))
-							|| (value instanceof Number && caseValue instanceof Number && ((Number) value).longValue() == ((Number) caseValue)
-									.longValue()) || (value.toString().equals(caseValue.toString()))) {
+							|| (value instanceof Number && caseValue instanceof Number && ((Number) value).longValue() == ((Number) caseValue).longValue())
+							|| (value.toString().equals(caseValue.toString()))) {
 						executeIndex = i;
 						break;
 					}
@@ -636,8 +643,7 @@ public class Context implements Visitor {
 		} else {
 			try {
 				return Parser.parseNumber(obj.toString()).longValue();
-			} catch (NumberFormatException e) {
-			}
+			} catch (NumberFormatException e) {}
 		}
 		return null;
 	}
@@ -654,8 +660,7 @@ public class Context implements Visitor {
 		} else {
 			try {
 				return Parser.parseNumber(obj.toString()).doubleValue();
-			} catch (NumberFormatException e) {
-			}
+			} catch (NumberFormatException e) {}
 		}
 		return Double.NaN;
 	}
@@ -1418,6 +1423,27 @@ public class Context implements Visitor {
 					}
 				}
 			}
+		} catch (Throwable exception) {
+			String exceptionName = exception.getClass().getSimpleName();
+			int i = 0, l = tryNode.exceptionTypes.length;
+			for (; i < l; i++) {
+				String catchName = tryNode.exceptionTypes[i];
+				if (exceptionName.equals(catchName)) {
+					try {
+						pushContext();
+						cx.frame.put(tryNode.exceptionNames[i], exception.getMessage());
+						eval(tryNode.exceptionBodies[i]);
+					} finally {
+						popContext();
+					}
+					break;
+				}
+			}
+			if (i == l) {
+				// there is no match for java exceptions
+				// execute finally and throw the exception
+				throw new RuntimeException(exception);
+			}
 		} finally {
 			if (needFinally) {
 				eval(tryNode.finallyBody);
@@ -1429,6 +1455,57 @@ public class Context implements Visitor {
 		setCurrentPosition(throwNode.position);
 		Object exception = eval(throwNode.expresion);
 		throw new CXException(exception);
+	}
+
+	public void visitSQL(NodeSQL nodeSQL) {
+		setCurrentPosition(nodeSQL.position);
+		// get all SQL escape tokens and if there are names that are different
+		// from the reserved words try to resolve them through the context, if
+		// there is no resolution through the context - use the exact name
+
+		StringBuilder sqlEscape = new StringBuilder(4096);
+		Token[] right = nodeSQL.right;
+		String[] rightStr = nodeSQL.rightStr;
+
+		for (int i = 0, l = right.length; i < l; ++i) {
+			Token t = right[i];
+			if (t == Token.NAME) {
+				// check for a reserved word
+				if (!NodeSQL.openSQLReservedWordsMap.contains(rightStr[i].toUpperCase())) {
+					// try to evaluate the name in the context
+					try {
+						Object value = eval(new NodeVariable(null, rightStr[i]));
+						if (value instanceof Number) {
+							sqlEscape.append(value.toString()).append(' ');
+							continue;
+						} else if (value instanceof String) {
+							NodeSQL.escapeSQLString(sqlEscape, (String) value);
+							sqlEscape.append(' ');
+							continue;
+						} else if (value instanceof Calendar) {
+							String format = sqlDateFormater.format(((Calendar) value).getTime());
+							sqlEscape.append('\'').append(format).append("' ");
+							continue;
+						}
+					} catch (Exception e) {
+						// error in evaluation - use the exact name
+					}
+				}
+			}
+			sqlEscape.append(rightStr[i]).append(' ');
+		}
+
+		if (nodeSQL.left instanceof NodeVariable) {
+			String varName = ((NodeVariable) nodeSQL.left).name;
+			Object rhsObject = sqlEscape.toString();
+			cx.set(varName, rhsObject);
+
+		} else if (nodeSQL.left instanceof NodeAccess) {
+			setNodeAccessValue((NodeAccess) nodeSQL.left, sqlEscape.toString());
+
+		} else if (nodeSQL.left == null) {
+			cx.result = null;
+		}
 	}
 
 	static final char[] hexDigit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };

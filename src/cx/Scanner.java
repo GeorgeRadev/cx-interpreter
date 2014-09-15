@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import cx.ast.SourcePosition;
 import cx.exception.ParserException;
 
@@ -218,6 +217,7 @@ class Scanner {
 				}
 				return Token.STRING;
 			}
+			strToken.append(c);
 			switch (c) {
 				case ';':
 					return Token.SEMICOLON;
@@ -238,6 +238,9 @@ class Scanner {
 				case '.':
 					return Token.DOT;
 				case ':':
+					if (matchChar('=')) {
+						return Token.SQL_STRING_ESCAPE;
+					}
 					return Token.COLON;
 				case '?':
 					if (matchChar('?')) {
@@ -336,6 +339,7 @@ class Scanner {
 				case '/':
 					if (matchChar('/')) {
 						skipLine();
+						strToken.setLength(0);
 					} else {
 						if (matchChar('*')) {
 							do {
@@ -344,6 +348,7 @@ class Scanner {
 									break;
 								}
 							} while (c != ZERO);
+							strToken.setLength(0);
 						} else {
 							if (matchChar('=')) {
 								op = Token.DIV;
@@ -428,6 +433,7 @@ class Scanner {
 	private final boolean matchChar(char paramChar) {
 		char c = getChar();
 		if (c == paramChar) {
+			strToken.append(c);
 			return true;
 		}
 		srcIdx--;
