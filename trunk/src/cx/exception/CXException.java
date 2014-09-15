@@ -8,4 +8,8 @@ public class CXException extends RuntimeException {
 	public CXException(Object object) {
 		this.object = object;
 	}
+
+	public String getMessage() {
+		return String.valueOf(object);
+	}
 }

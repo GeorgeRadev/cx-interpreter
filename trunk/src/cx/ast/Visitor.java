@@ -71,4 +71,7 @@ public abstract interface Visitor {
 	public void set(String varName, Object value);
 
 	public void addHandler(Handler handler);
+
+	// for escaping tokens sequence as strings
+	public abstract void visitSQL(NodeSQL nodeSQL);
 }

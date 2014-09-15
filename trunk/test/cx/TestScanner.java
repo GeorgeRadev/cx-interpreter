@@ -73,6 +73,16 @@ public class TestScanner extends TestCase {
 		scanner.setDebugMode(true);
 		assertEquals(Token.NUMBER, scanner.getToken());
 
+		scanner = new Scanner("sql := select * from 'table';");
+		scanner.setDebugMode(true);
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.SQL_STRING_ESCAPE, scanner.getToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.MUL, scanner.getToken());
+		assertEquals(Token.NAME, scanner.getToken());
+		assertEquals(Token.STRING, scanner.getToken());
+		assertEquals(Token.SEMICOLON, scanner.getToken());
+
 		scanner = new Scanner(
 				"if do for new \t var \r case else null \n true  break    while false return switch delete default continue function try catch \r finally throw");
 		scanner.setDebugMode(true);

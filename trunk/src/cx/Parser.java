@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -24,6 +23,7 @@ import cx.ast.NodeIf;
 import cx.ast.NodeNumber;
 import cx.ast.NodeObject;
 import cx.ast.NodeReturn;
+import cx.ast.NodeSQL;
 import cx.ast.NodeString;
 import cx.ast.NodeSwitch;
 import cx.ast.NodeTernary;
@@ -658,6 +658,7 @@ public class Parser {
 		if (token == Token.ASSIGN) {
 			scanner.getToken();
 			localObject = new NodeAssign(getSrcPos(), (Node) localObject, parseAssignmentExpr());
+
 		} else if (token == Token.ASSIGNOP) {
 
 			scanner.getToken();
@@ -709,6 +710,22 @@ public class Parser {
 			Node paramNode2 = parseAssignmentExpr();
 			localObject = new NodeAssign(getSrcPos(), paramNode1, new NodeBinary(getSrcPos(), paramNode1, operator,
 					paramNode2));
+
+		} else if (token == Token.SQL_STRING_ESCAPE) {
+			// get all following tokens until semicolumn(;) and store them as
+			// NodeSQL list
+			scanner.getToken();
+			List<Token> tokens = new ArrayList<Token>(32);
+			List<String> tokensStr = new ArrayList<String>(32);
+			for (token = scanner.peekToken(); token != Token.SEMICOLON; token = scanner.peekToken()) {
+				if (token == Token.EOF) {
+					handleError("Unexpected SQL string escape sequence! Should be terminated by semicolumn!",
+							scanner.getSrcPos());
+				}
+				tokens.add(scanner.getToken());
+				tokensStr.add(scanner.getString());
+			} 
+			localObject = new NodeSQL(getSrcPos(), (Node) localObject, tokens, tokensStr);
 		}
 		return localObject;
 	}

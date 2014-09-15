@@ -1,9 +1,12 @@
 package cx;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
-
 import junit.framework.TestCase;
+import cx.ast.Node;
+import cx.runtime.ContextFrame;
+import cx.runtime.DatabaseHandler;
 import cx.runtime.DateHandler;
 import cx.runtime.MathHandler;
 import cx.runtime.ObjectHandler;
@@ -165,17 +168,35 @@ public class TestHandlers extends TestCase {
 			Context cx = new Context();
 			cx.addHandler(new DateHandler());
 			cx.evaluate((new Parser(
-					"var date = newDate(); date.year=2013; date.month=07;date.day=08 ;var datestr = formatDate(date,'yyyy-MM-dd');"))
-					.parse());
+					"var date = newDate(); date.year=2013; date.month=07;date.day=08 ;var datestr = formatDate(date,'yyyy-MM-dd');")).parse());
 			assertEquals("2013-07-08", cx.get("datestr"));
 		}
 		{
 			Context cx = new Context();
 			cx.addHandler(new DateHandler());
 			cx.evaluate((new Parser(
-					"var date = newDate('08/07/2013','dd/MM/yyyy'); var datestr = formatDate(date,'yyyy-MM-dd');"))
-					.parse());
+					"var date = newDate('08/07/2013','dd/MM/yyyy'); var datestr = formatDate(date,'yyyy-MM-dd');")).parse());
 			assertEquals("2013-07-08", cx.get("datestr"));
 		}
+	}
+
+	public void testDatabaseHandler() throws ClassNotFoundException {
+		Class.forName("org.sqlite.JDBC");
+		Context cx = new Context();
+		cx.addHandler(new DatabaseHandler());
+		Parser parser = new Parser(new File("database_sqlite.cx"));
+		parser.supportTryCatchThrow = true;
+		List<Node> block = parser.parse();
+		long time = System.currentTimeMillis();
+		try {
+			cx.evaluate(block);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("time: " + (System.currentTimeMillis() - time));
+
+		ContextFrame frame = (ContextFrame) cx.get("map");
+		assertEquals("just a string", frame.frame.get("42"));
+		assertEquals("ok", cx.get("error"));
 	}
 }

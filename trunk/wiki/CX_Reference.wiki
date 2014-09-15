@@ -1,0 +1,1408 @@
+*CX* is a simple `JavaScript`-like language parser and interpreter written in java.
+
+It uses simple read-ahead parsing algorithm that can be easily customized to support additional language structured (like SQL).
+
+The interpreter is _`context/closures`_ based similar to `lisp` that gives the name of the language: 
+
+*CX* stands for *CONTEXT*.
+
+==Currently supported `C/Java/JavaScript` semantics==
+{{{
+if(condition)true_statement *else* false_statement
+for(initialization; condition; iteration) statement
+for(values_and_keys : list_or_map) statement
+while(condition) statement
+do statement while(condition)
+switch(statement){case value: statement ... default: statement}
+try statement catch(Exception name) statement finally statement
+break
+continue
+return
+throw
+var // for variable definition in the current context
+function(args) statement // for lambda function
+function name(args) statement // for named function
+[1,2,"test",'string'] //for array definition
+{a:4, str: “str”, foo:function(){return 0;}  } // for objects/maps definition
+}}}
+
+
+== Assumption ==
+in *CX* we assume the following:
+
+{{{null == false == 0 == 0.0 == "" == ''}}}
+
+
+==Currently implemented operator precedence==
+||*Operator Type*||*Operator*||*Associativity*||
+||Expression Operators|| () [] . expr++ expr--	||left-to-right||
+||Unary Operators  || + - ! ~ ++expr --expr	 ||right-to-left||
+||Binary Operators|| * / %	                  ||left-to-right||
+|| ||	+ -         || ||
+|| ||	<< >> >>>   || ||
+|| ||	< > <= >=	|| ||	
+|| ||	== !=		|| ||
+|| ||	& | ^ 		|| ||
+|| ||	&&   | |	|| ||
+||Ternary Operator||	? :	||right-to-left||
+||Assignment Operators||	= += -= *= /= %= >>= <<= &= ^= |=	||right-to-left||
+
+
+*Note*: Unit test were added for clearing the semantics
+==Basics==
+
+===Case sensitivity===
+JavaScript is case sensitive.
+It is common to start the name of a [[Constructor (computer science)|constructor]] with a [[CamelCase|capitalised]] letter, and the name of a function or variable with a lower-case letter.
+
+===Whitespace and semicolons===
+[[Space (punctuation)|Space]]s, [[tab character|tab]]s and [[newline]]s used outside of string constants are called [[whitespace (computer science)|whitespace]].  Unlike [[C (programming language)|C]], whitespace in JavaScript source can directly impact semantics. Because of a technique called "automatic [[semicolon insertion]]" (ASI), some statements that are well formed when a newline is parsed will be considered complete (as if a semicolon were inserted just prior to the newline). Some authorities advise supplying statement-terminating semicolons explicitly because it may lessen unintended effects of the automatic semicolon insertion.<ref>{{cite book
+|title=JavaScript: The definitive Guide
+|last=Flanagan
+|first=David
+|page=16
+|quote=Omitting semicolons is not a good programming practice; you should get into the habit of inserting them.
+|isbn=978-0-596-10199-2
+|year=2006}}</ref>
+
+There are two issues: five tokens can either begin a statement or be the extension of a complete statement; and five restricted productions, where line breaks are not allowed in certain positions, potentially yielding incorrect parsing.<ref name=inimino />
+
+The five problematic tokens are the open parenthesis "(", open bracket "[", slash "/", and "+" and "-". Of these, open parenthesis is common in the [[immediately-invoked function expression]] pattern, and open bracket occurs sometimes, while others are quite rare. The example given in the spec is:<ref name=inimino />
+<syntaxhighlight lang="JavaScript">
+a = b + c
+(d + e).foo()
+
+// Treated as:
+//   a = b + c(d + e).foo();
+</syntaxhighlight>
+with the suggestion that the preceding statement be terminated with a semicolon.
+
+Some suggest instead the use of ''leading'' semicolons on lines starting with ( or <nowiki>[</nowiki>, so the line is not accidentally joined with the previous one. This is known as a '''defensive semicolon''', and is particularly recommended because code may become ambiguous when it is rearranged.<ref name=inimino>"[http://inimino.org/~inimino/blog/javascript_semicolons JavaScript Semicolon Insertion: Everything you need to know]", [http://inimino.org/~inimino/blog/ ~inimino/blog/], Friday, May 28, 2010</ref><ref>"[http://mislav.uniqpath.com/2010/05/semicolons/ Semicolons in JavaScript are optional]", by Mislav Marohnić, 07 May 2010</ref> For example:
+<syntaxhighlight lang="JavaScript">
+a = b + c
+;(d + e).foo()
+
+// Treated as:
+//   a = b + c;
+//   (d + e).foo();
+</syntaxhighlight>
+Initial semicolons are also sometimes used at the start of JavaScript libraries, in case they are appended to another library which omits a trailing semicolon, as this can result in ambiguity of the initial statement.
+
+The five restricted productions are return, throw, break, continue, and post-increment/decrement. In all cases inserting semicolons does not fix the problem, but makes the parsed syntax clear, making the error easier to detect. Return and throw take an optional value, while break and continue take an optional label. In all cases the advice is to keep the value or label on the same line as the statement. This most often shows up in the return statement, where one might return a large object literal, which might be accidentally placed starting on a new line. For post-increment/decrement, there is potential ambiguity with pre-increment/decrement, and again it is recommended to simply keep these on the same line.
+<syntaxhighlight lang=JavaScript>
+return
+a + b;
+
+// Returns undefined. Treated as:
+//   return;
+//   a + b;
+// Should be written as:
+//   return a + b;
+</syntaxhighlight>
+
+===Comments===
+[[Comment (computer programming)|Comment]] syntax is the same as in [[C++]] and many other languages.
+
+<syntaxhighlight lang="JavaScript">
+// a short, one-line comment
+
+/* this is a long, multi-line comment
+   about my script. May it one day
+   be great. */
+
+/* Comments /* may not be nested */ Syntax error */
+</syntaxhighlight>
+
+==Variables==
+[[Variable (programming)|Variable]]s in standard JavaScript have no [[Type system|type]] attached, and any value can be stored in any variable. Variables are declared with a <code>var</code> statement, multiple variables can be declared at once. An identifier must start with a letter, underscore (_), or dollar sign ($); subsequent characters can also be digits (0-9). Because JavaScript is case sensitive, letters include the characters "A" through "Z" (uppercase) and the characters "a" through "z" (lowercase). Starting with JavaScript 1.5, [[ISO 8859-1]] or [[Unicode]] letters (or \uXXXX Unicode escape sequences) can be used in identifiers.<ref>{{cite web |url=https://developer.mozilla.org/en/JavaScript/Guide/Values,_Variables,_and_Literals&revision=22#Variables |title=Values, Variables, and Literals - MDC |date=16 September 2010 |publisher=Mozilla Developer Network}}</ref> In certain JavaScript implementations, the at sign (@) can be used in an identifier, this is contrary to the specifications and not supported in newer implementations. Variables are [[lexical scoping|lexically scoped]] at [[function scope|function level]] (not [[block scope|block level]] as in C), and this does not depend on order ([[forward declaration]] is not necessary): if a variable is declared inside a function (at any point, in any block), then inside the function, the name will resolve to that variable. This is equivalent in block scoping to variables being forward declared at the top of the function, and is referred to as '''{{visible anchor|hoisting}}'''.<ref>"[http://www.adequatelygood.com/JavaScript-Scoping-and-Hoisting.html JavaScript Scoping and Hoisting]", [http://www.adequatelygood.com/about.html Ben Cherry], ''[http://www.adequatelygood.com/ Adequately Good],'' 2010-02-08</ref> However, the variable value is <code>undefined</code> until it is initialized, and [[forward reference]] is not possible. Thus a <code>var x = 1</code> statement in the middle of the function is equivalent to a <code>var x</code> declaration statement at the top of the function, and an <code>x = 1</code> assignment statement at that point in the middle of the function – only the declaration is hoisted, not the assignment.
+
+Function statements, whose effect is to declare a variable of type Function and assign a value to it, are similar to variable statements, but in addition to hoisting the declaration, they also hoist the assignment – as if the entire statement appeared at the top of the containing function – and thus forward reference is also possible: the location of a function statement within an enclosing function is irrelevant.
+
+Block scoping can be produced by wrapping the entire block in a function and then executing it; this is known as the [[immediately-invoked function expression]] pattern.
+
+Variables declared outside any function are [[global variable|global]]. If a variable is declared in a higher scope, it can be accessed by child functions.
+
+Here is an example of variable declarations and global values:
+
+<syntaxhighlight lang="JavaScript" enclose="div">
+var x = 0; // A global variable, because it is not in any function
+
+function f() {
+  var z = 'foxes', r = 'birds'; // 2 local variables
+  m = 'fish'; // global because it wasn't declared anywhere before
+  function child() {
+     var r = 'monkeys'; // This variable is local and does not affect the "birds" r of the parent function.
+     z = 'penguins'; // The child function is able to access the variables of the parent function, this is called closure.
+  }
+  twenty = 20; // This variable is declared on the next line, but usable anywhere in the function, even before, as here
+  var twenty;
+  child();
+  return x; // We can use x here because it is global
+}
+f();
+alert(z); // This line will raise a ReferenceError exception because the value of z is no longer available
+</syntaxhighlight>
+
+When JavaScript tries to '''resolve''' an identifier, it looks in the local function scope. If this identifier is not found, it looks in the outer function that declared the local one, and so on along the ''scope chain'' until it reaches the ''global scope'' where global variables reside. If it is still not found, JavaScript will raise a ReferenceError exception.
+
+When '''assigning''' an identifier, JavaScript goes through exactly the same process to retrieve this identifier, except that if it is not found in the ''global scope'', it will create the "variable" as a property of the ''global object''.<ref>ECMA-262 5e edition clarified this confusing behavior introducing the notion of ''Declarative Environment Record'' and ''Object Environment Record''. With this formalism, the ''global object'' is the ''Object Environment Record'' of the global ''Lexical Environment'' (the ''global scope'').</ref> As a consequence, a variable never declared will be global if assigned. Declaring a variable (with the keyword <code>var</code>) in the ''global code'' (i.e. outside of any function body), assigning a never declared identifier or adding a property to the ''global object'' (usually ''window'') will also create a new global variable.
+
+Note that JavaScript's ''strict mode'' forbids the assignment of an undeclared variable, which avoids global namespace pollution.
+
+==Primitive data types==
+The JavaScript language provides a handful of [[primitive data types]]. Some of the primitive data types also provide a set of named values that represent the extents of the type boundaries. These named values are described within the appropriate sections below.
+
+===Undefined===
+The [[undefined value|value of "undefined"]] is assigned to all [[uninitialized variable]]s, and is also returned when checking for object properties that do not exist. In a Boolean context, the undefined value is considered a false value.
+
+Note: undefined is considered a genuine primitive type. Unless explicitly converted, the undefined value may behave unexpectedly in comparison to other types that evaluate to false in a logical context.
+
+<syntaxhighlight lang="JavaScript">
+var test;                  // variable declared but not defined, ...
+                           // ... set to value of undefined
+var testObj = {};
+alert(test);               // test variable exists but value not ...
+                           // ... defined, displays undefined
+alert(testObj.myProp);     // testObj exists, property does not, ...
+                           // ... displays undefined
+alert(undefined == null);  // unenforced type during check, displays true
+alert(undefined === null); // enforce type during check, displays false
+</syntaxhighlight>
+
+Note: There is no built-in language literal for undefined. Thus <tt>(x == undefined)</tt> is not a foolproof way to check whether a variable is undefined, because in versions before ECMAScript 5, it is legal for someone to write <tt>var undefined = "I'm defined now";</tt>. A more robust approach is to compare using <tt>(typeof x === 'undefined')</tt>.
+
+Functions like this won't work as expected:
+<syntaxhighlight lang="JavaScript">
+function isUndefined(x) { var u; return x === u; } // like this...
+function isUndefined(x) { return x === void 0; }   // ... or that second one
+function isUndefined(x) { return (typeof x) === "undefined"; } // ... or that third one
+</syntaxhighlight>
+
+Here, calling <code>isUndefined(my_var)</code> raises a ''ReferenceError'' if <code>my_var</code> is an unknown identifier, whereas <code>typeof my_var === 'undefined'</code> doesn't.
+
+===Null===
+Unlike undefined, [[Null Object pattern|null]] is often set to indicate that something has been declared but has been defined to be empty. In a Boolean context, the value of null is considered a false value in JavaScript.
+
+Note: Null is a true primitive-type within the JavaScript language, of which <tt>null</tt> (note case) is the single value. As such, when performing checks that enforce type checking, the null value will not equal other false types.  Surprisingly, <tt>null</tt> is considered an object by <tt>typeof</tt>.
+
+<syntaxhighlight lang="JavaScript">
+alert(null == undefined);         // unenforced type during check, displays true
+alert(null === undefined);        // enforce type during check, displays false
+alert(typeof null === 'object');  // true
+</syntaxhighlight>
+
+===Number===
+Numbers are represented in binary as [[IEEE-754]] Doubles, which provides an accuracy of nearly 16 [[significant digits]]. Because they are [[floating point]] numbers, they do not always exactly represent real numbers, including fractions.
+
+This becomes an issue when comparing or formatting numbers. For example:
+<syntaxhighlight lang="JavaScript">
+alert(0.2 + 0.1 == 0.3); // displays false
+alert(0.94 - 0.01); // displays 0.9299999999999999
+</syntaxhighlight>
+
+As a result, a routine such as the toFixed() method should be used to round numbers whenever they are [http://www.jibbering.com/faq/#formatNumber formatted for output].
+
+Numbers may be specified in any of these notations:
+<syntaxhighlight lang="JavaScript">
+345;    // an "integer", although there is only one numeric type in JavaScript
+34.5;   // a floating-point number
+3.45e2; // another floating-point, equivalent to 345
+0377;   // an octal integer equal to 255
+0xFF;   // a hexadecimal integer equal to 255, digits represented by the ...
+        // ... letters A-F may be upper or lowercase
+</syntaxhighlight>
+
+The extents [[extended real number line|'''+∞''', '''&minus;∞''']] and '''[[NaN]]''' (Not a Number) of the number type may be obtained by two program expressions:
+<syntaxhighlight lang="JavaScript">
+Infinity;  // Positive Infinity (negative obtained with -Infinity for instance)
+NaN;       // The Not-A-Number value, also returned as a failure in ...
+           // ... string-to-number conversions
+</syntaxhighlight>
+
+These three special values correspond and behave as the [[IEEE-754]] describes them.
+
+The Number constructor, or a unary + or -, may be used to perform explicit numeric conversion:
+<syntaxhighlight lang="JavaScript">
+var myString = "123.456";
+var myNumber1 = Number(myString);
+var myNumber2 = +myString;
+</syntaxhighlight>
+When used as a constructor, a numeric ''wrapper'' object is created (though it is of little use):
+<syntaxhighlight lang="JavaScript">
+myNumericWrapper = new Number(123.456);
+</syntaxhighlight>
+
+=== String ===
+A [[String (computer science)|string]] in JavaScript is a sequence of characters. In JavaScript, strings can be created directly by placing the series of characters between double or single quotes.
+<syntaxhighlight lang="JavaScript">
+var greeting = "Hello, world!";
+var anotherGreeting = 'Greetings, people of Earth.';
+</syntaxhighlight>
+
+You can access individual characters within a string using the <code>charAt</code> method (provided by <code>String.prototype</code>). This is the preferred way when accessing individual characters within a string because it also works in non-modern browsers:
+<syntaxhighlight lang="JavaScript">
+var h = greeting.charAt(0);
+</syntaxhighlight>
+
+In modern browsers, individual characters within a string can be accessed (as strings with only a single character) through the same notation as arrays:
+<syntaxhighlight lang="JavaScript">
+var h = greeting[0];
+</syntaxhighlight>
+
+However, JavaScript strings are [[immutable object|immutable]]:
+<syntaxhighlight lang="JavaScript">
+greeting[0] = "H"; // Fails.
+</syntaxhighlight>
+
+Applying the equality operator ("==") to two strings returns true if the strings have the same contents, which means: of the same length and containing the same sequence of characters (case is significant for alphabets). Thus:
+<syntaxhighlight lang="JavaScript">
+var x = "world";
+var compare1 = ("Hello, " +x == "Hello, world"); // Here compare1 contains true.
+var compare2 = ("Hello, " +x == "hello, world"); // Here compare2 contains  ...
+                                                  // ... false since the ...
+                                                  // ... first characters ...
+                                                  // ... of both operands ...
+                                                  // ... are not of the same case.
+</syntaxhighlight>
+You cannot use quotes of the same type inside quotes unless they are [[String literal#Escape character|escaped]].
+<syntaxhighlight lang="JavaScript">
+var x = '"Hello, world!" he said.' // Just fine.
+var x = ""Hello, world!" he said." // Not good.
+var x = "\"Hello, world!\" he said." // That works by replacing " with \"
+</syntaxhighlight>
+
+It is possible to create a string using the <code>String</code> constructor:
+<syntaxhighlight lang="JavaScript">
+var greeting = new String("Hello, world!");
+</syntaxhighlight>
+These objects have a <code>valueOf</code> method returning the primitive string wrapped within them:
+<syntaxhighlight lang="JavaScript">
+var s = new String("Hello !");
+typeof s; // Is 'object'.
+typeof s.valueOf(); // Is 'string'.
+</syntaxhighlight>
+
+Equality between two <code>String</code> objects does not behave as with string primitives:
+<syntaxhighlight lang="JavaScript">
+var s1 = new String("Hello !");
+var s2 = new String("Hello !");
+s1 == s2; // Is false, because they are two distinct objects.
+s1.valueOf() == s2.valueOf(); // Is true.
+</syntaxhighlight>
+
+====Alerts====
+Alerts are a common Javascript feature.
+
+Here is an example:
+<syntaxhighlight lang="JavaScript">
+msgToAlrt = "This is a test message."
+alert(msgToAlrt)
+</syntaxhighlight>
+This will display a window with the contents you specify.
+
+===Boolean===
+
+[[JavaScript]] provides a [[Boolean data type]] with <code>true</code> and <code>false</code> literals. The <code>typeof</code> operator returns the string <code>"boolean"</code> for these [[primitive types]]. When used in a logical context, <code>0</code>, <code>-0</code>, <code>null</code>, <code>NaN</code>, <code>undefined</code>, and the empty string (<code>""</code>) evaluate as <code>false</code> due to automatic [[type coercion]]. The [[complement (set theory)|complement]] evaluates as <code>true</code>, including the strings <code>"0"</code>, <code>"false"</code> and any object (except <code>null</code>). Automatic type coercion by the equality comparison operators (<code>==</code> and <code>!=</code>) can be avoided by using the type checked comparison operators, (<code>===</code> and <code>!==</code>).
+
+When type conversion is required, JavaScript converts String, Number, Boolean, or Object operands as follows:<ref>{{cite web |url=https://developer.mozilla.org/en/JavaScript/Reference/Operators/Comparison_Operators |title=Comparison Operators - MDC Doc Center |publisher=Mozilla |date=5 August 2010 |accessdate=5 March 2011}}</ref>
+;{{small|Number and String}}: The string is converted to a number value. JavaScript attempts to convert the string numeric literal to a Number type value. First, a mathematical value is derived from the string numeric literal. Next, this value is rounded to nearest Number type value.
+;{{small|Boolean}}: If one of the operands is a Boolean, the Boolean operand is converted to 1 if it is <code>true</code> or to 0 if it is <code>false</code>.
+;{{small|Object}}: If an object is compared with a number or string, JavaScript attempts to return the default value for the object. An object is converted to a primitive String or Number value, using the <code>.valueOf()</code> or <code>.toString()</code> methods of the object. If this fails, a runtime error is generated.
+[[Douglas Crockford]] advocates the terms "truthy" and "falsy" to describe how values of various types behave when evaluated in a logical context, especially in regard to edge cases.<ref>{{cite web |url=http://javascript.crockford.com/style2.html |title=The Elements of JavaScript Style |publisher=Douglas Crockford |accessdate=5 March 2011}}</ref>
+The binary logical operators returned a Boolean value in early versions of JavaScript, but now they return one of the operands instead. The left–operand is returned if it can be evaluated as''':''' <code>false</code>''',''' in the case of [[logical conjunction|conjunction]]: (<code>a && b</code>)''',''' or <code>true</code>''',''' in the case of [[logical disjunction|disjunction]]: (<code>a || b</code>)''';''' otherwise the right–operand is returned. Automatic type coercion by the comparison operators may differ for cases of mixed Boolean and number-compatible operands (including strings that can be evaluated as a number, or objects that can be evaluated as such a string) because the Boolean operand will be compared as a numeric value. This may be unexpected. An expression can be explicitly cast to a Boolean primitive by doubling the logical [[negation|negation operator]]: (<code>!!</code>)''',''' using the <code>Boolean()</code> function, or using the [[Conditional (programming)|conditional operator]]: (<code>c ? t : f</code>)'''.'''
+
+<div style="font-size:85%;line-height:150%;">
+<syntaxhighlight lang="JavaScript">
+//Automatic type coercion
+alert(true  ==    2 ); // false... true  → 1 !== 2 ←  2
+alert(false ==    2 ); // false... false → 0 !== 2 ←  2
+alert(true  ==    1 ); // true.... true  → 1 === 1 ←  1
+alert(false ==    0 ); // true.... false → 0 === 0 ←  0
+alert(true  ==   "2"); // false... true  → 1 !== 2 ← "2"
+alert(false ==   "2"); // false... false → 0 !== 2 ← "2"
+alert(true  ==   "1"); // true.... true  → 1 === 1 ← "1"
+alert(false ==   "0"); // true.... false → 0 === 0 ← "0"
+alert(false ==   "" ); // true.... false → 0 === 0 ← ""
+alert(false ==   NaN); // false... false → 0 !== NaN
+
+//Type checked comparison (no conversion of types and values)
+alert(true === 1);     // false... data types do not match
+
+//Explicit type coercion
+alert(true === !!2);   // true.... data types and values match
+alert(true === !!0);   // false... data types match but values differ
+alert( 1  ? true : false); // true.... only ±0 and NaN are “falsy” numbers
+alert("0" ? true : false); // true.... only the empty string is “falsy”
+alert(Boolean({}));    // true.... all objects are “truthy” except null
+</syntaxhighlight>
+</div>
+
+The <code>new</code> operator can be used to create an object wrapper for a Boolean primitive. However, the <code>typeof</code> operator does not return <code>"boolean"</code> for the object wrapper, it returns <code>"object"</code>'''.''' Because all objects evaluate as <code>true</code>''',''' a method such as <code>.valueOf()</code>''',''' or <code>.toString()</code>''',''' must be used to retrieve the wrapped value. For explicit coercion to the Boolean type, Mozilla recommends that the <code>Boolean()</code> function (without <code>new</code>) be used in preference to the Boolean object.
+
+<div style="font-size:85%;line-height:150%;">
+<syntaxhighlight lang="javascript">
+var b = new Boolean(false);   // Object  false {}
+var t = Boolean(b);           // Boolean true
+var f = Boolean(b.valueOf()); // Boolean false
+var n = new Boolean(b);       // Not recommended
+n = new Boolean(b.valueOf()); // Preferred
+
+if (0 || -0 || "" || null || undefined || b.valueOf() || !new Boolean() || !t) {
+    alert("Never this");
+} else if ([] && {} && b && typeof b === "object" && b.toString() === "false") {
+    alert("Always this");
+}
+</syntaxhighlight>
+</div>
+
+==Native objects==
+
+The JavaScript language provides a handful of native [[Object (computer science)|objects]]. JavaScript native objects are considered part of the JavaScript specification. JavaScript environment notwithstanding, this set of objects should always be available.
+
+===Array===
+An [[Array data type|Array]] is a JavaScript object prototyped from the Array constructor specifically designed to store data values indexed by integer keys. Arrays, unlike the basic Object type, are prototyped with methods and properties to aid the programmer in routine tasks (for example, <code>join</code>, <code>slice</code>, and <code>push</code>).
+
+As in the [[:Category:C programming language family|C family]], arrays use a zero-based indexing scheme: A value that is inserted into an empty array by means of the <code>push</code> method occupies the 0th index of the array.
+<syntaxhighlight lang="JavaScript">
+var myArray = [];            // Point the variable myArray to a newly ...
+                             // ... created, empty Array
+myArray.push("hello world"); // Fill the next empty index, in this case 0
+alert(myArray[0]);           // Equivalent to alert("hello world");
+</syntaxhighlight>
+
+Arrays have a <code>length</code> property that is guaranteed to always be larger than the largest integer index used in the array. It is automatically updated if one creates a property with an even larger index. Writing a smaller number to the <code>length</code> property will remove larger indices.
+
+Elements of Arrays may be accessed using normal object property access notation:
+<syntaxhighlight lang="JavaScript">
+myArray[1];   // the 2nd item in myArray
+myArray["1"];
+</syntaxhighlight>
+The above two are equivalent. It's not possible to use the "dot"-notation or strings with alternative representations of the number:
+<syntaxhighlight lang="JavaScript">
+myArray.1;     // syntax error
+myArray["01"]; // not the same as myArray[1]
+</syntaxhighlight>
+Declaration of an array can use either an Array literal or the <code>Array</code> constructor:
+<syntaxhighlight lang="JavaScript">
+myArray = [0, 1,, , 4, 5];            // array with length 6 and 6 elements, ...
+                                  // ... including 2 undefined elements
+myArray = new Array(0, 1, 2, 3, 4, 5); // array with length 6 and 6 elements
+myArray = new Array(365);         // an empty array with length 365
+</syntaxhighlight>
+[[Array data structure|Arrays]] are implemented so that only the defined elements use memory; they are "[[sparse array]]s". Setting <code>myArray[10] = 'someThing'</code> and <code>myArray[57] = 'somethingOther'</code> only uses space for these two elements, just like any other object. The <code>length</code> of the array will still be reported as 58.
+
+One can use the object declaration literal to create objects that behave much like associative arrays in other languages:
+<syntaxhighlight lang="JavaScript">
+dog = {color: "brown", size: "large"};
+dog["color"]; // results in "brown"
+dog.color;    // also results in "brown"
+</syntaxhighlight>
+One can use the object and array declaration literals to quickly create arrays that are associative, multidimensional, or both.
+(Technically, JavaScript does not support multidimensional arrays, but one can mimic them with arrays-of-arrays.)
+<syntaxhighlight lang="JavaScript">
+cats = [{color: "brown", size: "large"},
+        {color: "black", size: "small"}];
+cats[0]["size"];      // results in "large"
+
+dogs = {rover: {color: "brown", size: "large"},
+        spot:  {color: "black", size: "small"}};
+dogs["spot"]["size"]; // results in "small"
+dogs.rover.color;     // results in "brown"
+</syntaxhighlight>
+
+===Date===
+
+A Date object stores a signed millisecond count with zero representing 1970-01-01 00:00:00 UT and a range of ±10<sup>8</sup> days.  There are several ways of providing arguments to the <code>Date</code> constructor.  Note that months are zero-based.
+<syntaxhighlight lang="JavaScript">
+new Date()                       // create a new Date instance representing the current time/date.
+new Date(2010, 2, 1)             // create a new Date instance representing 2010-Mar-01 00:00:00
+new Date(2010, 2, 1, 14, 25, 30) // create a new Date instance representing 2010-Mar-01 14:25:30
+new Date("2010-3-1 14:25:30")    // create a new Date instance from a String.
+</syntaxhighlight>
+Methods to extract fields are provided, as well as a useful <code>toString</code>:
+<syntaxhighlight lang="JavaScript">
+var d = new Date(2010, 2, 1, 14, 25, 30); // 2010-Mar-01 14:25:30
+
+// Displays '2010-3-1 14:25:30':
+alert(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate() + ' '
+      + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
+
+// Built-in toString returns something like 'Mon Mar 01 2010 14:25:30 GMT-0500 (EST)':
+alert(d);
+</syntaxhighlight>
+
+===Error===
+
+{{Expand section|date=April 2011}}
+
+Custom error messages can be created using the Error class:
+<syntaxhighlight lang="JavaScript">
+throw new Error("Something went wrong.");
+</syntaxhighlight>
+
+Nested within conditional statements, such instantiations can substitute for try/catch blocks:
+<syntaxhighlight lang="JavaScript">
+var emailAddress = prompt("Please enter your e-mail address:", "");
+if (!emailAddress || emailAddress.length == 0) {
+	throw new Error("Excuse me: You must enter your e-mail address to continue.");
+}
+</syntaxhighlight>
+
+===Math===
+The Math object contains various math-related constants (for example, π) and functions (for example, cosine). (Note that the Math object has no constructor, unlike Array or Date. All its methods are "static", that is "class" methods.) All the trigonometric functions use angles expressed in [[radian]]s, not [[Degree (angle)|degrees]] or [[Grad (angle)|grads]].
+
+{| class="wikitable" border="1"
+|+ Properties of the Math object
+|-
+!Property!!Returned value<br>rounded to 5 digits!!Description
+|-
+|Math.E||align=center|2.7183||''[[e (mathematical constant)|e]]'': Natural logarithm base
+|-
+|Math.LN2||align=center|0.69315||[[Natural logarithm]] of 2
+|-
+|Math.LN10||align=center|2.3026||Natural logarithm of 10
+|-
+|Math.LOG2E||align=center|1.4427||[[Logarithm]] to the base 2 of ''e''
+|-
+|Math.LOG10E||align=center|0.43429||Logarithm to the base 10 of ''e''
+|-
+|Math.PI||align=center|3.14159||[[Pi|π]]: circumference/diameter of a circle
+|-
+|Math.SQRT1_2||align=center|0.70711||[[Square root]] of ½
+|-
+|Math.SQRT2||align=center|1.4142||[[Square root of 2]]
+|}
+
+{| class="wikitable" border="1"
+|+ Methods of the Math object
+|-
+!Example!!Returned value<br>rounded to 5 digits!!Description
+|-
+|Math.abs(-2.3)||align=center|2.3||Absolute value: <code>(x < 0) ? -x : x</code>
+|-
+|Math.acos(Math.SQRT1_2)||align=center|0.78540 rad. = 45°||[[Arccosine]]
+|-
+|Math.asin(Math.SQRT1_2)||align=center|0.78540 rad. = 45°||[[Arcsine]]
+|-
+|Math.atan(1)||align=center|0.78540 rad. = 45°||Half circle [[arctangent]] (-π/2 to +π/2)
+|-
+|Math.atan2(-3.7, -3.7)||align=center|-2.3562 rad. = -135°||Whole circle arctangent (-π to +π)
+|-
+|Math.ceil(1.1)||align=center|2||Ceiling: [[rounding|round]] up to smallest integer ≥ argument
+|-
+|Math.cos(Math.PI/4)||align=center|0.70711||[[Trigonometric_functions#cosine|Cosine]]
+|-
+|Math.exp(1)||align=center|2.7183||[[Exponential function]]: ''e'' raised to this power
+|-
+|Math.floor(1.9)||align=center|1||Floor: round down to largest integer ≤ argument
+|-
+|Math.log(Math.E)||align=center|1||Natural logarithm, base ''e''
+|-
+|Math.max(1, -2)||align=center|1||Maximum: <code>(x > y) ? x : y</code>
+|-
+|Math.min(1, -2)||align=center|-2||Minimum: <code>(x < y) ? x : y</code>
+|-
+|Math.pow(-3, 2)||align=center|9||[[Exponentiation]] (raised to the power of): <code>Math.pow(x, y)</code> gives x<sup>y</sup>
+|-
+|Math.random()||align=center|0.17068||[[Pseudorandom]] number between 0 (inclusive) and 1 (exclusive)
+|-
+|Math.round(1.5)||align=center|2||Round to the nearest integer; half fractions are rounded up (e.g. 1.5 rounds to 2)
+|-
+|Math.sin(Math.PI/4)||align=center|0.70711||[[Trigonometric_functions#sine|Sine]]
+|-
+|Math.sqrt(49)||align=center|7||Square root
+|-
+|Math.tan(Math.PI/4)||align=center|1||[[Trigonometric functions#Sine.2C cosine and tangent|Tangent]]
+|}
+
+===Regular expression===
+{{main|Regular expression}}
+<syntaxhighlight lang="JavaScript">
+/expression/.test(string);
+"string".search(/expression/);
+"string".replace(/expression/,replacement);
+
+// Here are some examples
+if(/Tom/.test("My name is Tom")) alert("Hello Tom!");
+alert("My name is Tom".search(/Tom/));                    // == 11 (letters before Tom)
+alert("My name is Tom".replace(/Tom/,"John"));            // == "My name is John"
+</syntaxhighlight>
+
+====Character classes====
+<syntaxhighlight lang="JavaScript">
+// \d   - digit
+// \D   - non digit
+// \s   - space
+// \S   - non space
+// \w   - word char
+// \W   - non word
+// [ ]  - one of
+// [^ ] - one not of
+//  -   - range
+
+if (/\d/.test('0'))                   alert('Digit');
+if (/[0-9]/.test('6'))                alert('Digit');
+if (/[13579]/.test('1'))              alert('Odd number');
+if (/\S\S\s\S\S\S\S/.test('My name')) alert('Format OK');
+if (/\w\w\w/.test('Tom'))             alert('Hello Tom');
+if (/[a-zA-Z]/.test('B'))             alert('Letter');
+</syntaxhighlight>
+
+====Character matching====
+<syntaxhighlight lang="JavaScript">
+// A...Z a...z 0...9  - alphanumeric
+// \u0000...\uFFFF    - Unicode hexadecimal
+// \x00...\xFF        - ASCII hexadecimal
+// \t                 - tab
+// \n                 - new line
+// \r                 - CR
+// .                  - any character
+// |                  - OR
+
+if (/T.m/.test('Tom')) alert ('Hi Tom, Tam or Tim');
+if (/A|B/.test("A"))   alert ('A or B');
+</syntaxhighlight>
+
+====Repeaters====
+<syntaxhighlight lang="JavaScript">
+// ?     - 0 or 1 match
+// *     - 0 or more
+// +     - 1 or more
+// {n}   - exactly n
+// {n,}  - n or more
+// {0,n}  - n or less
+// {n,m} - range n to m
+
+if (/ab?c/.test("ac"))        alert("OK"); // match: "ac", "abc"
+if (/ab*c/.test("ac"))        alert("OK"); // match: "ac", "abc", "abbc", "abbbc" etc.
+if (/ab+c/.test("abc"))       alert("OK"); // match: "abc", "abbc", "abbbc" etc.
+if (/ab{3}c/.test("abbbc"))   alert("OK"); // match: "abbbc"
+if (/ab{3,}c/.test("abbbc"))  alert("OK"); // match: "abbbc", "abbbbc", "abbbbbc" etc.
+if (/ab{1,3}c/.test("abc"))   alert("OK"); // match: "abc","abbc", "abbbc"
+</syntaxhighlight>
+
+====Anchors====
+<syntaxhighlight lang="JavaScript">
+// ^   - string starts with
+// $   - string ends with
+
+if (/^My/.test("My name is Tom"))   alert ("Hi!");
+if (/Tom$/.test("My name is Tom"))  alert ("Hi Tom!");
+</syntaxhighlight>
+
+====Subexpression====
+<syntaxhighlight lang="JavaScript">
+// ( )   - groups characters
+
+if (/water(mark)?/.test("watermark"))  alert("Here is water!"); // match: "water", "watermark",
+if (/(Tom)|(John)/.test("John"))       alert("Hi Tom or John!");
+</syntaxhighlight>
+
+====Flags====
+<syntaxhighlight lang="JavaScript">
+// /g   - global
+// /i   - ignore upper/lower case
+// /m   - allow matches to span multiple lines
+
+alert("hi tom!".replace(/Tom/i,"John"));      // == "hi John!"
+alert("ratatam".replace(/ta/,"tu"));          // == "ratutam"
+alert("ratatam".replace(/ta/g,"tu"));         // == "ratutum"
+</syntaxhighlight>
+
+====Advanced methods====
+<syntaxhighlight lang="JavaScript">
+my_array = my_string.split(my_delimiter);
+// example
+my_array = "dog,cat,cow".split(",");            // my_array==["dog","cat","cow"];
+
+my_array = my_string.match(my_expression);
+// example
+my_array = "We start at 11:30, 12:15 and 16:45".match(/\d\d:\d\d/g); // my_array==["11:30","12:15","16:45"];
+</syntaxhighlight>
+
+====Capturing groups====
+<syntaxhighlight lang="JavaScript">
+var myRe = /(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/;
+var results = myRe.exec("The date and time are 2009-09-08 09:37:08.");
+if (results) {
+    alert("Matched: " + results[0]); // Entire match
+    var my_date = results[1]; // First group == "2009-09-08"
+    var my_time = results[2]; // Second group == "09:37:08"
+    alert("It is " + my_time + " on " + my_date);
+} else alert("Did not find a valid date!");
+</syntaxhighlight>
+
+===Function===
+Every function in JavaScript is an instance of the Function constructor:
+<syntaxhighlight lang='javascript'>
+//x,y is the argument. 'return x+y' is the function body, which is the last in the argument list.
+var add = new Function('x', 'y', 'return x+y');
+var t = add(1, 2);
+alert(t);   //3
+</syntaxhighlight>
+The add function above may also be defined using a function expression:
+
+<syntaxhighlight lang='javascript'>
+var add = function(x, y) {
+    return x + y;
+}
+var t = add(1, 2);
+alert(t);  //3
+</syntaxhighlight>
+
+There exists a shorthand for assigning a function expression to a variable, and is as follows:
+<syntaxhighlight lang='javascript'>
+function add(x, y) {
+    return x + y;
+}
+var t = add(1, 2);
+alert(t);  //3
+</syntaxhighlight>
+
+A function instance has properties and methods.
+<syntaxhighlight lang='javascript'>
+function subtract(x, y) {
+    return x - y;
+}
+
+alert(subtract.length);//2,expected amount of arguments.
+alert(subtract.toString());
+
+/*
+"function subtract(x, y) {
+    return x - y;
+}"
+*/
+</syntaxhighlight>
+
+==Operators==
+The '+' operator is [[Operator overloading|overloaded]]: it is used for string concatenation and arithmetic addition. This may cause problems when inadvertently mixing strings and numbers. As a unary operator, it can convert a numeric string to a number. 
+<syntaxhighlight lang="JavaScript">
+// Concatenate 2 strings
+alert('He' + 'llo');  // displays Hello
+
+// Add two numbers
+alert(2 + 6);   // displays 8
+
+// Adding a number and a string results in concatenation
+alert(2 + '2');       // displays 22
+alert('$' + 3 + 4);   // displays $34, but $7 may have been expected
+alert('$' + (3 + 4)); // displays $7
+
+// Convert a string to a number
+alert(+'2' === 2); // displays true
+alert(+'Hello'); // displays NaN
+</syntaxhighlight>
+
+===Arithmetic===
+JavaScript supports the following '''binary arithmetic operators''':
+<pre>
++     Addition
+-     Subtraction
+*     Multiplication
+/     Division (returns a floating-point value)
+%     Modulus (returns the remainder)
+</pre>
+
+JavaScript supports the following '''unary arithmetic operators''':
+<pre>
++     Unary conversion of string to number
+-     Unary negation (reverses the sign)
+++    Increment (can be prefix or postfix)
+--    Decrement (can be prefix or postfix)
+</pre>
+<syntaxhighlight lang="JavaScript">
+var x = 1;
+alert(++x);  // displays: 2
+alert(x++);  // displays: 2; x becomes 3 then
+alert(x);    // displays: 3
+alert(x--); //  displays: 3; x becomes 2 then
+alert(x);   //  displays: 2
+alert(--x); //  displays: 1
+</syntaxhighlight>
+
+===Assignment===
+<pre>
+=     Assign
++=    Add and assign
+-=    Subtract and assign
+*=    Multiply and assign
+/=    Divide and assign
+%=    Modulus and assign
+</pre>
+[[Assignment (computer science)|Assignment]] of [[primitive type]]s
+<syntaxhighlight lang="JavaScript">
+var x = 9;
+x += 1; 
+alert(x);  // displays: 10
+x *= 30;
+alert(x);  // displays: 300
+x /= 6;
+alert(x);  // displays: 50
+x -= 3;
+alert(x);  // displays: 47
+x %= 7;
+alert(x);  // displays: 5
+</syntaxhighlight>
+Assignment of object types
+<syntaxhighlight lang="JavaScript">
+var obj_1 = {a: 1}; // assign reference of newly created object to variable obj_1
+var obj_2 = {a: 0};
+var obj_3 = obj_2; // obj_3 references the same object as obj_2 does
+
+obj_2.a = 2;
+alert(obj_1.a + " " + obj_2.a + " " + obj_3.a);  // displays 1 2 2
+
+obj_2 = obj_1; // obj_2 now references the same object as variable obj_1
+               //  obj_3 now the only reference to what obj_2 referenced
+alert(obj_1.a + " " + obj_2.a + " " + obj_3.a);   // displays 1 1 2
+
+obj_2.a = 7;// modifies obj_1
+alert(obj_1.a + " " + obj_2.a + " " + obj_3.a);   // displays 7 7 2
+</syntaxhighlight>
+
+==== Destructuring assignment ====
+In Mozilla's JavaScript, since version 1.7, destructuring assignment allows the assignment of parts of data structures to several variables at once. The left hand side of an assignment is a pattern that resembles an arbitrarily nested object/array literal containing l-lvalues at its leafs which are to receive the substructures of the assigned value.
+<syntaxhighlight lang="JavaScript">
+var a, b, c, d, e;
+[a, b] = [3, 4];
+alert(a + ',' + b); // displays: 3,4
+e = {foo: 5, bar: 6, baz: ['Baz', 'Content']};
+var arr = [];
+({baz: [arr[0], arr[3]], foo: a, bar: b}) = e;
+alert(a + ',' + b + ',' + arr);         // displays: 5,6,Baz,,,Content
+[a, b] = [b, a];                        // swap contents of a and b
+alert(a + ',' + b);                     // displays: 6,5
+</syntaxhighlight>
+
+===Comparison===
+<pre>
+==    Equal
+!=    Not equal
+>     Greater than
+>=    Greater than or equal to
+<     Less than
+<=    Less than or equal to
+===   Identical (equal and of the same type)
+!==   Not identical
+</pre>
+When comparing variables which are objects they are considered to be different if their objects are not the same object, even if the values of them are the same, so:
+<pre>
+var obj1 = {a: 1};
+var obj2 = {a: 1};
+var obj3 = obj1;
+alert(obj1 == obj2);   //false
+alert(obj3 == obj1);   //true
+</pre>
+See also [[#String|String]].
+
+===Logical===
+JavaScript provides four logical operators:
+* unary [[negation]] (<code>NOT = !a</code>)
+* binary [[logical disjunction|disjunction]] (<code>OR = a || b</code>) and [[logical conjunction|conjunction]] (<code>AND = a && b</code>)
+* ternary [[Conditional (programming)|conditional]] (<code>c ? t : f</code>)
+
+In the context of a logical operation, any expression evaluates to true except the following''':'''
+* <code>Strings: "", <nowiki>''</nowiki></code>''','''
+* <code>Numbers: 0, -0, NaN</code>''','''
+* <code>Special: null, undefined</code>''','''
+* <code>Boolean: false</code>'''.'''
+
+The Boolean function can be used to explicitly convert to a primitive of type Boolean:
+<syntaxhighlight lang="JavaScript">
+// Only empty strings return false
+alert(Boolean("")      === false);
+alert(Boolean("false") === true);
+alert(Boolean("0")     === true);
+
+// Only zero and NaN return false
+alert(Boolean(NaN) === false);
+alert(Boolean(0)   === false);
+alert(Boolean(-0)  === false); // equivalent to -1*0
+alert(Boolean(-2)  === true );
+
+// All objects return true
+alert(Boolean(this) === true);
+alert(Boolean({})   === true);
+alert(Boolean([])   === true);
+
+// These types return false
+alert(Boolean(null)      === false);
+alert(Boolean(undefined) === false); // equivalent to Boolean()
+</syntaxhighlight>
+
+The NOT operator evaluates its operand as a Boolean, and returns the negation. Using the operator twice in a row, as a [[double negative]]''',''' explicitly converts an expression to a primitive of type Boolean:
+<syntaxhighlight lang="JavaScript">
+alert( !0 === Boolean(!0));  alert(Boolean(!0) === !!1);    alert(!!1 === Boolean(1));
+alert(!!0 === Boolean(0));   alert(Boolean(0) === !1);      alert(!1 === Boolean(!1));
+alert(!"" === Boolean(!"")); alert(Boolean(!"") === !!"s"); alert(!!"s" === Boolean("s"));
+alert(!!"" === Boolean("")); alert(Boolean("") === !"s");   alert(!"s" === Boolean(!"s"));
+</syntaxhighlight>
+
+The ternary operator can also be used for explicit conversion:
+<syntaxhighlight lang="JavaScript">
+alert([] == false);  alert([] ? true : false); // “truthy”, but the comparison uses [].toString()
+alert([0] == false); alert([0]? true : false); // [0].toString() == "0"
+alert("0" == false); alert("0"? true : false); // "0" → 0 … (0==0) … 0 ← false
+alert([1] == true);  alert([1]? true : false); // [1].toString() == "1"
+alert("1" == true);  alert("1"? true : false); // "1" → 1 … (1==1) … 1 ← true
+alert([2] != true);  alert([2]? true : false); // [2].toString() == "2"
+alert("2" != true);  alert("2"? true : false); // "2" → 2 … (2!=1) … 1 ← true
+</syntaxhighlight>
+
+Expressions that use features such as post–incrementation, (<code>i++</code>), have an anticipated [[Side effect (computer science)|side effect]]. JavaScript provides [[short-circuit evaluation]] of expressions; the right operand is only executed if the left operand does not suffice to determine the value of the expression.
+<syntaxhighlight lang="JavaScript">
+alert(a || b);    // When a is true, there is no reason to evaluate b.
+alert(a && b);    // When a is false, there is no reason to evaluate b.
+alert(c ? t : f); // When c is true, there is no reason to evaluate f.
+</syntaxhighlight>
+
+In early versions of JavaScript and [[JScript]], the binary logical operators returned a Boolean value (like most C–derived programming languages). However, all contemporary implementations return one of their operands instead:
+<syntaxhighlight lang="JavaScript">
+alert(a || b); // if a is true, return a, otherwise return b
+alert(a && b); // if a is false, return a, otherwise return b
+</syntaxhighlight>
+
+Programmers who are more familiar with the behavior in C might find this feature surprising, but it allows for a more concise expression of patterns like [[null coalescing operator|null coalescing]]''':'''
+<syntaxhighlight lang="JavaScript">
+var s = t || "(default)"; // assigns t, or the default value if t is null, empty, etc.
+</syntaxhighlight>
+
+===Bitwise===
+{{Expand section|date=April 2011}}
+JavaScript supports the following '''binary [[Bitwise_operation|bitwise operators]]''':
+<pre>
+&     And
+|     Or
+^     Xor
+
+<<    Shift left  (zero fill)
+>>    Shift right (sign-propagating); copies of the leftmost bit (sign bit) are shifted in from the
+      left.
+>>>   Shift right (zero fill)
+
+      For positive numbers, >> and >>> yield the same result.
+</pre>
+
+JavaScript supports the following '''unary bitwise operator''':
+<pre>
+~     Not (inverts the bits)
+</pre>
+
+===String===
+<pre>
+=     Assignment
++     Concatenation
++=    Concatenate and assign
+</pre>
+
+Examples
+
+<syntaxhighlight lang="JavaScript">
+str = "ab" + "cd";   // "abcd"
+str += "e";          // "abcde"
+
+str2 = "2"+2         // "22", not "4" or 4.
+</syntaxhighlight>
+
+==Control structures==
+
+===Compound statements===
+
+A pair of curly brackets <tt>{&nbsp;}</tt> and an enclosed sequence of statements constitute a compound statement, which can be used wherever a statement can be used.
+
+===If ... else===
+<syntaxhighlight lang="JavaScript">
+if (expr) {
+   //statements;
+} else if (expr2) {
+   //statements;
+} else {
+   //statements;
+}
+</syntaxhighlight>
+this is also possible
+<syntaxhighlight lang="JavaScript">
+if (exprA == exprB) {
+   //statements;
+} else if (expr2) {
+   //statements;
+} else {
+   //statements;
+}
+</syntaxhighlight>
+
+=== Conditional operator ===
+
+The conditional operator creates an expression that evaluates as one of two expressions depending on a condition. This is similar to the ''if'' statement that selects one of two statements to execute depending on a condition. I.e., the conditional operator is to expressions what ''if'' is to statements.
+
+<syntaxhighlight lang="JavaScript">
+ result = condition ? expression : alternative;
+</syntaxhighlight>
+
+is the same as:
+
+<syntaxhighlight lang="JavaScript">
+ if (condition) {
+   result = expression;
+ } else {
+   result = alternative;
+ }
+</syntaxhighlight>
+
+Unlike the ''if'' statement, the conditional operator cannot omit its "else-branch".
+
+===Switch statement===
+The syntax of the JavaScript [[Control flow#Choice|switch statement]] is as follows:
+<syntaxhighlight lang="JavaScript">
+ switch (expr) {
+   case SOMEVALUE:
+     //statements;
+     break;
+   case ANOTHERVALUE:
+     //statements;
+     break;
+   default:
+     //statements;
+     break;
+ }
+</syntaxhighlight>
+
+*<code>break;</code> is optional; however, it is usually needed, since otherwise code execution will continue to the body of the next <code>case</code> block.
+*Add a break statement to the end of the last case as a precautionary measure, in case additional cases are added later.
+*Strings literal values can also be used for the case values.
+*Expressions can be used instead of values.
+*<code>case default:</code> is optional.
+*Braces are required.
+
+===For loop===
+The syntax of the JavaScript [[for loop]] is as follows:
+<syntaxhighlight lang="JavaScript">
+ for (initial; condition; loop statement) {
+   /*
+     statements will be executed every time
+     the for{} loop cycles, while the
+     condition is satisfied
+   */
+ }
+</syntaxhighlight>
+
+or
+
+<syntaxhighlight lang="JavaScript">
+ for (initial; condition; loop statement(iteration)) // one statement
+</syntaxhighlight>
+
+===For ... in loop===
+The syntax of the JavaScript [[Foreach|for ... in loop]] is as follows:
+<syntaxhighlight lang="JavaScript">
+ for (var property_name in some_object) {
+   //statements using some_object[property_name];
+ }
+</syntaxhighlight>
+
+* Iterates through all enumerable properties of an object.
+* Iterates through all used indices of array including all user-defined properties of array object if any. Thus it may be better to use a traditional for loop with a numeric index when iterating over arrays.
+* There are differences between the various web browsers with regard to which properties will be reflected with the for...in loop statement. In theory, this is controlled by an internal state property defined by the ECMAscript standard called "DontEnum", but in practice each browser returns a slightly different set of properties during introspection. It is useful to test for a given property using <code>if (some_object.hasOwnProperty(property_name)) { ... }</code>.  Thus, adding a method to the array prototype with <code>Array.prototype.newMethod = function() {...}</code> may cause for ... in loops to loop over the method's name.
+
+===While loop===
+The syntax of the JavaScript [[while loop]] is as follows:
+<syntaxhighlight lang="JavaScript">
+ while (condition) {
+   statement1;
+   statement2;
+   statement3;
+   ...
+ }
+</syntaxhighlight>
+
+===Do ... while loop===
+The syntax of the JavaScript [[do while loop|do ... while loop]] is as follows:
+<syntaxhighlight lang="JavaScript">
+ do {
+   statement1;
+   statement2;
+   statement3;
+   ...
+ } while (condition);
+</syntaxhighlight>
+
+===With===
+The <code>with</code> statement adds all of the given object's properties and methods into the following block's scope, letting them be referenced as if they were local variables.
+<syntaxhighlight lang="JavaScript">
+ with (document) {
+   var a = getElementById('a');
+   var b = getElementById('b');
+   var c = getElementById('c');
+ };
+</syntaxhighlight>
+* Note the absence of <code>document.</code> before each <code>getElementById()</code> invocation.
+
+The semantics are similar to the <code>with</code> statement of [[Pascal (programming language)|Pascal]].
+
+Because the availability of <code>with</code> statements hinders program performance and is believed to reduce code clarity (since any given variable could actually be a property from an enclosing <code>with</code>), this statement is not allowed in ''strict mode''.
+
+===Labels===
+JavaScript supports nested labels in most implementations. Loops or blocks can be labeled for the <code>break</code> statement, and loops for <code>continue</code>. Although [[goto]] is a reserved word,<ref>ECMA-262, Edition 3, 7.5.3 Future Reserved Words</ref> goto is not implemented in JavaScript.
+<syntaxhighlight lang="JavaScript">loop1: for (var a = 0; a < 10; a++) {
+   if (a == 4) {
+       break loop1; // Stops after the 4th attempt
+   }
+   alert('a = ' + a);
+   loop2: for (var b = 0; b < 10; ++b) {
+      if (b == 3) {
+         continue loop2; // Number 3 is skipped
+      }
+      if (b == 6) {
+         continue loop1; // Continues the first loop, 'finished' is not shown
+      }
+      alert('b = ' + b);
+   }
+   alert('finished')
+}
+block1: {
+    alert('hello'); // Displays 'hello'
+    break block1;
+    alert('world'); // Will never get here
+}
+goto block1; // Parse error.
+</syntaxhighlight>
+
+==Functions==
+
+A [[function (programming)|function]] is a block with a (possibly empty) parameter list that is normally given a name. A function may use local variables. If you exit the function without a return statement, the value <code>undefined</code> is returned.  
+
+<syntaxhighlight lang="JavaScript">
+function gcd(segmentA, segmentB) {
+    var diff = segmentA - segmentB;
+    if (diff == 0) 
+        return segmentA;
+    return diff > 0 ? gcd(segmentB, diff) : gcd(segmentA, -diff);
+}
+alert(gcd(60, 40)); // 20
+
+var mygcd = gcd; // mygcd is a reference to the same function as gcd. Note no argument ()s.
+alert(mygcd(60, 40)); // 20
+</syntaxhighlight>
+
+Functions are [[first class object]]s and may be assigned to other variables.
+
+The number of arguments given when calling a function may not necessarily correspond to the number of arguments in the function definition; a named argument in the definition that does not have a matching argument in the call will have the value <code>undefined</code> (which can be implicitly cast to false).  Within the function, the arguments may also be accessed through the <code>arguments</code> object; this provides access to all arguments using indices (e.g. <code>arguments[0], arguments[1], ... arguments[n]</code>), including those beyond the number of named arguments. (While the arguments list has a <code>.length</code> property, it is ''not'' an instance of Array; it does not have methods such as <code>.slice()</code>, <code>.sort()</code>, etc.)
+
+<syntaxhighlight lang="JavaScript">
+function add7(x, y) {
+   if (!y) {
+      y = 7;
+   }
+   alert(x + y + arguments.length);
+};
+add7(3); // 11
+add7(3, 4); // 9
+</syntaxhighlight>
+
+Primitive values (number, boolean, string) are passed by value. For objects, it is the reference to the object that is passed.
+
+<syntaxhighlight lang="JavaScript">
+var obj1 = {a : 1};
+var obj2 = {b : 2};
+function foo(p) {
+  p = obj2; // Ignores actual parameter
+  p.b = arguments[1];
+}
+foo(obj1, 3); // Does not affect obj1 at all.  3 is additional parameter
+alert(obj1.a + " " + obj2.b); // writes 1 3
+</syntaxhighlight>
+
+Functions can be declared inside other functions, and access the outer function's local variables.  Furthermore they implement full [[closure (computer science)|closure]]s by remembering the outer function's local variables even after the outer function has exited.
+
+<syntaxhighlight lang="JavaScript">
+var v = "Top";
+var bar, baz;
+function foo() {
+  var v = "fud";
+  bar = function() { alert(v) };
+  baz = function(x) { v = x; };
+}
+foo();
+baz("Fugly");
+bar(); // Fugly (not fud) even though foo() has exited.
+alert(v); // Top
+</syntaxhighlight>
+
+==Objects==
+For convenience, types are normally subdivided into ''primitives'' and ''objects''. Objects are entities that have an identity (they are only equal to themselves) and that map property names to values ("slots" in [[prototype-based programming]] terminology). Objects may be thought of as [[associative arrays]] or hashes, and are often implemented using these data structures. However, objects have additional features, such as a prototype chain{{clarify|date=January 2012}}, which ordinary associative arrays do not have.
+
+JavaScript has several kinds of built-in objects, namely Array, Boolean, Date, Function, Math, Number, Object, RegExp and String. Other objects are "host objects", defined not by the language but by the runtime environment. For example, in a browser, typical host objects belong to the DOM (window, form, links, etc.).
+
+===Creating objects===
+Objects can be created using a constructor or an object literal. The constructor can use either a built-in Object function or a custom function. It is a convention that constructor functions are given a name that starts with a capital letter:
+<syntaxhighlight lang="JavaScript">
+// Constructor
+var anObject = new Object();
+
+// Object literal
+var objectA = {};
+var objectA2 = {};  // A != A2, {}s create new objects as copies.
+var objectB = {index1: 'value 1', index2: 'value 2'};
+
+// Custom constructor (see below)
+</syntaxhighlight>
+
+Object literals and array literals allow one to easily create flexible data structures:
+<syntaxhighlight lang="JavaScript">
+var myStructure = {
+  name: {
+    first: "Mel",
+    last: "Smith"
+  },
+  age: 33,
+  hobbies: ["chess", "jogging"]
+};
+</syntaxhighlight>
+This is the basis for [[JSON]], which is a simple notation that uses JavaScript-like syntax for data exchange.
+
+===Methods===
+
+A [[method (computer science)|method]] is simply a function that has been assigned to a property name of an object. Unlike many object-oriented languages, there is no distinction between a function definition and a method definition. Rather, the distinction occurs during function calling; a function can be called as a method.
+
+When called as a method, the standard local variable ''this'' is just automatically set to the object instance to the left of the ".".  (There are also ''call'' and ''apply'' methods that can set ''this'' explicitly—some packages such as [[jQuery]] do unusual things with ''this''.)
+
+In the example below, Foo is being used as a constructor. There is nothing special about a constructor - it is just a plain function that initialises an object. When used with the ''new'' keyword, as is the norm, ''this'' is set to a newly created blank object.
+
+Note that in the example below, Foo is simply assigning values to slots, some of which are functions. Thus it can assign different functions to different instances. There is no prototyping in this example.
+
+<syntaxhighlight lang="JavaScript">
+function px() {return this.prefix + "X";}
+
+function Foo(yz) {
+  this.prefix = "a-";
+  if (yz > 0) {
+    this.pyz = function() {return this.prefix + "Y";};
+  } else {
+    this.pyz = function() {return this.prefix + "Z";};
+  }
+  this.m1 = px;
+}
+
+var foo1 = new Foo(1);
+var foo2 = new Foo(0);
+foo2.prefix = "b-";
+
+alert("foo1/2 " + foo1.pyz() + foo2.pyz());
+// foo1/2 a-Y b-Z
+
+foo1.m3 = px; // Assigns the function itself, not its evaluated result, i.e. not px()
+var baz = {"prefix": "c-"};
+baz.m4 = px; // No need for a constructor to make an object.
+
+alert("m1/m3/m4 " + foo1.m1() + foo1.m3() + baz.m4());
+// m1/m3/m4 a-X a-X c-X
+
+foo1.m2(); // Throws an exception, because foo1.m2 doesn't exist.
+
+</syntaxhighlight>
+
+===Constructors===
+
+[[Constructor function]]s simply assign values to slots of a newly created object. The values may be data or other functions.
+
+Example: Manipulating an object
+<syntaxhighlight lang="JavaScript">
+function MyObject(attributeA, attributeB) {
+  this.attributeA = attributeA;
+  this.attributeB = attributeB;
+}
+
+MyObject.staticC = "blue"; // On MyObject Function, not obj
+alert(MyObject.staticC); // blue
+
+obj = new MyObject('red', 1000);
+
+alert(obj.attributeA); // red
+alert(obj["attributeB"]); // 1000
+
+alert(obj.staticC); // undefined
+obj.attributeC = new Date(); // add a new property
+
+delete obj.attributeB; // remove a property of obj
+alert(obj.attributeB); // undefined
+
+delete obj; // remove the whole Object (rarely used)
+alert(obj.attributeA); // throws an exception
+</syntaxhighlight>
+
+The constructor itself is referenced in the object's prototype's ''constructor'' slot.  So <syntaxhighlight lang="JavaScript">
+function Foo() {}
+// Use of 'new' sets prototype slots (for example, 
+// x = new Foo() would set x's prototype to Foo.prototype,
+// and Foo.prototype has a constructor slot pointing back to Foo).
+x = new Foo();
+// The above is almost equivalent to
+y = {};
+y.constructor = Foo;
+y.constructor();
+// Except
+x.constructor == y.constructor // true
+x instanceof Foo // true
+y instanceof Foo // false
+// y's prototype is Object.prototype, not
+// Foo.prototype, since it was initialised with
+// {} instead of new Foo.
+// Even though Foo is set to y's constructor slot,
+// this is ignored by instanceof - only y's prototype's
+// constructor slot is considered.
+</syntaxhighlight>
+
+Functions are objects themselves, which can be used to produce an effect similar to "static properties" (using C++/Java terminology) as shown below. (The function object also has a special <code>prototype</code> property, as discussed in the Inheritance section below.)
+
+Object deletion is rarely used as the scripting engine will [[Garbage collection (computer science)|garbage collect]] objects that are no longer being referenced.
+
+===Inheritance===
+JavaScript supports inheritance hierarchies through prototyping in the manner of Self.
+
+In the following example, the Derived class inherits from the Base class.
+When d is created as a Derived, the reference to the base instance of Base is copied to d.base.
+
+Derive does not contain a value for aBaseFunction, so it is retrieved from Base ''when aBaseFunction is accessed''.
+This is made clear by changing the value of base.aBaseFunction, which is reflected in the value of d.aBaseFunction.
+
+Some implementations allow the prototype to be accessed or set explicitly using the __proto__ slot as shown below.
+
+<syntaxhighlight lang="JavaScript">
+function Base() {
+  this.anOverride = function() {alert("Base::anOverride()");};
+
+  this.aBaseFunction = function() {alert("Base::aBaseFunction()");};
+}
+
+function Derived() {
+  this.anOverride = function() {alert("Derived::anOverride()");};
+}
+
+base = new Base();
+Derived.prototype = base; // Must be before new Derived()
+Derived.prototype.constructor = Derived; // Required to make `instanceof` work
+
+d = new Derived(); // Copies Derived.prototype to d instance's hidden prototype slot.
+d instanceof Derived; // true
+d instanceof Base; // true
+
+base.aBaseFunction = function() {alert("Base::aNEWBaseFunction()")}
+
+d.anOverride(); // Derived::anOverride()
+d.aBaseFunction(); // Base::aNEWBaseFunction()
+alert(d.aBaseFunction == Derived.prototype.aBaseFunction); // true
+
+alert(d.__proto__ == base); // true in Mozilla-based implementations but false in many other implementations.
+</syntaxhighlight>
+
+The following shows clearly how references to prototypes are ''copied'' on instance creation, but that changes to a prototype can affect all instances that refer to it.
+
+<syntaxhighlight lang="JavaScript">
+function m1() {return "One";}
+function m2() {return "Two";}
+function m3() {return "Three";}
+
+function Base() {}
+
+Base.prototype.m = m2;
+bar = new Base();
+alert("bar.m " + bar.m()); // bar.m Two
+
+function Top() {this.m = m3;}
+t = new Top();
+
+foo = new Base();
+Base.prototype = t;
+// No effect on foo, the *reference* to t is copied.
+alert("foo.m " + foo.m()); // foo.m Two
+
+baz = new Base();
+alert("baz.m " + baz.m()); // baz.m Three
+
+t.m = m1; // Does affect baz, and any other derived classes.
+alert("baz.m1 " + baz.m()); // baz.m1 One
+</syntaxhighlight>
+
+In practice many variations of these themes are used, and it can be both powerful and confusing.
+
+==Exception handling==
+JavaScript includes a <code>try ... catch ... finally</code> [[exception handling]] statement to handle run-time errors.
+
+The <code>try ... catch ... finally</code> statement catches [[exception handling|exceptions]] resulting from an error or a [[throw statement]]. Its syntax is as follows:
+
+<syntaxhighlight lang="JavaScript">
+try {
+  // Statements in which exceptions might be thrown
+} catch(errorValue) {
+  // Statements that execute in the event of an exception
+} finally {
+  // Statements that execute afterward either way
+}
+</syntaxhighlight>
+
+Initially, the statements within the try block execute. If an exception is thrown, the script's control flow immediately transfers to the statements in the catch block, with the exception available as the error argument. Otherwise the catch block is skipped.   The Catch block can <code>throw(errorValue)</code> if it does not want to handle a specific error.
+
+In any case the statements in the finally block are always executed. This can be used to free resources, although memory is automatically garbage collected.
+
+Either the <code>catch</code> or the <code>finally</code> clause may be omitted.  The catch argument is required.
+
+The Mozilla implementation allows for multiple catch statements, as an extension to the ECMAScript standard. They follow a syntax similar to that used in [[Java (programming language)|Java]]:
+<syntaxhighlight lang="JavaScript">
+try { statement; }
+catch (e if e == "InvalidNameException")  { statement; }
+catch (e if e == "InvalidIdException")    { statement; }
+catch (e if e == "InvalidEmailException") { statement; }
+catch (e)                                 { statement; }
+</syntaxhighlight>
+
+In a browser, the <code>onerror</code> event is more commonly used to trap exceptions.
+<!-- This needs verification -->
+
+<syntaxhighlight lang="JavaScript">
+onerror = function (errorValue, url, lineNr) {...; return true;};
+</syntaxhighlight>
+
+==Native functions and methods==
+(Not related to web browsers.)
+
+===eval (expression) ===
+Evaluates expression string parameter, which can include assignment statements.  Variables local to functions can be referenced by the expression.
+
+<syntaxhighlight lang="JavaScript">
+(function foo() {
+  var x=7;
+  alert("val " + eval("x+2"));
+})(); // shows val 9.
+</syntaxhighlight>
+
+==See also==
+
+* [[Comparison of JavaScript-based source code editors]]
+* [[JavaScript]]
+
+{{JavaScript}}
+
+== Notes ==
+<references />
+
+==References==
+* David Flanagan, Paula Ferguson: ''JavaScript: The Definitive Guide'', O'Reilly & Associates, ISBN 0-596-10199-6
+* Danny Goodman: ''JavaScript Bible'', Wiley, John & Sons, ISBN 0-7645-3342-8
+* Thomas A. Powell, Fritz Schneider: ''JavaScript: The Complete Reference'', McGraw-Hill Companies, ISBN 0-07-219127-9
+* Emily Vander Veer: ''JavaScript For Dummies, 4th Edition'', Wiley, ISBN 0-7645-7659-3
+
+==External links==
+{{Wikibooks|JavaScript}}
+*[https://developer.mozilla.org/en/docs/A_re-introduction_to_JavaScript A re-introduction to JavaScript - Mozilla Developer Center]
+* ECMAScript standard references: [http://www.ecma-international.org/publications/standards/Ecma-262.htm ECMA-262]
+*[http://javalessons.com/cgi-bin/fun/java-tutorials-main.cgi?sub=javascript&code=script Interactive JavaScript Lessons - example-based]
+*[http://javascript.about.com/ JavaScript on About.com: lessons and explanation]
+* Mozilla Developer Center Core References for JavaScript versions [https://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference 1.5], [http://research.nihonsoft.org/javascript/CoreReferenceJS14/ 1.4], [http://research.nihonsoft.org/javascript/ClientReferenceJS13/ 1.3] and [http://research.nihonsoft.org/javascript/jsref/ 1.2]
+*[https://developer.mozilla.org/en/docs/JavaScript Mozilla JavaScript Language Documentation]
+*[http://www.how-to-code.com/javascript/comparison-operators-in-javascript.html Comparison Operators in JavaScript]
+
+{{Use dmy dates|date=April 2011}}
+
+{{DEFAULTSORT:Javascript Syntax}}
+[[Category:JavaScript|syntax]]

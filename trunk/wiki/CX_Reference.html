@@ -1,0 +1,138 @@
+
+<p>
+	<strong>CX</strong> is a simple
+	<tt>JavaScript</tt>
+	-like language parser and interpreter written in java.
+</p>
+<p>It uses simple read-ahead parsing algorithm that can be easily customized to support additional language
+	structured (like SQL).</p>
+<p>
+	The interpreter is <i><tt>context/closures</tt></i> based similar to
+	<tt>lisp</tt>
+	that gives the name of the language:
+</p>
+<p>
+	<strong>CX</strong> stands for <strong>CONTEXT</strong>.
+</p>
+<h2>
+	<a name="Currently_supported_C/Java/JavaScript_semantics"></a>Currently supported
+	<tt>C/Java/JavaScript</tt>
+	semantics<a href="#Currently_supported_C/Java/JavaScript_semantics" class="section_anchor"></a>
+</h2>
+<pre class="prettyprint">
+	<span class="kwd">if</span><span class="pun">(</span><span class="pln">condition</span><span class="pun">)</span><span
+		class="pln">true_statement </span><span class="pun">*</span><span class="kwd">else</span><span class="pun">*</span><span
+		class="pln"> false_statement<br></span><span class="kwd">for</span><span class="pun">(</span><span class="pln">initialization</span><span
+		class="pun">;</span><span class="pln"> condition</span><span class="pun">;</span><span class="pln"> iteration</span><span
+		class="pun">)</span><span class="pln"> statement<br></span><span class="kwd">for</span><span class="pun">(</span><span
+		class="pln">values_and_keys </span><span class="pun">:</span><span class="pln"> list_or_map</span><span class="pun">)</span><span
+		class="pln"> statement<br></span><span class="kwd">while</span><span class="pun">(</span><span class="pln">condition</span><span
+		class="pun">)</span><span class="pln"> statement<br></span><span class="kwd">do</span><span class="pln"> statement </span><span
+		class="kwd">while</span><span class="pun">(</span><span class="pln">condition</span><span class="pun">)</span><span
+		class="pln"><br></span><span class="kwd">switch</span><span class="pun">(</span><span class="pln">statement</span><span
+		class="pun">){</span><span class="kwd">case</span><span class="pln"> value</span><span class="pun">:</span><span
+		class="pln"> statement </span><span class="pun">...</span><span class="pln"> </span><span class="kwd">default</span><span
+		class="pun">:</span><span class="pln"> statement</span><span class="pun">}</span><span class="pln"><br></span><span
+		class="kwd">try</span><span class="pln"> statement </span><span class="kwd">catch</span><span class="pun">(</span><span
+		class="typ">Exception</span><span class="pln"> name</span><span class="pun">)</span><span class="pln"> statement </span><span
+		class="kwd">finally</span><span class="pln"> statement<br></span><span class="kwd">break</span><span class="pln"><br></span><span
+		class="kwd">continue</span><span class="pln"><br></span><span class="kwd">return</span><span class="pln"><br></span><span
+		class="kwd">throw</span><span class="pln"><br></span><span class="kwd">var</span><span class="pln"> </span><span
+		class="com">// for variable definition in the current context</span><span class="pln"><br></span><span
+		class="kwd">function</span><span class="pun">(</span><span class="pln">args</span><span class="pun">)</span><span
+		class="pln"> statement </span><span class="com">// for lambda function</span><span class="pln"><br></span><span
+		class="kwd">function</span><span class="pln"> name</span><span class="pun">(</span><span class="pln">args</span><span
+		class="pun">)</span><span class="pln"> statement </span><span class="com">// for named function</span><span
+		class="pln"><br></span><span class="pun">[</span><span class="lit">1</span><span class="pun">,</span><span
+		class="lit">2</span><span class="pun">,</span><span class="str">"test"</span><span class="pun">,</span><span
+		class="str">'string'</span><span class="pun">]</span><span class="pln"> </span><span class="com">//for array definition</span><span
+		class="pln"><br></span><span class="pun">{</span><span class="pln">a</span><span class="pun">:</span><span
+		class="lit">4</span><span class="pun">,</span><span class="pln"> str</span><span class="pun">:</span><span class="pln"> </span><span
+		class="pun">“</span><span class="pln">str</span><span class="pun">”,</span><span class="pln"> foo</span><span
+		class="pun">:</span><span class="kwd">function</span><span class="pun">(){</span><span class="kwd">return</span><span
+		class="pln"> </span><span class="lit">0</span><span class="pun">;}</span><span class="pln"> &nbsp;</span><span
+		class="pun">}</span><span class="pln"> </span><span class="com">// for objects/maps definition</span>
+</pre>
+<h2>
+	<a name="Assumption"></a>Assumption<a href="#Assumption" class="section_anchor"></a>
+</h2>
+<p>
+	in <strong>CX</strong> we assume the following:
+</p>
+<p>
+	<tt>null == false == 0 == 0.0 == "" == ''</tt>
+</p>
+<h2>
+	<a name="Currently_implemented_operator_precedence"></a>Currently implemented operator precedence<a
+		href="#Currently_implemented_operator_precedence" class="section_anchor"></a>
+</h2>
+<p></p>
+<table class="wikitable">
+	<tbody>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Operator Type</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">Operator</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">Associativity</td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Expression Operators</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">() <a href=""></a> . expr++ expr--
+			</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">left-to-right</td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Unary Operators</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">+ - ! ~ ++expr --expr</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">right-to-left</td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Binary Operators</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"><strong> / % </strong></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">left-to-right</td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">+ -</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">&lt;&lt; &gt;&gt; &gt;&gt;&gt;</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">&lt; &gt; &lt;= &gt;=</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">== !=</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">&amp; | ^</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+			<td style="border: 1px solid #ccc; padding: 5px;">&amp;&amp; | |</td>
+			<td style="border: 1px solid #ccc; padding: 5px;"></td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Ternary Operator</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">? :</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">right-to-left</td>
+		</tr>
+		<tr>
+			<td style="border: 1px solid #ccc; padding: 5px;">Assignment Operators</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">= += -= = /= %= &gt;&gt;= &lt;&lt;= &amp;= ^= |=</td>
+			<td style="border: 1px solid #ccc; padding: 5px;">right-to-left</td>
+		</tr>
+	</tbody>
+</table>
+<p></p>
+<p>
+	<strong>Note</strong>: Unit test were added for clearing the semantics
+</p>

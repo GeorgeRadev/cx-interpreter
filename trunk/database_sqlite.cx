@@ -1,0 +1,54 @@
+var connectionString = 'jdbc:sqlite:./out/test_db.sqlite'; 
+var map = {};
+var error = "ok";
+
+db = Database.create(connectionString);
+if(db.connect()){
+	sql := CREATE TABLE IF NOT EXISTS 'TestTable' ( 'number' INT , 'string' VARCHAR );
+	if(!db.execute(sql)){
+		error = db.error;
+		throw "Create fails: " + error;
+	}
+	
+	sql := DELETE FROM 'TestTable';
+	if(!db.execute(sql)){
+		error = db.error;
+		throw "delete fails: " + error;
+	}
+	
+	number = 42;
+	string = 'just a string';
+	sql := INSERT INTO 'TestTable' ( 'number', 'string' ) VALUES (number, string);
+	if(!db.execute(sql)){
+		error = db.error;
+		throw "insert fails: " + error;
+	}
+	
+	sql := SELECT 'number', 'string' FROM 'TestTable';
+	var result = db.execute(sql, 
+		function(id, name){
+		    // will check in the test case that the value was retrieved
+			map[""+id] = name;
+		}
+	);
+	if(!result){
+		error = db.error;
+		throw "select fails: " + error;
+	}
+	
+	if(!db.commit()){ 
+		error = db.error;
+		throw "commit fails: " + error;
+	}
+	if(!db.rollback()){ 
+		error = db.error;
+		throw "rollback fails: " + error;
+	}
+	if(!db.close()){ 
+		error = db.error;
+		throw "close fails: " + error;
+	}
+	
+}else{
+	error = db.error;
+}
