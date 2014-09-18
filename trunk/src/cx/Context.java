@@ -537,9 +537,6 @@ public class Context implements Visitor {
 	}
 
 	private Number complement(Number number) {
-		if (number instanceof Double) {
-			return Long.valueOf(~number.longValue());
-		}
 		return Long.valueOf(~number.longValue());
 	}
 
@@ -559,6 +556,18 @@ public class Context implements Visitor {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
 					cx.result = newValue;
+				} else {
+					Long l = toLong(result);
+					if (l == null) {
+						double d = toDouble(result);
+						if (d != d) {
+							cx.result = null;
+						} else {
+							cx.result = d + 1;
+						}
+					} else {
+						cx.result = ++l;
+					}
 				}
 				return;
 			case INC_POST:
@@ -581,6 +590,18 @@ public class Context implements Visitor {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
 					cx.result = newValue;
+				} else {
+					Long l = toLong(result);
+					if (l == null) {
+						double d = toDouble(result);
+						if (d != d) {
+							cx.result = null;
+						} else {
+							cx.result = d - 1;
+						}
+					} else {
+						cx.result = --l;
+					}
 				}
 				return;
 			case DEC_POST:
@@ -597,16 +618,44 @@ public class Context implements Visitor {
 			case NEGATE:
 				if ((result instanceof Number)) {
 					cx.result = negate((Number) result);
+				} else {
+					Long l = toLong(result);
+					if (l == null) {
+						double d = toDouble(result);
+						if (d != d) {
+							cx.result = null;
+						} else {
+							cx.result = -d;
+						}
+					} else {
+						cx.result = -l;
+					}
 				}
 				return;
 			case ABSOLUTE:
 				if ((result instanceof Number)) {
 					cx.result = absolute((Number) result);
+				} else {
+					Long l = toLong(result);
+					if (l == null) {
+						cx.result = absolute(toDouble(result));
+					} else {
+						cx.result = absolute(l);
+					}
 				}
 				return;
 			case COMPLEMENT:
-				if ((result instanceof Number)) {
-					cx.result = complement((Number) result);
+				if (result != null) {
+					if ((result instanceof Number)) {
+						cx.result = complement((Number) result);
+					} else {
+						double d = toDouble(result);
+						if (d != d) {
+							cx.result = null;
+						} else {
+							cx.result = ~((long) d);
+						}
+					}
 				}
 				return;
 			default:
@@ -642,7 +691,7 @@ public class Context implements Visitor {
 			return ZERO;
 		} else {
 			try {
-				return Parser.parseNumber(obj.toString()).longValue();
+				return Long.parseLong(obj.toString());
 			} catch (NumberFormatException e) {}
 		}
 		return null;
@@ -721,7 +770,7 @@ public class Context implements Visitor {
 		} else if (left instanceof Number) {
 			Long l = toLong(left);
 			Long r = toLong(right);
-			return r == null || r.compareTo(l) == 0;
+			return r != null && r.compareTo(l) == 0;
 
 		} else if (left instanceof String) {
 			String l = toString(left);
@@ -910,13 +959,8 @@ public class Context implements Visitor {
 		} else if (right == null) {
 			return left;
 		} else if (left instanceof Number && right instanceof Number) {
-			if (left instanceof Double || right instanceof Double) {
 				double d = ((Number) left).doubleValue() / ((Number) right).doubleValue();
 				return new Double(d);
-			} else {
-				long l = ((Number) left).longValue() / ((Number) right).longValue();
-				return Long.valueOf(l);
-			}
 		}
 		return null;
 	}
@@ -1041,7 +1085,16 @@ public class Context implements Visitor {
 		final Object obj = eval(access.object);
 		final Node element = access.element;
 
-		if (obj instanceof List) {
+		if (obj instanceof ContextFrame) {
+			String _element;
+			if (element instanceof NodeVariable) {
+				_element = ((NodeVariable) element).name;
+			} else {
+				_element = eval(element).toString();
+			}
+			((ContextFrame) obj).set(_element, value);
+
+		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 			try {
 				int ix;
@@ -1112,15 +1165,6 @@ public class Context implements Visitor {
 			}
 			((Map) obj).put(_element, value);
 
-		} else if (obj instanceof ContextFrame) {
-			String _element;
-			if (element instanceof NodeVariable) {
-				_element = ((NodeVariable) element).name;
-			} else {
-				_element = eval(element).toString();
-			}
-			((ContextFrame) obj).set(_element, value);
-
 		} else {
 			String _element;
 			if (element instanceof NodeVariable) {
@@ -1145,7 +1189,30 @@ public class Context implements Visitor {
 		final Node element = node.element;
 
 		cx.result = null;
-		if (obj instanceof List) {
+		if (obj instanceof ContextFrame) {
+			if (element instanceof NodeString) {
+				String _element = ((NodeString) element).value;
+				if ("length".equals(_element)) {
+					cx.result = ((ContextFrame) obj).frame.size();
+					return;
+				}
+				cx.result = ((ContextFrame) obj).frame.get(_element);
+				return;
+			}
+
+			Object _element = eval(element);
+			if (_element != null) {
+				if (_element instanceof String) {
+					cx.result = ((ContextFrame) obj).frame.get(_element);
+				} else {
+					cx.result = ((ContextFrame) obj).frame.get(_element.toString());
+				}
+				return;
+			} else {
+				cx.result = null;
+				return;
+			}
+		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 
 			if (element instanceof NodeString) {
@@ -1235,26 +1302,6 @@ public class Context implements Visitor {
 			Object _element = eval(element);
 			if (_element != null) {
 				cx.result = ((Map) obj).get(_element);
-				return;
-			} else {
-				cx.result = null;
-				return;
-			}
-
-		} else if (obj instanceof ContextFrame) {
-			if (element instanceof NodeString) {
-				String _element = ((NodeString) element).value;
-				if ("length".equals(_element)) {
-					cx.result = ((ContextFrame) obj).frame.size();
-					return;
-				}
-				cx.result = ((ContextFrame) obj).frame.get(_element);
-				return;
-			}
-
-			Object _element = eval(element);
-			if (_element != null) {
-				cx.result = ((ContextFrame) obj).frame.get(_element);
 				return;
 			} else {
 				cx.result = null;

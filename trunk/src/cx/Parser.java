@@ -979,7 +979,7 @@ public class Parser {
 				localNode = parsePrimaryExpr();
 				if (localNode instanceof NodeVariable) {
 					// convert access name to string
-					// to differ obj.element as obj["element"]
+					// to define obj.element as obj["element"]
 					// (not as obj[element] )
 					localNode = new NodeString(localNode.position, ((NodeVariable) localNode).name);
 				}
