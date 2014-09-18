@@ -10,6 +10,82 @@ import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 public class TestContext extends TestCase {
+	public void testUnaryArithmetic() {
+		Parser parser;
+		List<Node> block;
+		{
+			parser = new Parser("str = '-42'; n = -12.34; val1 = +str; val2 = +n; val3 = --'13'; val4 = '13'++;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(42L, cx.get("val1"));
+			assertEquals(12.34d, cx.get("val2"));
+			assertEquals(12L, cx.get("val3"));
+			assertEquals("13", cx.get("val4"));
+		}
+		{
+			parser = new Parser("str = '-42.42'; val1 = +str; val2 = ++str; val3 = ++val1;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(43.42d, cx.get("val1"));
+			assertEquals(-41.42d, cx.get("val2"));
+			assertEquals(43.42d, cx.get("val3"));
+		}
+		{
+			parser = new Parser("val1 = ~~'-5';val2 = ~~'3.14';");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(-5L, cx.get("val1"));
+			assertEquals(3L, cx.get("val2"));
+		}
+	}
+
+	public void testAccess() {
+		Parser parser;
+		List<Node> block;
+		{
+			parser = new Parser("obj = {};\n obj[6] = 'six'; r1 = obj.'6'; r2 = obj[6]; r3 = obj['6'];");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals("six", cx.get("r1"));
+			assertEquals("six", cx.get("r2"));
+			assertEquals("six", cx.get("r3"));
+		}
+		{
+			parser = new Parser("obj = {}; obj.a = 5; r1 = obj.a; r2 = obj.'a'; r3 = obj[a]; r4 = obj['a'];");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(5L, cx.get("r1"));
+			assertEquals(5L, cx.get("r2"));
+			assertNull(cx.get("r3"));
+			assertEquals(5L, cx.get("r4"));
+		}
+		{
+			parser = new Parser("a = 'a'; obj = {}; obj.a = 5; r1 = obj.a; r2 = obj.'a'; r3 = obj[a]; r4 = obj['a'];");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(5L, cx.get("r1"));
+			assertEquals(5L, cx.get("r2"));
+			assertEquals(5L, cx.get("r3"));
+			assertEquals(5L, cx.get("r4"));
+		}
+		{
+			parser = new Parser(
+					"obj = {b:7}; a = 'b'; obj.a = 5; r1 = obj.a; r2 = obj.'a'; r3 = obj[a]; r4 = obj['a'];");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(5L, cx.get("r1"));
+			assertEquals(5L, cx.get("r2"));
+			assertEquals(7L, cx.get("r3"));
+			assertEquals(5L, cx.get("r4"));
+		}
+	}
 
 	@SuppressWarnings("rawtypes")
 	public void testToString() {
@@ -34,8 +110,7 @@ public class TestContext extends TestCase {
 			return false;
 		}
 
-		public void set(Object thiz, String method, Object value) {
-		}
+		public void set(Object thiz, String method, Object value) {}
 
 		public Object get(Object thiz, String method) {
 			return null;
@@ -71,8 +146,7 @@ public class TestContext extends TestCase {
 						System.out.println(str);
 						value = value + str;
 						lines++;
-						if (lines > 50000)
-							System.exit(0);
+						if (lines > 50000) System.exit(0);
 						return value;
 					}
 					break;
@@ -80,8 +154,7 @@ public class TestContext extends TestCase {
 			return null;
 		}
 
-		public void init(Visitor cx) {
-		}
+		public void init(Visitor cx) {}
 	}
 
 	public void testHandler() {
@@ -115,8 +188,7 @@ public class TestContext extends TestCase {
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser(
-					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};"))
-					.parse());
+					"function test(v){var r=0; switch(v){case 1:return 1; case 2:break; case 3: r++; case '4': r++; break; default: r=10;} return r;};")).parse());
 			List<Node> block = (new Parser("f=test(f);")).parse();
 
 			cx.set("f", Integer.valueOf(1));
@@ -232,8 +304,7 @@ public class TestContext extends TestCase {
 	public void testFunction() {
 		{// return function
 			Context cx = new Context();
-			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);"))
-					.parse());
+			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);")).parse());
 			assertEquals(84L, cx.get("result"));
 		}
 		{// return function

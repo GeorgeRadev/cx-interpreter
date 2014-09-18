@@ -201,7 +201,12 @@ public class MathHandler implements Handler {
 					if (args[0] instanceof Number) {
 						return ((Number) args[0]).longValue();
 					} else {
-						return Context.toLong(args[0]);
+						double d = Context.toDouble(args[0]);
+						if (d != d) {
+							return null;
+						} else {
+							return (long) d;
+						}
 					}
 				}
 				break;
