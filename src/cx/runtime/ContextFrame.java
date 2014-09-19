@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import json.JSONBuilder;
 
 public class ContextFrame {
 	public Object result = null;
@@ -56,7 +57,14 @@ public class ContextFrame {
 		for (int i = 0; i < _keys.size(); i++) {
 			Object key = _keys.get(i);
 			result.append(key).append(" : ");
-			result.append(frame.get(key)).append(",\n");
+			Object value = frame.get(key);
+			if (value instanceof String) {
+				// escape strings
+				JSONBuilder.escapeAsString(result, (String) value);
+				result.append(",\n");
+			} else {
+				result.append(value).append(",\n");
+			}
 		}
 		if (_keys.size() > 0) {
 			result.setLength(result.length() - 2);
@@ -66,7 +74,7 @@ public class ContextFrame {
 	}
 
 	public void dumpContext() {
-		System.out.println("Dump Variables:");
+		System.out.println("Context frame variables:");
 		System.out.println(toString());
 	}
 }
