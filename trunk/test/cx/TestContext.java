@@ -101,6 +101,20 @@ public class TestContext extends TestCase {
 			assertEquals("2.3", l.get(2).toString());
 			assertEquals("42", l.get(3).toString());
 		}
+		{// object
+			Context cx = new Context();
+			PrintHandler printHandler = new PrintHandler();
+			cx.addHandler(printHandler);
+			cx.evaluate((new Parser(
+					"o={number:5, str:'string', arr:[0,1], obj: new {}, 'simpleObj':{} }; b=eval(''+o+';');")).parse());
+			assertTrue(cx.get("b") instanceof ContextFrame);
+			ContextFrame frame = (ContextFrame) cx.get("b");
+			assertEquals(5L, frame.get("number"));
+			assertEquals("string", frame.get("str"));
+			assertTrue(frame.get("arr") instanceof List);
+			assertTrue(frame.get("obj") instanceof ContextFrame);
+			assertTrue(frame.get("simpleObj") instanceof ContextFrame);
+		}
 	}
 
 	private static class PrintHandler implements Handler {

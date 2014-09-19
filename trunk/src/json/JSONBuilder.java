@@ -193,7 +193,7 @@ public class JSONBuilder {
 
 	static final char[] hexDigit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-	void escapeAsString(StringBuilder builder, String str) {
+	public static void escapeAsString(StringBuilder builder, String str) {
 		builder.append('"');
 		for (int i = 0, l = str.length(); i < l; i++) {
 			final char c = str.charAt(i);

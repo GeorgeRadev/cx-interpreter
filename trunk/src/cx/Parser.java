@@ -1090,6 +1090,7 @@ public class Parser {
 	private NodeObject parseNew() {
 		Token token1 = scanner.peekToken();
 		if (token1 == Token.L_CURLY) {
+			token1 = scanner.getToken();
 			NodeObject obj = new NodeObject(getSrcPos(), null);
 			parseObject(obj);
 			return obj;
@@ -1247,10 +1248,18 @@ public class Parser {
 				if (!scanner.matchToken(Token.COLON)) {
 					handleError("Syntax error: ':' expected!", getSrcPos());
 				}
-				element = parseExpression();
+				if (scanner.matchToken(Token.L_CURLY)) {
+					// we have new object
+					NodeObject obj = new NodeObject(getSrcPos(), null);
+					parseObject(obj);
+					element = obj;
+				} else {
+					element = parseExpression();
+				}
 				result.put(key, element);
 			} else {
-				handleError("unexpected token: " + token, getSrcPos());
+				handleError("unexpected token: " + token + "! Number, string or indentifier expected for object key.",
+						getSrcPos());
 			}
 		} while (token != Token.EOF && token != Token.ERROR);
 		handleError("Missing '}'", getSrcPos());
