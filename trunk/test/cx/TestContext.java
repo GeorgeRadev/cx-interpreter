@@ -563,6 +563,10 @@ public class TestContext extends TestCase {
 
 			assertEquals("str1", cx.get("msg1"));
 			assertEquals("str2", cx.get("msg2"));
+
+			// undefine object value to access the parent context
+			cx.evaluate((new Parser(" obj3.message = null; var msg1 = obj3.message; ")).parse());
+			assertEquals("string", cx.get("msg1"));
 		}
 		{
 			Context cx = new Context();
