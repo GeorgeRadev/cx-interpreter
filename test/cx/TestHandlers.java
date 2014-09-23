@@ -92,7 +92,7 @@ public class TestHandlers extends TestCase {
 			assertEquals("test", cx.get("str"));
 
 			cx.evaluate((new Parser("str = 'test'.length();")).parse());
-			assertEquals("test".length(), cx.get("str"));
+			assertEquals(4L, cx.get("str"));
 			cx.evaluate((new Parser("str = 'smallCammelCase'.toLowerCase();")).parse());
 			assertEquals("smallCammelCase".toLowerCase(), cx.get("str"));
 			cx.evaluate((new Parser("str = 'smallCammelCase'.toUpperCase();")).parse());
