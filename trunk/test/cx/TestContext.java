@@ -10,6 +10,74 @@ import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 public class TestContext extends TestCase {
+	public void testBinaryArithmetic() {
+		Parser parser;
+		List<Node> block;
+		{
+			parser = new Parser(
+					"a = true; b = false; valAdd = a + b; valSub = a - b; valMul = a * b; valDiv = a / b; valMod = a % b;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(Boolean.TRUE, cx.get("valAdd"));
+			assertEquals(Boolean.TRUE, cx.get("valSub"));
+			assertEquals(Boolean.FALSE, cx.get("valMul"));
+			assertEquals(Boolean.TRUE, cx.get("valDiv"));
+			assertEquals(null, cx.get("valMod"));
+		}
+		{
+			parser = new Parser(
+					"a = 24; b = 2; valAdd = a + b; valSub = a - b; valMul = a * b; valDiv = a / b; valMod = a % b;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(26L, cx.get("valAdd"));
+			assertEquals(22L, cx.get("valSub"));
+			assertEquals(48L, cx.get("valMul"));
+			assertEquals(12d, cx.get("valDiv"));
+			assertEquals(0L, cx.get("valMod"));
+		}
+		{
+			parser = new Parser(
+					"a = 'str'; b = 2; valAdd = a + b; valSub = a - b; valMul = a * b; valDiv = a / b; valMod = a % b;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals("str2", cx.get("valAdd"));
+			assertEquals(null, cx.get("valSub"));
+			assertEquals(null, cx.get("valMul"));
+			assertEquals(null, cx.get("valDiv"));
+			assertEquals(null, cx.get("valMod"));
+		}
+		{
+			parser = new Parser(
+					"a = []; b = 2; valAdd = a + b; valSub = a - b; valMul = a * b; valDiv = a / b; valMod = a % b;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertTrue(cx.get("valAdd") instanceof List);
+			List<?> l = (List<?>) cx.get("valAdd");
+			assertEquals(1, l.size());
+			assertEquals(2L, l.get(0));
+			assertEquals(null, cx.get("valSub"));
+			assertEquals(null, cx.get("valMul"));
+			assertEquals(null, cx.get("valDiv"));
+			assertEquals(null, cx.get("valMod"));
+		}
+		{
+			parser = new Parser(
+					"a = {}; b = 2; valAdd = a + b; valSub = a - b; valMul = a * b; valDiv = a / b; valMod = a % b;");
+			block = parser.parse();
+			Context cx = new Context();
+			cx.evaluate(block);
+			assertEquals(null, cx.get("valAdd"));
+			assertEquals(null, cx.get("valSub"));
+			assertEquals(null, cx.get("valMul"));
+			assertEquals(null, cx.get("valDiv"));
+			assertEquals(null, cx.get("valMod"));
+		}
+	}
+
 	public void testUnaryArithmetic() {
 		Parser parser;
 		List<Node> block;
@@ -84,6 +152,29 @@ public class TestContext extends TestCase {
 			assertEquals(5L, cx.get("r2"));
 			assertEquals(7L, cx.get("r3"));
 			assertEquals(5L, cx.get("r4"));
+		}
+	}
+
+	public void testLength() {
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("a = 'test'; len = a.length;")).parse());
+			assertEquals(4L, cx.get("len"));
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("a = [1,2,3]; len = a.length;")).parse());
+			assertEquals(3L, cx.get("len"));
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("a = {a:4, b:'string'}; len = a.length;")).parse());
+			assertEquals(2L, cx.get("len"));
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("a = 5; len = a.length;")).parse());
+			assertNull(cx.get("len"));
 		}
 	}
 
@@ -316,6 +407,16 @@ public class TestContext extends TestCase {
 
 	@SuppressWarnings("rawtypes")
 	public void testFunction() {
+		{// arguments
+			Context cx = new Context();
+			cx.evaluate((new Parser(
+					"function gcd(a, b) { var diff = a-b; if (diff == 0)return a; diff > 0 ? gcd(b, diff) : gcd(a, -diff); }  ")).parse());
+			cx.evaluate((new Parser("result=gcd(60, 40);")).parse());
+			assertEquals(20L, cx.get("result"));
+
+			cx.evaluate((new Parser("var mygcd = gcd; result = mygcd(7, 40);")).parse());
+			assertEquals(1L, cx.get("result"));
+		}
 		{// return function
 			Context cx = new Context();
 			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);")).parse());
@@ -337,6 +438,26 @@ public class TestContext extends TestCase {
 			assertEquals(5, args.size());
 			assertEquals(1L, args.get(0));
 			assertEquals(5L, args.get(4));
+		}
+		{// arguments as last executed statement will be returned
+			Context cx = new Context();
+			cx.evaluate((new Parser("function f(num){ arguments;}")).parse());
+			cx.evaluate((new Parser("result=f();")).parse());
+			assertEquals(0, ((List) cx.get("result")).size());
+
+			cx.evaluate((new Parser("result=f(1,2,3);")).parse());
+			List args = (List) cx.get("result");
+			assertEquals(3, args.size());
+			assertEquals(1L, args.get(0));
+			assertEquals(3L, args.get(2));
+		}
+		{// arguments.length
+			Context cx = new Context();
+			cx.evaluate((new Parser("function f(num){ arguments.length;}")).parse());
+			cx.evaluate((new Parser("result=f(1,2,3,4);")).parse());
+			assertEquals(4L, cx.get("result"));
+			cx.evaluate((new Parser("result=f();")).parse());
+			assertEquals(0L, cx.get("result"));
 		}
 		{// Factorial calculating
 			Context cx = new Context();
@@ -411,6 +532,31 @@ public class TestContext extends TestCase {
 	}
 
 	public void testObject() {
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("var obj1 = new {};")).parse());
+			ContextFrame obj = (ContextFrame) cx.get("obj1");
+			assertEquals(0, obj.frame.size());
+
+			cx.evaluate((new Parser("var obj2 = {};")).parse());
+			obj = (ContextFrame) cx.get("obj2");
+			assertEquals(0, obj.frame.size());
+
+			cx.evaluate((new Parser("obj2['message'] = 'string';")).parse());
+			obj = (ContextFrame) cx.get("obj2");
+			assertEquals(1, obj.frame.size());
+			assertEquals("string", obj.frame.get("message"));
+
+			cx.evaluate((new Parser("var obj3 = new obj2 {getMessage: function(){ return message;} };")).parse());
+			cx.evaluate((new Parser(
+					"var msg1 = obj3.getMessage(); var msg2 = obj3['message']; var msg3 = obj3.message;")).parse());
+			obj = (ContextFrame) cx.get("obj3");
+			assertEquals(1, obj.frame.size());
+
+			assertEquals("string", cx.get("msg1"));
+			assertEquals("string", cx.get("msg2"));
+			assertEquals("string", cx.get("msg3"));
+		}
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'}; obj.a++; obj.b += ' more';")).parse());
