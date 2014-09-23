@@ -1110,9 +1110,12 @@ public class Context implements Visitor {
 		// setCurrentPosition(object.position);
 		String parentObjectName = object.parent;
 		final ContextFrame newObject;
-		if (parentObjectName != null && parentObjectName.length() > 0) {
-			Object parent = cx.get(parentObjectName);
-			newObject = (parent instanceof ContextFrame) ? new ContextFrame((ContextFrame) parent) : new ContextFrame();
+		Object parent;
+		if (parentObjectName != null && parentObjectName.length() > 0 && (parent = cx.get(parentObjectName)) != null
+				&& parent instanceof ContextFrame) {
+			newObject = new ContextFrame((ContextFrame) parent);
+			// flatten parent variables into current object context
+			ContextFrame.flattenAintoB(newObject.parent, newObject);
 		} else {
 			newObject = new ContextFrame();
 		}

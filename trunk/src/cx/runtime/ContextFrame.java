@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import json.JSONBuilder;
 
 public class ContextFrame {
@@ -44,6 +45,19 @@ public class ContextFrame {
 		} while (ccx != null);
 		frame.put(varName, value);
 		return this;
+	}
+
+	public static final void flattenAintoB(ContextFrame A, ContextFrame B) {
+		Stack<ContextFrame> stack = new Stack<ContextFrame>();
+		ContextFrame ccx = A;
+		while (ccx != null) {
+			stack.push(ccx);
+			ccx = ccx.parent;
+		}
+		while (!stack.isEmpty()) {
+			ccx = stack.pop();
+			B.frame.putAll(ccx.frame);
+		}
 	}
 
 	public String toString() {
