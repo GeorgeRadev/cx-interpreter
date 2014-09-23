@@ -551,11 +551,18 @@ public class TestContext extends TestCase {
 			cx.evaluate((new Parser(
 					"var msg1 = obj3.getMessage(); var msg2 = obj3['message']; var msg3 = obj3.message;")).parse());
 			obj = (ContextFrame) cx.get("obj3");
-			assertEquals(1, obj.frame.size());
+			// new object with parent inherit all context elements
+			assertEquals(2, obj.frame.size());
 
 			assertEquals("string", cx.get("msg1"));
 			assertEquals("string", cx.get("msg2"));
 			assertEquals("string", cx.get("msg3"));
+
+			cx.evaluate((new Parser(
+					"var obj3 = new obj2 {}; var obj4 = new obj2 {}; obj3.message = 'str1'; obj4.message = 'str2'; var msg1 = obj3.message; var msg2 = obj4.message;")).parse());
+
+			assertEquals("str1", cx.get("msg1"));
+			assertEquals("str2", cx.get("msg2"));
 		}
 		{
 			Context cx = new Context();
