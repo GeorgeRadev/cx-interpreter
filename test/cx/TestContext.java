@@ -532,6 +532,14 @@ public class TestContext extends TestCase {
 	}
 
 	public void testObject() {
+		{// test inheritance with flatten and function this update
+			Context cx = new Context();
+			cx.evaluate((new Parser("obj = {key:'value', setValue:function(value){key = value;}};")).parse());
+			cx.evaluate((new Parser("obj.setValue('oldValue'); newObj = new obj{}; newObj.setValue('newValue');")).parse());
+			cx.evaluate((new Parser("key1 = obj.key; key2 = newObj.key;")).parse());
+			assertEquals("oldValue", cx.get("key1"));
+			assertEquals("newValue", cx.get("key2"));
+		}
 		{
 			Context cx = new Context();
 			cx.evaluate((new Parser("var obj1 = new {};")).parse());
