@@ -344,6 +344,17 @@ public class TestContext extends TestCase {
 	}
 
 	public void testTryCatch() {
+		{
+			Context cx = new Context();
+			Parser parser = new Parser();
+			parser.supportTryCatchThrow = true;
+			cx.evaluate(parser.parse("result = false; try{ throw AnyException; } catch(e){result = true;} "));
+			assertEquals(Boolean.TRUE, cx.get("result"));
+			cx.evaluate(parser.parse("result = false; try{ throw MyException; } catch(Error e){ } catch(MyException e){result = true;} "));
+			assertEquals(Boolean.TRUE, cx.get("result"));
+			cx.evaluate(parser.parse("result = true; try{ throw Error(false); } catch(Error e){result = e; } catch(MyException e){result = true;} "));
+			assertEquals(Boolean.FALSE, cx.get("result"));
+		}
 		{// with return
 			Context cx = new Context();
 			Parser parser = new Parser("var r=0; function x(){try{return 1;}finally{return 2;}}; r =x();");
@@ -356,7 +367,7 @@ public class TestContext extends TestCase {
 		{// with finally
 			Context cx = new Context();
 			Parser parser = new Parser(
-					"var f = 0; try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Long e){arg = 'integer';}catch(String e){arg = 'string';}finally{f = 42;}");
+					"var f = 0; try{ if(arg==1)throw Long(1); if(arg==2)throw String('str');}catch(Long e){arg = 'long';}catch(String e){arg = 'string';}finally{f = 42;}");
 			parser.supportTryCatchThrow = true;
 			List<Node> block = parser.parse();
 
@@ -367,7 +378,7 @@ public class TestContext extends TestCase {
 
 			cx.set("arg", 1);
 			cx.evaluate(block);
-			assertEquals("integer", cx.get("arg").toString());
+			assertEquals("long", cx.get("arg").toString());
 			assertEquals("42", cx.get("f").toString());
 
 			cx.set("arg", 2);
@@ -383,7 +394,7 @@ public class TestContext extends TestCase {
 		{// just catch
 			Context cx = new Context();
 			Parser parser = new Parser(
-					"try{ if(arg==1)throw 1; if(arg==2)throw 'str';}catch(Long e){arg = 'integer';}catch(String e){arg = 'string';}");
+					"try{ if(arg==1)throw Long(1); if(arg==2)throw String('str');}catch(Long e){arg = 'integer';}catch(String e){arg = 'string';}");
 			parser.supportTryCatchThrow = true;
 			List<Node> block = parser.parse();
 
@@ -539,6 +550,8 @@ public class TestContext extends TestCase {
 			cx.evaluate((new Parser("key1 = obj.key; key2 = newObj.key;")).parse());
 			assertEquals("oldValue", cx.get("key1"));
 			assertEquals("newValue", cx.get("key2"));
+			cx.evaluate((new Parser("newObj.key = null; key3 = newObj.key;")).parse());
+			assertEquals("oldValue", cx.get("key3"));
 		}
 		{
 			Context cx = new Context();

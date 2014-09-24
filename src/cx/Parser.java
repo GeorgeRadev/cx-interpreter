@@ -39,7 +39,7 @@ import cx.exception.ParserException;
 
 public class Parser {
 	boolean isDebug = false;
-	private Scanner scanner;
+	private Scanner scanner = null;
 	public boolean supportTryCatchThrow = false;
 
 	public Parser(char[] paramArrayOfChar) {
@@ -63,11 +63,21 @@ public class Parser {
 		}
 	}
 
-	public Parser(String paramArrayOfChar) {
-		scanner = new Scanner(paramArrayOfChar.toCharArray());
+	public Parser() {}
+
+	public Parser(String code) {
+		scanner = new Scanner(code.toCharArray());
+	}
+
+	public List<Node> parse(String code) throws ParserException {
+		scanner = new Scanner(code.toCharArray());
+		return parse();
 	}
 
 	public List<Node> parse() throws ParserException {
+		if (scanner == null) {
+			return null;
+		}
 		final List<Node> statements = new ArrayList<Node>();
 		try {
 			scanner.setDebugMode(isDebug);
@@ -378,6 +388,8 @@ public class Parser {
 				caseStatements);
 	}
 
+	// try{}catch(ExceptionName variable){}
+	// catch(variable) - for any type of exception
 	private Node parseTry() {
 		if (isDebug) {
 			System.out.println("parseTry");
@@ -387,10 +399,7 @@ public class Parser {
 		List<Node> finallyBody = null;
 		scanner.getToken();// eat 'try'
 
-		Token token = scanner.peekToken();
-
-		if (token == Token.L_CURLY) {
-			scanner.getToken();
+		if (scanner.matchToken(Token.L_CURLY)) {
 			tryBody = parseBlock().statements;
 		} else {
 			if (scanner.matchToken(Token.SEMICOLON)) {
@@ -408,6 +417,7 @@ public class Parser {
 		final List<String> exceptionVarNames = new ArrayList<String>();
 		final List<Node> exceptionBodies = new ArrayList<Node>();
 
+		Token token;
 		boolean hasCatchFinally = false;
 		do {
 			if (scanner.matchToken(Token.CATCH)) {
@@ -416,18 +426,29 @@ public class Parser {
 					handleError("expecting '(' after catch!", scanner.getSrcPos());
 				}
 				if (!scanner.matchToken(Token.NAME)) {
-					handleError("expecting exception name in catch(...)!", scanner.getSrcPos());
+					handleError("expecting exception name in catch(ExceptionName variable)!", scanner.getSrcPos());
 				}
-				String exceptionType = scanner.getString();
-				if (!scanner.matchToken(Token.NAME)) {
-					handleError("expecting variable after exception name in catch(Exception variable)!",
-							scanner.getSrcPos());
+
+				String exceptionType = null;
+				String exceptionVar = null;
+				token = scanner.peekToken();
+				if (token == Token.R_PAREN) {
+					exceptionVar = scanner.getString();
+					scanner.getToken();
+
+				} else {
+					exceptionType = scanner.getString();
+					if (!scanner.matchToken(Token.NAME)) {
+						handleError("expecting variable after exception name in catch(Exception variable)!",
+								scanner.getSrcPos());
+					}
+					exceptionVar = scanner.getString();
+					if (!scanner.matchToken(Token.R_PAREN)) {
+						handleError("expecting variable after exception name in catch(Exception variable)!",
+								scanner.getSrcPos());
+					}
 				}
-				String exceptionVar = scanner.getString();
-				if (!scanner.matchToken(Token.R_PAREN)) {
-					handleError("expecting variable after exception name in catch(Exception variable)!",
-							scanner.getSrcPos());
-				}
+
 				token = scanner.peekToken();
 				Node exceptionBody;
 				if (token == Token.L_CURLY) {
@@ -724,7 +745,7 @@ public class Parser {
 				}
 				tokens.add(scanner.getToken());
 				tokensStr.add(scanner.getString());
-			} 
+			}
 			localObject = new NodeSQL(getSrcPos(), (Node) localObject, tokens, tokensStr);
 		}
 		return localObject;
@@ -1181,10 +1202,27 @@ public class Parser {
 		scanner.getToken();// eat "throw"
 		Token token = scanner.peekToken();
 		if (token == Token.SEMICOLON) {
-			return new NodeThrow(getSrcPos(), null);
+			return new NodeThrow(getSrcPos(), null, null);
 		}
-		Node localNode = parseExpression();
-		return new NodeThrow(getSrcPos(), localNode);
+
+		String name = null;
+		if (scanner.matchToken(Token.NAME)) {
+			name = scanner.getString();
+		} else {
+			handleError("Expecting exception name in throw statement: throw ExceptionName(expression) !", getSrcPos());
+		}
+
+		Node expression = null;
+		if (scanner.matchToken(Token.L_PAREN)) {
+			if (!scanner.matchToken(Token.R_PAREN)) {
+				expression = parseExpression();
+				if (!scanner.matchToken(Token.R_PAREN)) {
+					handleError("Missing ')' in throw statement: throw ExceptionName(expression) !", getSrcPos());
+				}
+			}
+		}
+
+		return new NodeThrow(getSrcPos(), name, expression);
 	}
 
 	private NodeArray parseArray() {
