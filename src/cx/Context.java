@@ -1560,8 +1560,13 @@ public class Context implements Visitor {
 
 	public void visitThrow(NodeThrow throwNode) {
 		setCurrentPosition(throwNode.position);
-		Object exception = eval(throwNode.expression);
-		throw new CXException(throwNode.name, exception);
+		Object exceptionValue;
+		if (throwNode.expression != null) {
+			exceptionValue = eval(throwNode.expression);
+		} else {
+			exceptionValue = null;
+		}
+		throw new CXException(throwNode.name, exceptionValue);
 	}
 
 	public void visitSQL(NodeSQL nodeSQL) {
