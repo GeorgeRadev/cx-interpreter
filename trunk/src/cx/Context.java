@@ -1514,15 +1514,14 @@ public class Context implements Visitor {
 			throw continueJump;
 
 		} catch (CXException cxException) {
-			Object exception = cxException.object;
-			if (exception != null) {
-				String exceptionName = exception.getClass().getSimpleName();
+			String exceptionName = cxException.name;
+			if (exceptionName != null) {
 				for (int i = 0, l = tryNode.exceptionTypes.length; i < l; i++) {
 					String catchName = tryNode.exceptionTypes[i];
-					if (exceptionName.equals(catchName)) {
+					if (catchName == null || exceptionName.equals(catchName)) {
 						try {
 							pushContext();
-							cx.frame.put(tryNode.exceptionNames[i], exception);
+							cx.frame.put(tryNode.exceptionNames[i], cxException.value);
 							eval(tryNode.exceptionBodies[i]);
 						} finally {
 							popContext();
@@ -1561,8 +1560,8 @@ public class Context implements Visitor {
 
 	public void visitThrow(NodeThrow throwNode) {
 		setCurrentPosition(throwNode.position);
-		Object exception = eval(throwNode.expresion);
-		throw new CXException(exception);
+		Object exception = eval(throwNode.expression);
+		throw new CXException(throwNode.name, exception);
 	}
 
 	public void visitSQL(NodeSQL nodeSQL) {

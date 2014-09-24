@@ -34,7 +34,13 @@ public class TestParser extends TestCase {
 		Parser parser;
 		List<Node> block;
 		{
-			parser = new Parser("throw '2'+5;");
+			parser = new Parser("throw Exception('2'+5);");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("throw Exception();");
+			parser.supportTryCatchThrow = true;
+			block = parser.parse();
+			parser = new Parser("throw Exception;");
 			parser.supportTryCatchThrow = true;
 			block = parser.parse();
 			parser = new Parser("throw;");

@@ -7,13 +7,13 @@ if(db.connect()){
 	sql := CREATE TABLE IF NOT EXISTS 'TestTable' ( 'number' INT , 'string' VARCHAR );
 	if(!db.execute(sql)){
 		error = db.error;
-		throw "Create fails: " + error;
+		throw Error("Create fails: " + error);
 	}
 	
 	sql := DELETE FROM 'TestTable';
 	if(!db.execute(sql)){
 		error = db.error;
-		throw "delete fails: " + error;
+		throw Error("delete fails: " + error);
 	}
 	
 	number = 42;
@@ -21,7 +21,7 @@ if(db.connect()){
 	sql := INSERT INTO 'TestTable' ( 'number', 'string' ) VALUES (number, string);
 	if(!db.execute(sql)){
 		error = db.error;
-		throw "insert fails: " + error;
+		throw Error("insert fails: " + error);
 	}
 	
 	sql := SELECT 'number', 'string' FROM 'TestTable';
@@ -33,20 +33,20 @@ if(db.connect()){
 	);
 	if(!result){
 		error = db.error;
-		throw "select fails: " + error;
+		throw Error("select fails: " + error);
 	}
 	
 	if(!db.commit()){ 
 		error = db.error;
-		throw "commit fails: " + error;
+		throw Error("commit fails: " + error);
 	}
 	if(!db.rollback()){ 
 		error = db.error;
-		throw "rollback fails: " + error;
+		throw Error("rollback fails: " + error);
 	}
 	if(!db.close()){ 
 		error = db.error;
-		throw "close fails: " + error;
+		throw Error("close fails: " + error);
 	}
 	
 }else{
