@@ -179,7 +179,7 @@ public class DatabaseHandler implements Handler {
 						final int argsLen;
 						ResultSetMetaData meta = resultSet.getMetaData();
 						{
-							int l1 = function.function.argumentNames.length;
+							int l1 = function.body.argumentNames.length;
 							int l2 = meta.getColumnCount();
 							argsLen = Math.min(l1, l2);
 						}
@@ -189,7 +189,7 @@ public class DatabaseHandler implements Handler {
 							argumentsType[i] = meta.getColumnType(i + 1);
 							arguments.add(null);
 						}
-						SourcePosition position = function.function.position;
+						SourcePosition position = function.body.position;
 
 						while (next(resultSet)) {
 							// fill up the arguments
@@ -223,7 +223,7 @@ public class DatabaseHandler implements Handler {
 
 							}
 							// do call to listener
-							NodeCall call = new NodeCall(position, function.function, arguments);
+							NodeCall call = new NodeCall(position, function.body, arguments);
 							visitor.visitCall(call);
 						}
 

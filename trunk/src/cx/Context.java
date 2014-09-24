@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import cx.ast.Node;
 import cx.ast.NodeAccess;
 import cx.ast.NodeArray;
@@ -1116,6 +1117,16 @@ public class Context implements Visitor {
 			newObject = new ContextFrame((ContextFrame) parent);
 			// flatten parent variables into current object context
 			ContextFrame.flattenAintoB(newObject.parent, newObject);
+			// replace all functions with new ones that has the same this to
+			// the new object
+			for (Entry<String, Object> entry : newObject.frame.entrySet()) {
+				Object value = entry.getValue();
+				if (value instanceof Function) {
+					Function function = (Function) value;
+					Function newFunction = new Function(newObject, function.body);
+					newObject.frame.put(entry.getKey(), newFunction);
+				}
+			}
 		} else {
 			newObject = new ContextFrame();
 		}
@@ -1458,8 +1469,8 @@ public class Context implements Visitor {
 	}
 
 	public Object callFunction(Function function, List<Object> argValues) {
-		setCurrentPosition(function.function.position);
-		final String[] argumentNames = function.function.argumentNames;
+		setCurrentPosition(function.body.position);
+		final String[] argumentNames = function.body.argumentNames;
 		final int l = Math.min(argumentNames.length, argValues.size());
 		// add this
 		// cx.frame.put(THIS, function.thiz);
@@ -1474,7 +1485,7 @@ public class Context implements Visitor {
 		cx.frame.put(ARGUMENTS, argValues);
 		// execute
 		try {
-			evaluate(function.function.body);
+			evaluate(function.body.body);
 		} catch (JumpReturn result) {
 			cx.result = result.value;
 		}
