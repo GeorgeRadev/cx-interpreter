@@ -6,10 +6,81 @@ import java.util.TimeZone;
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.Visitor;
+import cx.exception.JumpReturn;
 import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 public class TestContext extends TestCase {
+
+	public void testChainCalls() {
+		Parser parser = new Parser();
+		{
+			Context cx = new Context();
+			List<Node> block = parser.parse("obj = {r:5, inc:function(){r++;}, dec:function(){r--;}}; obj.inc().inc().inc().dec().inc(); r = obj.r;");
+			cx.evaluate(block);
+			assertEquals(8L, cx.get("r"));
+		}
+		{
+			Context cx = new Context();
+			List<Node> block = parser.parse("obj = {r:5, getInstance:function(){}}; r = obj.r; obj1 = obj.getInstance(); obj1.r=8; r1 = obj.r; r2 = obj1.r;");
+			cx.evaluate(block);
+			assertEquals(8L, cx.get("r1"));
+			assertEquals(8L, cx.get("r2"));
+		}
+		{
+			Context cx = new Context();
+			List<Node> block = parser.parse("r = 8; function getInstance(){}; obj = getInstance(); obj.r = 9; r1 = obj.r;");
+			cx.evaluate(block);
+			assertEquals(9L, cx.get("r"));
+			assertEquals(9L, cx.get("r1"));
+		}
+	}
+
+	public void testIndexing() {
+		Parser parser = new Parser();
+		List<Node> block;
+		{
+			Context cx = new Context();
+			block = parser.parse("arr=[1,2,3,4,5]; var1 = arr['0']; var2 = arr['2']; var3 = arr['10']; var4 = arr['-2']; var5 = arr['-10'];");
+			cx.evaluate(block);
+			assertEquals(1L, cx.get("var1"));
+			assertEquals(3L, cx.get("var2"));
+			assertNull(cx.get("var3"));
+			assertEquals(4L, (char) ((Long) cx.get("var4")).intValue());
+			assertNull(cx.get("var5"));
+		}
+		{
+			Context cx = new Context();
+			block = parser.parse("arr=[1,2,3,4,5]; var1 = arr[0]; var2 = arr[2]; var3 = arr[10]; var4 = arr[-2]; var5 = arr[-10];");
+			cx.evaluate(block);
+			assertEquals(1L, cx.get("var1"));
+			assertEquals(3L, cx.get("var2"));
+			assertNull(cx.get("var3"));
+			assertEquals(4L, (char) ((Long) cx.get("var4")).intValue());
+			assertNull(cx.get("var5"));
+		}
+		{
+			Context cx = new Context();
+			block = parser.parse("str='12345'; var1 = str['0']; var2 = str['2']; var3 = str['10']; var4 = str['-2']; var5 = str['-10'];");
+			cx.evaluate(block);
+			assertEquals('1', (char) ((Long) cx.get("var1")).intValue());
+			assertEquals('3', (char) ((Long) cx.get("var2")).intValue());
+			assertNull(cx.get("var3"));
+			assertEquals('4', (char) ((Long) cx.get("var4")).intValue());
+			assertNull(cx.get("var5"));
+		}
+		{
+			Context cx = new Context();
+			block = parser.parse("str='12345'; var1 = str[0]; var2 = str[2]; var3 = str[10]; var4 = str[-2]; var5 = str[-10];");
+			cx.evaluate(block);
+			assertEquals('1', (char) ((Long) cx.get("var1")).intValue());
+			assertEquals('3', (char) ((Long) cx.get("var2")).intValue());
+			assertNull(cx.get("var3"));
+			assertEquals('4', (char) ((Long) cx.get("var4")).intValue());
+			assertNull(cx.get("var5"));
+		}
+	}
+
 	public void testBinaryArithmetic() {
 		Parser parser;
 		List<Node> block;
@@ -421,7 +492,7 @@ public class TestContext extends TestCase {
 		{// arguments
 			Context cx = new Context();
 			cx.evaluate((new Parser(
-					"function gcd(a, b) { var diff = a-b; if (diff == 0)return a; diff > 0 ? gcd(b, diff) : gcd(a, -diff); }  ")).parse());
+					"function gcd(a, b) { var diff = a-b; if (diff == 0)return a; return diff > 0 ? gcd(b, diff) : gcd(a, -diff); }  ")).parse());
 			cx.evaluate((new Parser("result=gcd(60, 40);")).parse());
 			assertEquals(20L, cx.get("result"));
 
@@ -430,17 +501,17 @@ public class TestContext extends TestCase {
 		}
 		{// return function
 			Context cx = new Context();
-			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} var f = g(42);result = f(42);")).parse());
+			cx.evaluate((new Parser("function g(n){ return function(){return n+42;};} var f = g(42);result = f(42);")).parse());
 			assertEquals(84L, cx.get("result"));
 		}
 		{// return function
 			Context cx = new Context();
-			cx.evaluate((new Parser("function g(n){ return  function(){n+42;};} result = g(42)(42);")).parse());
+			cx.evaluate((new Parser("function g(n){ return function(){return n+42;};} result = g(42)(42);")).parse());
 			assertEquals(84L, cx.get("result"));
 		}
 		{// arguments
 			Context cx = new Context();
-			cx.evaluate((new Parser("function f(num){ return  arguments;}")).parse());
+			cx.evaluate((new Parser("function f(num){ return arguments;}")).parse());
 			cx.evaluate((new Parser("result=f();")).parse());
 			assertEquals(0, ((List) cx.get("result")).size());
 
@@ -452,7 +523,7 @@ public class TestContext extends TestCase {
 		}
 		{// arguments as last executed statement will be returned
 			Context cx = new Context();
-			cx.evaluate((new Parser("function f(num){ arguments;}")).parse());
+			cx.evaluate((new Parser("function f(num){return arguments;}")).parse());
 			cx.evaluate((new Parser("result=f();")).parse());
 			assertEquals(0, ((List) cx.get("result")).size());
 
@@ -464,7 +535,7 @@ public class TestContext extends TestCase {
 		}
 		{// arguments.length
 			Context cx = new Context();
-			cx.evaluate((new Parser("function f(num){ arguments.length;}")).parse());
+			cx.evaluate((new Parser("function f(num){return arguments.length;}")).parse());
 			cx.evaluate((new Parser("result=f(1,2,3,4);")).parse());
 			assertEquals(4L, cx.get("result"));
 			cx.evaluate((new Parser("result=f();")).parse());
@@ -512,6 +583,14 @@ public class TestContext extends TestCase {
 
 			cx.evaluate((new Parser("a = none.nonexistent('test');")).parse());
 			assertNull(cx.get("a"));
+		}
+		{// return without function
+			Context cx = new Context();
+			List<Node> block = (new Parser()).parse("return 10;");
+			try {
+				cx.evaluate(block);
+				fail();
+			} catch (JumpReturn e) {}
 		}
 	}
 

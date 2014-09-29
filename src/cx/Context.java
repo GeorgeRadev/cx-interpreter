@@ -90,9 +90,6 @@ public class Context implements Visitor {
 			// finish block execution
 		} catch (JumpContinue continueJump) {
 			// finish execution
-		} catch (JumpReturn returnJump) {
-			// finish interpretation and set the result
-			cx.result = returnJump.value;
 		}
 		return cx.result;
 	}
@@ -1245,6 +1242,10 @@ public class Context implements Visitor {
 	@SuppressWarnings("rawtypes")
 	public void visitAccess(NodeAccess node) {
 		// setCurrentPosition(node.position);
+
+		// for objects that could have handlers (like String)
+		// do not leave the function since there could be some handles
+
 		final Object obj = eval(node.object);
 		final Node element = node.element;
 
@@ -1255,23 +1256,26 @@ public class Context implements Visitor {
 				if ("length".equals(_element)) {
 					cx.result = Long.valueOf(((ContextFrame) obj).frame.size());
 					return;
+				} else {
+					cx.result = ((ContextFrame) obj).get(_element);
+					return;
 				}
-				cx.result = ((ContextFrame) obj).get(_element);
-				return;
 			}
 
 			Object _element = eval(element);
 			if (_element != null) {
 				if (_element instanceof String) {
 					cx.result = ((ContextFrame) obj).frame.get(_element);
+					return;
 				} else {
 					cx.result = ((ContextFrame) obj).frame.get(_element.toString());
+					return;
 				}
-				return;
 			} else {
 				cx.result = null;
 				return;
 			}
+
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
 
@@ -1283,68 +1287,120 @@ public class Context implements Visitor {
 				}
 			}
 
-			try {
-				final int ix;
-				Object _element = eval(element);
-				if (_element instanceof Number) {
-					ix = ((Number) _element).intValue();
-				} else if (_element != null) {
+			final int ix;
+			Object _element = eval(element);
+			if (_element instanceof Number) {
+				ix = ((Number) _element).intValue();
+			} else if (_element instanceof String) {
+				try {
+					ix = Integer.parseInt((String) _element);
+				} catch (Exception e) {
+					// not an integer index for addressing list
+					cx.result = null;
+					return;
+				}
+			} else if (_element != null) {
+				try {
 					ix = Integer.parseInt(element.toString());
+				} catch (Exception e) {
+					// not an integer index for addressing list
+					cx.result = null;
+					return;
+				}
+			} else {
+				cx.result = null;
+				return;
+			}
+			int len = list.size();
+			if (ix >= 0 && ix < len) {
+				cx.result = list.get(ix);
+				return;
+			} else if (ix >= -len && ix < 0) {
+				cx.result = list.get(len + ix);
+				return;
+			} else {
+				cx.result = null;
+				return;
+			}
+
+		} else if (obj instanceof String) {
+			final String str = ((String) obj);
+
+			if (element instanceof NodeNumber) {
+				Number _element = ((NodeNumber) element).number;
+				int ix = _element.intValue();
+				int len = str.length();
+				if (ix >= 0 && ix < len) {
+					cx.result = Long.valueOf(str.charAt(ix));
+					return;
 				} else {
 					cx.result = null;
 					return;
 				}
 
-				if (ix >= 0 && ix < list.size()) {
-					cx.result = list.get(ix);
-				} else {
-					cx.result = null;
-				}
-			} catch (Exception e) {
-				// not an integer index for addressing list
-			}
-			return;
-
-		} else if (obj instanceof String) {
-			final String str = ((String) obj);
-
-			if (element instanceof NodeString) {
+			} else if (element instanceof NodeString) {
 				String _element = ((NodeString) element).value;
 				if ("length".equals(_element)) {
 					cx.result = Long.valueOf(str.length());
 					return;
 				}
 				try {
-					int ix = Integer.parseInt(element.toString());
-					if (ix >= 0 && ix < str.length()) {
+					int ix = Integer.parseInt(_element);
+					int len = str.length();
+					if (ix >= 0 && ix < len) {
 						cx.result = Long.valueOf(str.charAt(ix));
+						return;
+					} else if (ix >= -len && ix < 0) {
+						cx.result = Long.valueOf(str.charAt(len + ix));
+						return;
+					} else {
+						cx.result = null;
 						return;
 					}
 				} catch (Exception e) {
 					// not an integer index for addressing list
 				}
+
 			} else {
 				Object _element = eval(element);
-				try {
-					if (_element instanceof Number) {
-						int ix = ((Number) _element).intValue();
-						if (ix >= 0 && ix < str.length()) {
-							cx.result = Long.valueOf(str.charAt(ix));
-							return;
-						}
-					} else if (_element != null) {
-						int ix = Integer.parseInt(element.toString());
-						if (ix >= 0 && ix < str.length()) {
-							cx.result = Long.valueOf(str.charAt(ix));
-							return;
-						}
+				if (_element instanceof Number) {
+					int ix = ((Number) _element).intValue();
+					int len = str.length();
+					if (ix >= 0 && ix < len) {
+						cx.result = Long.valueOf(str.charAt(ix));
+						return;
+					} else if (ix >= -len && ix < 0) {
+						cx.result = Long.valueOf(str.charAt(len + ix));
+						return;
 					} else {
 						cx.result = null;
 						return;
 					}
 
-				} catch (Exception e) {
-					// not an integer index for addressing list
+				} else if (_element != null) {
+					int ix;
+					try {
+						ix = Integer.parseInt(element.toString());
+					} catch (Exception e) {
+						// not an integer index for addressing list
+						cx.result = null;
+						return;
+					}
+					int len = str.length();
+					if (ix >= 0 && ix < len) {
+						cx.result = Long.valueOf(str.charAt(ix));
+						return;
+					} else if (ix >= -len && ix < 0) {
+						cx.result = Long.valueOf(str.charAt(len + ix));
+						return;
+					} else {
+						cx.result = null;
+						return;
+					}
+
+				} else {
+					cx.result = null;
+					return;
 				}
 			}
 
@@ -1354,9 +1410,10 @@ public class Context implements Visitor {
 				if ("length".equals(_element)) {
 					cx.result = Long.valueOf(((Map) obj).size());
 					return;
+				} else {
+					cx.result = ((Map) obj).get(_element);
+					return;
 				}
-				cx.result = ((Map) obj).get(_element);
-				return;
 			}
 
 			Object _element = eval(element);
@@ -1438,7 +1495,7 @@ public class Context implements Visitor {
 				Function func = (Function) function;
 				cx = new ContextFrame(func.thiz);
 				if (cx != null) {
-					callFunction(((Function) function), argValues);
+					callFunction(func, argValues);
 				}
 			} finally {
 				previousFrame.result = cx.result;
@@ -1486,6 +1543,8 @@ public class Context implements Visitor {
 		// execute
 		try {
 			evaluate(function.body.body);
+			// void functions will return its context for chain calls
+			cx.result = function.thiz;
 		} catch (JumpReturn result) {
 			cx.result = result.value;
 		}
