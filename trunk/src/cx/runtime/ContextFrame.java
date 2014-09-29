@@ -72,7 +72,10 @@ public class ContextFrame {
 			Object key = _keys.get(i);
 			result.append(key).append(" : ");
 			Object value = frame.get(key);
-			if (value instanceof String) {
+			if (value == this) {
+				JSONBuilder.escapeAsString(result, "this_self_reference");
+				result.append(",\n");
+			} else if (value instanceof String) {
 				// escape strings
 				JSONBuilder.escapeAsString(result, (String) value);
 				result.append(",\n");
