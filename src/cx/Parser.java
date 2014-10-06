@@ -37,6 +37,11 @@ import cx.ast.NodeWhile;
 import cx.ast.SourcePosition;
 import cx.exception.ParserException;
 
+/**
+ * Parser creates the Abstract syntax tree (AST) from string or file. It uses
+ * scanner to tokenize the content and then to organize the AST by precedence.
+ * This is a standard read-ahead parser implementation.
+ */
 public class Parser {
 	boolean isDebug = false;
 	private Scanner scanner = null;
