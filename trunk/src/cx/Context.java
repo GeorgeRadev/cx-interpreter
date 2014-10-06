@@ -46,6 +46,11 @@ import cx.runtime.ContextFrame;
 import cx.runtime.Function;
 import cx.runtime.Handler;
 
+/**
+ * This is the interpreter implementation (Visitor interface implementation)
+ * that supports the documented logic at :
+ * https://code.google.com/p/cx-interpreter/
+ */
 public class Context implements Visitor {
 	private static final String ARGUMENTS = "arguments";
 

@@ -7,6 +7,10 @@ import java.util.Map;
 import cx.ast.SourcePosition;
 import cx.exception.ParserException;
 
+/**
+ * Separates a character array to a sequence of recognizable and supported
+ * tokens. All tokens are defined in class Token.
+ */
 class Scanner {
 	private boolean isDebug = false;
 	private static final char ZERO = (char) 0;

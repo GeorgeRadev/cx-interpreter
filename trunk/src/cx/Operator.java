@@ -1,5 +1,8 @@
 package cx;
 
+/**
+ * All supported operators and their string representation are enumerated here
+ */
 public enum Operator {
 	NOT("!"), INC_PRE("++"), DEC_PRE("--"), INC_POST("++"), DEC_POST("--"), MUL("*"), DIV("/"), MOD("%"), ADD("+"), SUB(
 			"-"), EQ("=="), NE("!="), GE(">="), GT(">"), LE("<="), LT("<"), OR("||"), AND("&&"), BIT_OR("|"), BIT_AND(
