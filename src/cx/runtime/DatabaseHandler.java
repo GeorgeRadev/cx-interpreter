@@ -19,11 +19,20 @@ import cx.ast.Visitor;
 
 public class DatabaseHandler implements Handler {
 	protected Visitor visitor;
+	protected final String referenceName;
+
+	public DatabaseHandler() {
+		referenceName = "Database";
+	}
+
+	public DatabaseHandler(String refName) {
+		referenceName = refName;
+	}
 
 	public void init(Visitor visitor) {
 		// defines global object for Database operations
 		this.visitor = visitor;
-		visitor.set("Database", this);
+		visitor.set(referenceName, this);
 	}
 
 	public static enum DatabaseMethod {
@@ -121,12 +130,12 @@ public class DatabaseHandler implements Handler {
 						conn.setAutoCommit(false);
 					} catch (SQLException e) {
 						conn = null;
-						error = "Cannot set up commit state connection!";
+						error = "Cannot set up commit state connection! " + e.getMessage();
 					}
 				}
 			} catch (Exception e) {
 				conn = null;
-				error = "Cannot create a DB Connection!";
+				error = "Cannot create a DB Connection! " + e.getMessage();
 			}
 			if (connection != null) {
 				close();
