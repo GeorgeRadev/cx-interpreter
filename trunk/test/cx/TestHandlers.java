@@ -183,7 +183,7 @@ public class TestHandlers extends TestCase {
 	public void testDatabaseHandler() throws ClassNotFoundException {
 		Class.forName("org.sqlite.JDBC");
 		Context cx = new Context();
-		cx.addHandler(new DatabaseHandler());
+		cx.addHandler(new DatabaseHandler("Database"));
 		Parser parser = new Parser(new File("database_sqlite.cx"));
 		parser.supportTryCatchThrow = true;
 		List<Node> block = parser.parse();
