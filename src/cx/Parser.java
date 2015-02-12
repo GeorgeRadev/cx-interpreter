@@ -46,6 +46,7 @@ public class Parser {
 	boolean isDebug = false;
 	private Scanner scanner = null;
 	public boolean supportTryCatchThrow = false;
+	public boolean supportSQLEscaping = false;
 
 	public Parser(char[] paramArrayOfChar) {
 		scanner = new Scanner(paramArrayOfChar);
@@ -69,6 +70,11 @@ public class Parser {
 	}
 
 	public Parser() {}
+
+	public Parser(boolean supportTryCatchThrow, boolean supportSQLEscaping) {
+		this.supportTryCatchThrow = supportTryCatchThrow;
+		this.supportSQLEscaping = supportSQLEscaping;
+	}
 
 	public Parser(String code) {
 		scanner = new Scanner(code.toCharArray());
@@ -150,7 +156,7 @@ public class Parser {
 	}
 
 	private Node parseStatement() {
-		Token token = scanner.peekToken();
+		final Token token = scanner.peekToken();
 		Node node = null;
 		switch (token) {
 			case IF:
@@ -217,6 +223,28 @@ public class Parser {
 				scanner.getToken();
 				return null;
 			default:
+				// SQL escaping syntax
+				if (supportSQLEscaping && token == Token.NAME && scanner.peekToken(2) == Token.SQL_STRING_ESCAPE) {
+					scanner.getToken();
+					Node variable = new NodeVariable(getSrcPos(), scanner.getString());
+					scanner.getToken();
+					SourcePosition sqlPos = getSrcPos();
+
+					// get all following tokens until semicolon(;) and store
+					// them as NodeSQL list
+					List<Token> tokens = new ArrayList<Token>(32);
+					List<String> tokensStr = new ArrayList<String>(32);
+					for (Token sqlToken = scanner.peekToken(); sqlToken != Token.SEMICOLON; sqlToken = scanner.peekToken()) {
+						if (sqlToken == Token.EOF) {
+							handleError("Unexpected SQL string escape sequence! Should be terminated by semicolumn!",
+									scanner.getSrcPos());
+						}
+						tokens.add(scanner.getToken());
+						tokensStr.add(scanner.getString());
+					}
+					Node sql = new NodeSQL(sqlPos, variable, tokens, tokensStr);
+					return sql;
+				}
 				node = parseExpression();
 		}
 		if (!scanner.matchToken(Token.SEMICOLON)) {
@@ -684,6 +712,7 @@ public class Parser {
 		if (token == Token.ASSIGN) {
 			scanner.getToken();
 			localObject = new NodeAssign(getSrcPos(), (Node) localObject, parseAssignmentExpr());
+			return localObject;
 
 		} else if (token == Token.ASSIGNOP) {
 
@@ -736,24 +765,11 @@ public class Parser {
 			Node paramNode2 = parseAssignmentExpr();
 			localObject = new NodeAssign(getSrcPos(), paramNode1, new NodeBinary(getSrcPos(), paramNode1, operator,
 					paramNode2));
+			return localObject;
 
-		} else if (token == Token.SQL_STRING_ESCAPE) {
-			// get all following tokens until semicolumn(;) and store them as
-			// NodeSQL list
-			scanner.getToken();
-			List<Token> tokens = new ArrayList<Token>(32);
-			List<String> tokensStr = new ArrayList<String>(32);
-			for (token = scanner.peekToken(); token != Token.SEMICOLON; token = scanner.peekToken()) {
-				if (token == Token.EOF) {
-					handleError("Unexpected SQL string escape sequence! Should be terminated by semicolumn!",
-							scanner.getSrcPos());
-				}
-				tokens.add(scanner.getToken());
-				tokensStr.add(scanner.getString());
-			}
-			localObject = new NodeSQL(getSrcPos(), (Node) localObject, tokens, tokensStr);
+		} else {
+			return localObject;
 		}
-		return localObject;
 	}
 
 	private Node parseTernaryExpr() {

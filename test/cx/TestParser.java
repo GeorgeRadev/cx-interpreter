@@ -894,7 +894,8 @@ public class TestParser extends TestCase {
 
 	public void testSQLStringEscape() {
 		{
-			List<Node> block = new Parser("sql := update 'table' set 'id' = 'id' + 1;").parse();
+			Parser parser = new Parser(false, true);
+			List<Node> block = parser.parse("sql := update 'table' set 'id' = 'id' + 1;");
 			NodeSQL n = (NodeSQL) block.get(0);
 			assertEquals(n.left.toString(), "sql");
 			String sqlString = Node.explode(n.rightStr, ' ');
