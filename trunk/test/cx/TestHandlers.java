@@ -186,6 +186,7 @@ public class TestHandlers extends TestCase {
 		cx.addHandler(new DatabaseHandler("Database"));
 		Parser parser = new Parser(new File("database_sqlite.cx"));
 		parser.supportTryCatchThrow = true;
+		parser.supportSQLEscaping = true;
 		List<Node> block = parser.parse();
 		long time = System.currentTimeMillis();
 		try {
