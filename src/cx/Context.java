@@ -55,6 +55,9 @@ public class Context implements Visitor {
 	private static final String ARGUMENTS = "arguments";
 
 	private static final Long ZERO = 0L;
+	private static final Long ONE = 1L;
+	private static final Double ZEROD = 0.0d;
+	private static final Double ONED = 1.0d;
 	private static final String EMPTY_STRING = "";
 	private int[] breakpoints = null;
 	private BreakPoint breakPoint = null;
@@ -689,48 +692,76 @@ public class Context implements Visitor {
 	public static Long toLong(Object obj) {
 		if (obj == null) {
 			return ZERO;
-		} else if (obj instanceof Boolean) {
-			return ((Boolean) obj) ? 1L : 0L;
 		} else if (obj instanceof Number) {
 			return ((Number) obj).longValue();
-		} else if (obj instanceof String && ((String) obj).length() == 0) {
-			return ZERO;
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? ONE : ZERO;
+		} else if (obj instanceof String) {
+			if (((String) obj).length() == 0) {
+				return ZERO;
+			} else {
+				try {
+					return Long.parseLong((String) obj);
+				} catch (NumberFormatException e) {
+					return null;
+				}
+			}
 		} else {
 			try {
 				return Long.parseLong(obj.toString());
-			} catch (NumberFormatException e) {}
+			} catch (NumberFormatException e) {
+				return null;
+			}
 		}
-		return null;
 	}
 
 	public static double toDouble(Object obj) {
 		if (obj == null) {
-			return 0.0d;
-		} else if (obj instanceof Boolean) {
-			return ((Boolean) obj) ? 1d : 0d;
+			return ZEROD;
 		} else if (obj instanceof Number) {
 			return ((Number) obj).doubleValue();
-		} else if (obj instanceof String && ((String) obj).length() == 0) {
-			return 0.0d;
+		} else if (obj instanceof String) {
+			if (((String) obj).length() == 0) {
+				return ZEROD;
+			} else {
+				try {
+					return Parser.parseNumber((String) obj).doubleValue();
+				} catch (NumberFormatException e) {
+					return Double.NaN;
+				}
+			}
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? ONED : ZEROD;
 		} else {
 			try {
 				return Parser.parseNumber(obj.toString()).doubleValue();
-			} catch (NumberFormatException e) {}
+			} catch (NumberFormatException e) {
+				return Double.NaN;
+			}
 		}
-		return Double.NaN;
 	}
 
 	public static Number toNumber(Object obj) {
 		if (obj == null) {
 			return ZERO;
-		} else if (obj instanceof Boolean) {
-			return ((Boolean) obj) ? 1L : ZERO;
 		} else if (obj instanceof Double) {
 			return ((Number) obj).doubleValue();
 		} else if (obj instanceof Number) {
 			return ((Number) obj).longValue();
-		} else if (obj instanceof String && ((String) obj).length() == 0) {
-			return ZERO;
+		} else if (obj instanceof String) {
+			if (((String) obj).length() == 0) {
+				return ZERO;
+			} else {
+				try {
+					return Long.parseLong((String) obj);
+				} catch (NumberFormatException e) {
+					try {
+						return Parser.parseNumber((String) obj).doubleValue();
+					} catch (NumberFormatException ex) {}
+				}
+			}
+		} else if (obj instanceof Boolean) {
+			return ((Boolean) obj) ? ONE : ZERO;
 		} else {
 			final String str = obj.toString();
 			try {
@@ -805,7 +836,8 @@ public class Context implements Visitor {
 		} else if (left instanceof String) {
 			String l = toString(left);
 			if (l.length() <= 0) {
-				return toLong(right) == ZERO;
+				Long r = toLong(right);
+				return r == null || r.longValue() == 0L;
 			} else {
 				return l.compareTo(toString(right)) == 0;
 			}
@@ -890,7 +922,8 @@ public class Context implements Visitor {
 		} else if (left instanceof String) {
 			String l = toString(left);
 			if (l.length() <= 0) {
-				return toLong(right) == ZERO;
+				Long r = toLong(right);
+				return r == null || r.longValue() == 0L;
 			} else {
 				return l.compareTo(toString(right)) >= 0;
 			}
@@ -1017,9 +1050,8 @@ public class Context implements Visitor {
 			return null;
 		} else if (right == null) {
 			return left;
-		} else if (left instanceof Number) {
-			long rvalue = toLong(right);
-			long l = ((Number) left).longValue() % rvalue;
+		} else if (left instanceof Number && right instanceof Number) {
+			long l = ((Number) left).longValue() % ((Number) right).longValue();
 			return Long.valueOf(l);
 		}
 		return null;
@@ -1030,9 +1062,8 @@ public class Context implements Visitor {
 			return null;
 		} else if (right == null) {
 			return left;
-		} else if (left instanceof Number) {
-			long rvalue = toLong(right);
-			long l = ((Number) left).longValue() | rvalue;
+		} else if (left instanceof Number && right instanceof Number) {
+			long l = ((Number) left).longValue() | ((Number) right).longValue();
 			return Long.valueOf(l);
 		}
 		return null;
