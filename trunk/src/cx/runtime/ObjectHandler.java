@@ -3,7 +3,6 @@ package cx.runtime;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-
 import cx.Context;
 import cx.ast.Visitor;
 
@@ -121,14 +120,14 @@ public class ObjectHandler implements Handler {
 			return value.toString();
 		} else if (type.isAssignableFrom(long.class) || type.isAssignableFrom(Long.class)) {
 			return Context.toLong(value);
-		} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
-			return Context.toLong(value).intValue();
 		} else if (type.isAssignableFrom(double.class) || type.isAssignableFrom(Double.class)) {
 			return Context.toDouble(value);
-		} else if (type.isAssignableFrom(float.class) || type.isAssignableFrom(Float.class)) {
-			return (float) Context.toDouble(value);
 		} else if (type.isAssignableFrom(boolean.class) || type.isAssignableFrom(Boolean.class)) {
 			return Context.isTrue(value);
+		} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
+			return Context.toLong(value).intValue();
+		} else if (type.isAssignableFrom(float.class) || type.isAssignableFrom(Float.class)) {
+			return (float) Context.toDouble(value);
 		} else if (type.isAssignableFrom(value.getClass())) {
 			return value;
 		} else if (value instanceof ContextFrame && type.isAssignableFrom(((ContextFrame) value).frame.getClass())) {

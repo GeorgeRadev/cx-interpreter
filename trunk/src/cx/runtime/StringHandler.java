@@ -229,7 +229,9 @@ public class StringHandler implements Handler {
 
 		} else if ("chr".equals(method)) {
 			if (args.length == 1) {
-				return String.valueOf((char) Context.toLong(args[0]).intValue());
+				Long lc = Context.toLong(args[0]);
+				char c = (lc == null) ? 0 : ((char) lc.longValue());
+				return String.valueOf(c);
 			}
 		}
 		return null;
