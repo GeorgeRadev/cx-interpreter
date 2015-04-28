@@ -1,8 +1,6 @@
 package cx;
 
-import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.ast.Visitor;
@@ -594,33 +592,6 @@ public class TestContext extends TestCase {
 		}
 	}
 
-	public void testFor() {
-		{
-			Context cx = new Context();
-			cx.evaluate((new Parser("array = [0,1,2,3]; for(i=0;i<array.length;i++){array[i]++;}")).parse());
-			@SuppressWarnings("rawtypes")
-			List arr = (List) cx.get("array");
-			assertEquals(4, arr.size());
-			assertEquals(1L, arr.get(0));
-			assertEquals(2L, arr.get(1));
-			assertEquals(3L, arr.get(2));
-			assertEquals(4L, arr.get(3));
-		}
-		{
-			Context cx = new Context();
-			cx.evaluate((new Parser("s=0; array = [0,1,2,3]; for(e:array){s+=e;}")).parse());
-			assertEquals(6L, cx.get("s"));
-		}
-		{
-			Context cx = new Context();
-			cx.set("i", Integer.valueOf(0xCAFE));
-			cx.evaluate((new Parser("s=0; obj = {a:0,b:1,c:2,d:3}; for(e:obj){s+=obj[e];}")).parse());
-			assertEquals(6L, cx.get("s"));
-			cx.evaluate((new Parser("s+=obj['d'];")).parse());
-			assertEquals(9L, cx.get("s"));
-		}
-	}
-
 	public void testObject() {
 		{// test inheritance with flatten and function this update
 			Context cx = new Context();
@@ -874,42 +845,6 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.evaluate(new Parser("i=0;str='test'+i;").parse());
 			assertEquals("test0", cx.get("str").toString());
-		}
-	}
-
-	public void testSQLStringEscape() {
-
-		Parser parser = new Parser( );
-		parser.supportSQLEscaping = true;
-		{
-			Context cx = new Context();
-			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-			cal.set(Calendar.ZONE_OFFSET, 0);
-			cal.setTimeInMillis(0);
-			cx.set("datestr", cal);
-			parser.supportSQLEscaping = true;
-			cx.evaluate(parser.parse("sql := select 'id' where 'updated' = datestr;"));
-			String sql = cx.get("sql").toString();
-			assertEquals("select id where updated = '1970-01-01 02:00:00' ", sql);
-		}
-		{
-			Context cx = new Context();
-			cx.evaluate(parser.parse("a = 4; sql := update 'schema'.'table' set 'id' = 'id' + a;"));
-			String sql = cx.get("sql").toString();
-			assertEquals("update schema . table set id = id + 4 ", sql);
-		}
-		{
-			Context cx = new Context();
-			cx.evaluate(parser.parse("date = 'test'; sql := update 'table' set date = 0;"));
-			String sql = cx.get("sql").toString();
-			// date is reserved word
-			assertEquals("update table set date = 0 ", sql);
-		}
-		{
-			Context cx = new Context();
-			cx.evaluate(parser.parse("s = 'value'; sql := select 'id' where 'name' = s and 'city' = \"'NY'\";"));
-			String sql = cx.get("sql").toString();
-			assertEquals("select id where name = 'value' and city = 'NY' ", sql);
 		}
 	}
 }

@@ -426,21 +426,37 @@ public class Context implements Visitor {
 
 	public void visitWhile(NodeWhile paramWhileNode) {
 		setCurrentPosition(paramWhileNode.position);
+		Node condition = paramWhileNode.condition;
 		try {
 			pushContext();
-			Object localScrBoolean = eval(paramWhileNode.condition);
 
-			while (isTrue(localScrBoolean)) {
-				try {
-					eval(paramWhileNode.body);
-				} catch (JumpBreak localBreakJump) {
-					// break
-					break;
-				} catch (JumpContinue localContinueJump) {
-					// continue
+			if (paramWhileNode.isDoWhile) {
+				do {
+					try {
+						eval(paramWhileNode.body);
+					} catch (JumpBreak localBreakJump) {
+						// break
+						break;
+					} catch (JumpContinue localContinueJump) {
+						// continue
+						continue;
+					}
+				} while (condition == null || isTrue(eval(condition)));
+
+			} else {
+				while (condition == null || isTrue(eval(condition))) {
+					try {
+						eval(paramWhileNode.body);
+					} catch (JumpBreak localBreakJump) {
+						// break
+						break;
+					} catch (JumpContinue localContinueJump) {
+						// continue
+						continue;
+					}
 				}
-				localScrBoolean = eval(paramWhileNode.condition);
 			}
+
 		} finally {
 			popContext();
 		}
@@ -486,11 +502,15 @@ public class Context implements Visitor {
 	}
 
 	public void visitBreak(NodeBreak paramBreakNode) {
-		throw new JumpBreak();
+		if (paramBreakNode.condition == null || isTrue(eval(paramBreakNode.condition))) {
+			throw new JumpBreak();
+		}
 	}
 
 	public void visitContinue(NodeContinue paramContinueNode) {
-		throw new JumpContinue();
+		if (paramContinueNode.condition == null || isTrue(eval(paramContinueNode.condition))) {
+			throw new JumpContinue();
+		}
 	}
 
 	public void visitTrue(NodeTrue paramTrueNode) {

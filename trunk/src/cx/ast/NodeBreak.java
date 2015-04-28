@@ -1,8 +1,11 @@
 package cx.ast;
 
 public class NodeBreak extends Node {
-	public NodeBreak(SourcePosition position) {
+	public Node condition;
+
+	public NodeBreak(SourcePosition position, Node condition) {
 		super(position);
+		this.condition = condition;
 	}
 
 	public void accept(Visitor visitor) {
@@ -10,6 +13,10 @@ public class NodeBreak extends Node {
 	}
 
 	public String toString() {
-		return "break";
+		if (condition == null) {
+			return "break";
+		} else {
+			return "break " + condition;
+		}
 	}
 }
