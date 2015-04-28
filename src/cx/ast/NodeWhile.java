@@ -26,7 +26,11 @@ public class NodeWhile extends Node {
 			bodystr = body.toString() + ";";
 		}
 		if (isDoWhile) {
-			return "do " + bodystr + " while(" + condition + ")";
+			if (condition == null) {
+				return "do " + bodystr;
+			} else {
+				return "do " + bodystr + " while(" + condition + ")";
+			}
 		} else {
 			return "while(" + condition + ") " + bodystr;
 		}

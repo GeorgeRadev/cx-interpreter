@@ -1,8 +1,11 @@
 package cx.ast;
 
 public class NodeContinue extends Node {
-	public NodeContinue(SourcePosition position) {
+	public Node condition;
+
+	public NodeContinue(SourcePosition position, Node condition) {
 		super(position);
+		this.condition = condition;
 	}
 
 	public void accept(Visitor visitor) {
@@ -10,6 +13,10 @@ public class NodeContinue extends Node {
 	}
 
 	public String toString() {
-		return "continue";
+		if (condition == null) {
+			return "continue";
+		} else {
+			return "continue " + condition;
+		}
 	}
 }

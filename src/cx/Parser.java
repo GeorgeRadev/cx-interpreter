@@ -177,11 +177,31 @@ public class Parser {
 				}
 			case BREAK:
 				scanner.getToken();
-				node = new NodeBreak(getSrcPos());
+				{
+					Node condition = null;
+					if (scanner.peekToken() != Token.SEMICOLON) {
+						// break with condition
+						condition = parseExpression();
+						if (scanner.peekToken() != Token.SEMICOLON) {
+							handleError("expected ';' after 'break [condition];' !", scanner.getSrcPos());
+						}
+					}
+					node = new NodeBreak(getSrcPos(), condition);
+				}
 				break;
 			case CONTINUE:
 				scanner.getToken();
-				node = new NodeContinue(getSrcPos());
+				{
+					Node condition = null;
+					if (scanner.peekToken() != Token.SEMICOLON) {
+						// break with condition
+						condition = parseExpression();
+						if (scanner.peekToken() != Token.SEMICOLON) {
+							handleError("expected ';' after 'continue [condition];' !", scanner.getSrcPos());
+						}
+					}
+					node = new NodeContinue(getSrcPos(), condition);
+				}
 				break;
 			case RETURN:
 				node = parseReturn();
@@ -291,26 +311,35 @@ public class Parser {
 			if (scanner.matchToken(Token.SEMICOLON)) {
 				body = null;
 			} else {
-				body = parseStatement();
+				if (scanner.matchToken(Token.L_CURLY)) {
+					body = parseBlock();
+				} else {
+					body = parseStatement();
+				}
 			}
 		}
 
 		if (!scanner.matchToken(Token.WHILE)) {
-			handleError("expected 'while' !", scanner.getSrcPos());
+			// implement Knut's [loop while() repeat] structure
+			// in current parser it is presented as
+			// do { ...; break [condition]; ...; continue [condition]; ...; }
+			return new NodeWhile(localSourcePosition, null, body, true);
+
+		} else {
+			if (!scanner.matchToken(Token.L_PAREN)) {
+				handleError("expected '(' in 'while(...' !", scanner.getSrcPos());
+			}
+			if (scanner.peekToken() != Token.R_PAREN) {
+				condition = parseExpression();
+			}
+			if (!scanner.matchToken(Token.R_PAREN)) {
+				handleError("expected ')' in 'do...while(...)' !", scanner.getSrcPos());
+			}
+			if (!scanner.matchToken(Token.SEMICOLON)) {
+				handleError("expected ';' for the 'do...while()' statement!", scanner.getSrcPos());
+			}
+			return new NodeWhile(localSourcePosition, condition, body, true);
 		}
-		if (!scanner.matchToken(Token.L_PAREN)) {
-			handleError("expected '(' in 'while(...' !", scanner.getSrcPos());
-		}
-		if (scanner.peekToken() != Token.R_PAREN) {
-			condition = parseExpression();
-		}
-		if (!scanner.matchToken(Token.R_PAREN)) {
-			handleError("expected ')' in 'do...while(...)' !", scanner.getSrcPos());
-		}
-		if (!scanner.matchToken(Token.SEMICOLON)) {
-			handleError("expected ';' for the 'do...while()' statement!", scanner.getSrcPos());
-		}
-		return new NodeWhile(localSourcePosition, condition, body, true);
 	}
 
 	private Node parseWhile() {
