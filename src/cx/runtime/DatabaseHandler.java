@@ -17,6 +17,57 @@ import cx.ast.NodeString;
 import cx.ast.SourcePosition;
 import cx.ast.Visitor;
 
+//Database Handler provides a wrapper around JDBC implementations. 
+// it registers the following object:
+//Database {
+//	static Database open(connectionString);
+//	static Database connect(connectionString);
+//	static void classForName(className);
+//	
+//	Database create();
+//	
+//	Database open();
+//	Database connect();
+//	boolean execute(sql);
+//	boolean execute(sql, callback(parameters, that, match, the, select, columns) {...});
+//	commit();
+//	rollback();
+//	close();
+//	setProperty();
+//	String setConnectionString // variable 	
+//}
+
+// provided methods are used like:
+// if the registered handler is with name Database then
+// Database.classForName("org.sqlite.JDBC); // create JDBC instance
+// var db = Database.create(); // create JDBC instance
+// var db = Database.create(connectionString); // create JDBC instance
+//
+// db.setProperty(key,value); // may be used before open/connect if JDBC driver requires properties
+// db.setConnectionString = "new connection string"; // may be used 
+//
+// // the following four methods are initializing the connection
+// // and return true if everything is ok
+// // otherwize the error is in db.error
+// db.open();
+// db.open(connectionstring);
+// db.connect(); 
+// db.connect(connectionString);
+// 
+// // when db connection is ok the following methods can be used
+// db.execute(sql);
+// db.execute(sql, callback(parameters, that, match, the, select, columns) {...});
+// db.commit(); 
+//  db.rollback(); 
+//
+//  // to close the connection:
+//  db.close();
+//}
+
+//Handler can be added to the Context like:
+//Context cx = new Context();
+//cx.addHandler(new DatabaseHandler("Database")); // register database handler under name "Database"
+
 public class DatabaseHandler implements Handler {
 	protected Visitor visitor;
 	protected final String referenceName;
@@ -36,7 +87,7 @@ public class DatabaseHandler implements Handler {
 	}
 
 	public static enum DatabaseMethod {
-		open, connect, execute, commit, rollback, close, setProperty, setConnectionString;
+		open, connect, execute, commit, rollback, close, setProperty, setConnectionString, classForName, create;
 
 		public static DatabaseMethod parse(final String str) {
 			String guess = null;
@@ -57,9 +108,12 @@ public class DatabaseHandler implements Handler {
 					}
 					break;
 				case 6:
-					if (str.charAt(0) == 'c') {
+					if (str.charAt(1) == 'o') {
 						guess = "commit";
 						method = commit;
+					} else if (str.charAt(1) == 'r') {
+						guess = "create";
+						method = create;
 					}
 					break;
 				case 7:
@@ -81,6 +135,12 @@ public class DatabaseHandler implements Handler {
 					if (str.charAt(0) == 's') {
 						guess = "setProperty";
 						method = setProperty;
+					}
+					break;
+				case 12:
+					if (str.charAt(0) == 'c') {
+						guess = "classForName";
+						method = classForName;
 					}
 					break;
 				case 19:
@@ -362,10 +422,21 @@ public class DatabaseHandler implements Handler {
 				return new DatabaseCall((DatabaseObject) thiz, method);
 			}
 		} else if (thiz instanceof DatabaseHandler) {
-			if ("create".equals(variable)) {
-				DatabaseObject db = new DatabaseObject("");
-				DatabaseCall call = new DatabaseCall(db, DatabaseMethod.setConnectionString);
-				return call;
+			DatabaseMethod method = DatabaseMethod.parse(variable);
+			if (method != null) {
+				switch (method) {
+					case create: {
+						DatabaseObject db = new DatabaseObject("");
+						DatabaseCall call = new DatabaseCall(db, DatabaseMethod.setConnectionString);
+						return call;
+					}
+					case classForName: {
+						DatabaseCall call = new DatabaseCall(null, DatabaseMethod.classForName);
+						return call;
+					}
+					default:
+						return null;
+				}
 			}
 		}
 		return null;
@@ -436,6 +507,11 @@ public class DatabaseHandler implements Handler {
 					result = databaseCall.db.setProperty(property, value);
 				}
 				break;
+			case classForName:
+				for (Object arg : args) {
+					classForName(String.valueOf(arg));
+				}
+				break;
 			case setConnectionString:
 				if (args.length >= 1) {
 					String connectionStr = null;
@@ -448,21 +524,50 @@ public class DatabaseHandler implements Handler {
 				}
 				result = databaseCall.db;
 				break;
+			default:
+				break;
 		}
 		return result;
 	}
 
 	public boolean acceptStaticCall(String method, Object[] args) {
-		return ((args.length == 1) && ("connect".equals(method) || "open".equals(method)));
+		DatabaseMethod dbStaticMethod = DatabaseMethod.parse(method);
+		if (dbStaticMethod != null) {
+			switch (dbStaticMethod) {
+				case connect:
+				case open:
+					return true;
+				default:
+					break;
+			}
+		}
+		return false;
 	}
 
 	public Object staticCall(String method, Object[] args) {
-		if (args.length == 1) {
-			if ("connect".equals(method) || "open".equals(method)) {
-				DatabaseObject db = new DatabaseObject(String.valueOf(args[0]));
-				return db;
+		DatabaseMethod dbStaticMethod = DatabaseMethod.parse(method);
+		if (dbStaticMethod != null) {
+			switch (dbStaticMethod) {
+				case connect:
+				case open:
+					if (args.length > 0) {
+						DatabaseObject db = new DatabaseObject(String.valueOf(args[0]));
+						return db;
+					} else {
+						return null;
+					}
+				default:
+					break;
 			}
 		}
 		return null;
+	}
+
+	public void classForName(String className) {
+		if (className != null && className.length() > 0) {
+			try {
+				Class.forName(className);
+			} catch (ClassNotFoundException e) {}
+		}
 	}
 }

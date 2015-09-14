@@ -3,6 +3,29 @@ package cx.runtime;
 import cx.Context;
 import cx.ast.Visitor;
 
+/////////////Math Handler provides the global object Math with methods:
+//Math {
+//    random(); 
+//    abs(number); 
+//    ceil(number); 
+//    floor(number); 
+//    round(number);
+//    sqrt(number); 
+//    max(number,...); 
+//    min(number,...); 
+//    isNaN(number); 
+//    parseInteger(string); 
+//    parseDouble(string);
+//}
+//and static method formatDate() for creating a string representation.
+
+////////////////Examples:
+//var d = Math.round(0.53); // d = 1
+//var d = Math.floor(0.23); // d = 0.0
+//var d = Math.max(-1,0,1,2,4); // d = 4.0
+//var d = Math.min(2,4,6,8,9); // d = 2.0
+//var d = Math.parseInteger('2.3'); // d = 2
+
 public class MathHandler implements Handler {
 
 	public void init(Visitor cx) {
