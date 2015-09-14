@@ -3,6 +3,23 @@ package cx.runtime;
 import cx.Context;
 import cx.ast.Visitor;
 
+//////////////////supported functions over String
+//trim(); 
+//substring(start); 
+//substring(start,end); 
+//replace(from,to);
+//indexOf(char); 
+//lastIndexOf(char); 
+//startsWith(string); 
+//endsWith(string);
+//toLowerCase(); 
+//toUpperCase();
+
+//////////////////////examples
+//var str = ' trim '; 
+//str = str.trim();                         - str = 'trim'
+//str = 'smallCammelCase'.toLowerCase();    - str = 'smallcammelcase'
+
 public class StringHandler implements Handler {
 	public static enum StringMethod {
 		trim, substring, replace, indexOf, lastIndexOf, startsWith, endsWith, toLowerCase, toUpperCase;
