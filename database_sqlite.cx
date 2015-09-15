@@ -1,8 +1,9 @@
-var connectionString = 'jdbc:sqlite:./out/test_db.sqlite'; 
-var map = {};
+ var map = {};
 var error = "ok";
 
-db = Database.create(connectionString);
+Database.classForName("org.sqlite.JDBC");
+db = Database.create('jdbc:sqlite:./out/test_db.sqlite');
+
 if(db.connect()){
 	sql := CREATE TABLE IF NOT EXISTS 'TestTable' ( 'number' INT , 'string' VARCHAR );
 	if(!db.execute(sql)){
