@@ -2,7 +2,7 @@
 var error = "ok";
 
 Database.classForName("org.sqlite.JDBC");
-db = Database.create('jdbc:sqlite:./out/test_db.sqlite');
+db = Database.create('jdbc:sqlite:./out_test/test_db.sqlite');
 
 if(db.connect()){
 	sql := CREATE TABLE IF NOT EXISTS 'TestTable' ( 'number' INT , 'string' VARCHAR );
