@@ -1,0 +1,484 @@
+package handlers;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.cchbc.jco.SAPManager;
+import com.cchbc.jco.SAPProvider;
+import com.sap.conn.jco.JCoException;
+import com.sap.conn.jco.JCoField;
+import com.sap.conn.jco.JCoFieldIterator;
+import com.sap.conn.jco.JCoFunction;
+import com.sap.conn.jco.JCoMetaData;
+import com.sap.conn.jco.JCoParameterList;
+import com.sap.conn.jco.JCoStructure;
+import com.sap.conn.jco.JCoTable;
+import cx.ast.Node;
+import cx.ast.NodeCall;
+import cx.ast.NodeString;
+import cx.ast.Visitor;
+import cx.runtime.ContextFrame;
+import cx.runtime.Function;
+import cx.runtime.Handler;
+
+//SAP{
+//	static SAP create(connectionString);
+//	
+//	readTable(tableName, [columnNames], whereClause, callback(parameters, that, match, the, select, columns) {...});
+//  Object callRFC(RFCName, {map with parameters}, {map with table parameters - i.e. map with list of maps});
+//}
+public class SAPHandler implements Handler {
+	protected Visitor visitor;
+	protected final String referenceName;
+	private static final SimpleDateFormat YYYYMMDD = new SimpleDateFormat("yyyyMMdd");
+
+	public SAPHandler(String refName) {
+		referenceName = refName;
+	}
+
+	public void init(Visitor visitor) {
+		// defines global object for Database operations
+		this.visitor = visitor;
+		visitor.set(referenceName, this);
+	}
+
+	public static enum SAPMethod {
+		create, callRFC, readTable;
+
+		public static SAPMethod parse(final String str) {
+			if (str == null) {
+				return null;
+			}
+			final int length = str.length();
+			String guess = null;
+			SAPMethod method = null;
+
+			switch (length) {
+				case 6:
+					if (str.charAt(0) == 'c') {
+						guess = "create";
+						method = create;
+					}
+					break;
+				case 7:
+					if (str.charAt(0) == 'c') {
+						guess = "callRFC";
+						method = callRFC;
+					}
+					break;
+				case 9:
+					if (str.charAt(0) == 'r') {
+						guess = "readTable";
+						method = readTable;
+					}
+					break;
+			}
+			if (str.equals(guess)) {
+				return method;
+			} else {
+				return null;
+			}
+		}
+	}
+
+	private static class SAPCall {
+		private final SAPObject sap;
+		private final SAPMethod method;
+
+		SAPCall(SAPObject db, SAPMethod method) {
+			this.sap = db;
+			this.method = method;
+		}
+	}
+
+	public boolean accept(Object object) {
+		return object instanceof SAPObject || object instanceof SAPCall || object instanceof SAPHandler;
+	}
+
+	public boolean acceptStaticCall(String method, Object[] args) {
+		return false;
+	}
+
+	public Object staticCall(String method, Object[] args) {
+		return null;
+	}
+
+	public void set(Object object, String variable, Object value) {}
+
+	public Object get(Object thiz, String variable) {
+		if (thiz instanceof SAPObject) {
+			// dynamic object calls are here
+			SAPMethod method = SAPMethod.parse(variable);
+			if (method != null) {
+				return new SAPCall((SAPObject) thiz, method);
+			}
+		} else if (thiz instanceof SAPHandler) {
+			// static object calls are here
+			SAPMethod method = SAPMethod.parse(variable);
+			if (method != null) {
+				switch (method) {
+					case create: {
+						return new SAPCall(null, method);
+					}
+					default:
+						return null;
+				}
+			}
+		}
+		return null;
+	}
+
+	public Object call(Object object, Object[] args) {
+		if (!(object instanceof SAPCall)) {
+			return null;
+		}
+		SAPCall sapCall = (SAPCall) object;
+
+		switch (sapCall.method) {
+			case create:
+				if (args.length > 0) {
+					SAPObject sap = new SAPObject(String.valueOf(args[0]));
+					return sap;
+				} else {
+					return null;
+				}
+			case readTable:
+				if (args.length == 4) {
+					if (args[0] == null || args[1] == null || args[2] == null || args[3] == null) {
+						return null;
+					}
+					if (!(args[1] instanceof List)) {
+						return null;
+					}
+					if (!(args[3] instanceof Function)) {
+						return null;
+					}
+					String tableName = String.valueOf(args[0]);
+					String[] columns;
+					{
+						List<?> _columns = (List<?>) args[1];
+						if (_columns.size() <= 0) {
+							return null;
+						}
+						columns = new String[_columns.size()];
+						int i = 0;
+						for (Object column : _columns) {
+							columns[i++] = String.valueOf(column);
+						}
+					}
+					String where = String.valueOf(args[2]);
+					sapCall.sap.readTable(visitor, tableName, columns, where, (Function) args[3]);
+				}
+				return null;
+			case callRFC:
+				if (args.length >= 2) {
+					if (args[0] == null || args[1] == null) {
+						return null;
+					}
+					String functionName = String.valueOf(args[0]);
+					if (functionName.length() <= 0) {
+						return null;
+					}
+					Map<?, ?> parameters = parameterToMap(args[1]);
+					return sapCall.sap.callRFC(functionName, parameters);
+				}
+				return null;
+			default:
+				return null;
+		}
+	}
+
+	private static class SAPObject {
+		private static int i = 0;
+		private String sapName;
+		final private SAPManager sap;
+
+		public SAPObject(String connectionString) {
+			synchronized (SAPObject.class) {
+				i++;
+				sapName = "SAP_SYSTEM_" + i;
+			}
+			SAPProvider.addSystem(sapName, connectionString);
+			SAPManager _sap;
+			try {
+				_sap = new SAPManager(sapName);
+			} catch (JCoException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+			sap = _sap;
+		}
+
+		public String toString() {
+			return sap.getName();
+		}
+
+		public int readTable(Visitor visitor, String tableName, String[] columns, String where, Function function) {
+			try {
+				List<String[]> result = sap.SAPTableSelect(tableName, columns, where, 0);
+				if (result.size() <= 0) {
+					return 0;
+				}
+				int cols = columns.length;
+				List<Node> arguments = new ArrayList<Node>(cols);
+				for (int i = 0; i < cols; i++) {
+					arguments.add(null);
+				}
+				for (String[] row : result) {
+					// build arguments
+					for (int i = 0; i < cols; i++) {
+						if (i < row.length) {
+							arguments.set(i, new NodeString(function.body.position, row[i]));
+						} else {
+							arguments.set(i, null);
+						}
+					}
+					// do call to listener
+					NodeCall call = new NodeCall(function.body.position, function.body, arguments);
+					visitor.visitCall(call);
+				}
+				// return rows
+				return result.size();
+			} catch (Exception e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+
+		public Map<?, ?> callRFC(String functionName, Map<?, ?> parameters) {
+			try {
+				final JCoFunction function = sap.repository.getFunction(functionName);
+				if (parameters != null) {// process import parameters
+					final JCoParameterList jcoInParameters = function.getImportParameterList();
+					if (jcoInParameters != null) {
+						populateParameters(jcoInParameters.getParameterFieldIterator(), parameters);
+					}
+					final JCoParameterList jcoChangeParameters = function.getChangingParameterList();
+					if (jcoChangeParameters != null) {
+						populateParameters(jcoChangeParameters.getParameterFieldIterator(), parameters);
+					}
+					final JCoParameterList jcoTables = function.getTableParameterList();
+					if (jcoTables != null) {
+						populateParameters(jcoTables.getParameterFieldIterator(), parameters);
+					}
+				}
+
+				if (!sap.execute(function)) {
+					return null;
+				}
+
+				Map<String, Object> result = new HashMap<String, Object>();
+				{// process result parameters
+					final JCoParameterList jcoChangeParameters = function.getChangingParameterList();
+					if (jcoChangeParameters != null) {
+						processParameters(jcoChangeParameters.getParameterFieldIterator(), result);
+					}
+					final JCoParameterList jcoParameters = function.getExportParameterList();
+					if (jcoParameters != null) {
+						processParameters(jcoParameters.getParameterFieldIterator(), result);
+					}
+					final JCoParameterList jcoTables = function.getTableParameterList();
+					if (jcoTables != null) {
+						processParameters(jcoTables.getParameterFieldIterator(), result);
+					}
+				}
+
+				return result;
+			} catch (Exception e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+		}
+	}
+
+	private static Map<?, ?> parameterToMap(Object object) {
+		if (object instanceof ContextFrame) {
+			ContextFrame context = new ContextFrame();
+			ContextFrame.flattenAintoB((ContextFrame) object, context);
+			return context.frame;
+		} else if (object instanceof Map) {
+			return (Map<?, ?>) object;
+		} else {
+			return null;
+		}
+	}
+
+	private static void populateParameters(JCoFieldIterator parametersIterator, Map<?, ?> parameters) {
+		if (parametersIterator == null || parameters == null) {
+			return;
+		}
+		while (parametersIterator.hasNextField()) {
+			JCoField parameter = parametersIterator.nextField();
+			String parameterName = parameter.getName();
+			int parameterType = parameter.getType();
+			Object value = parameters.get(parameterName);
+			if (value == null) {
+				continue;
+			}
+			switch (parameterType) {
+				case JCoMetaData.TYPE_DATE:
+					try {
+						String dateStr = String.valueOf(value);
+						// validate
+						YYYYMMDD.parse(dateStr);
+						parameter.setValue(dateStr);
+					} catch (ParseException e) {
+						// ignore parameter
+					}
+					break;
+				case JCoMetaData.TYPE_DECF16:
+				case JCoMetaData.TYPE_DECF34:
+				case JCoMetaData.TYPE_FLOAT:
+					if (value instanceof Number) {
+						parameter.setValue(((Number) value).doubleValue());
+					} else {
+						try {
+							String doublestr = String.valueOf(value);
+							double d = Double.parseDouble(doublestr);
+							parameter.setValue(d);
+						} catch (NumberFormatException e) {
+							// ignore parameter
+						}
+					}
+					break;
+				case JCoMetaData.TYPE_INT1:
+					if (value instanceof Number) {
+						parameter.setValue(((Number) value).shortValue());
+					} else {
+						try {
+							String longstr = String.valueOf(value);
+							long l = Long.parseLong(longstr);
+							parameter.setValue(l);
+						} catch (NumberFormatException e) {
+							// ignore parameter
+						}
+					}
+					break;
+				case JCoMetaData.TYPE_INT2:
+					if (value instanceof Number) {
+						parameter.setValue(((Number) value).intValue());
+					} else {
+						try {
+							String longstr = String.valueOf(value);
+							long l = Long.parseLong(longstr);
+							parameter.setValue(l);
+						} catch (NumberFormatException e) {
+							// ignore parameter
+						}
+					}
+					break;
+				case JCoMetaData.TYPE_NUM:
+				case JCoMetaData.TYPE_INT:
+					if (value instanceof Number) {
+						parameter.setValue(((Number) value).longValue());
+					} else {
+						try {
+							String longstr = String.valueOf(value);
+							long l = Long.parseLong(longstr);
+							parameter.setValue(l);
+						} catch (NumberFormatException e) {
+							// ignore parameter
+						}
+					}
+					break;
+
+				case JCoMetaData.TYPE_TABLE:
+					JCoTable table = parameter.getTable();
+					if (value instanceof List) {
+						List<?> rows = (List<?>) value;
+						table.clear();
+						for (Object row : rows) {
+							Map<?, ?> map = parameterToMap(row);
+							if (map != null) {
+								table.appendRow();
+								populateParameters(table.getFieldIterator(), map);
+							}
+						}
+					}
+					break;
+
+				case JCoMetaData.TYPE_STRUCTURE:
+					JCoStructure structure = parameter.getStructure();
+					if (value instanceof Map || value instanceof ContextFrame) {
+						Map<?, ?> struct = parameterToMap(value);
+						if (struct != null) {
+							populateParameters(structure.getFieldIterator(), struct);
+						}
+					}
+					break;
+
+				default:
+					// case for boolean
+					if (JCoMetaData.TYPE_CHAR == parameterType && parameter.getLength() == 1
+							&& value instanceof Boolean) {
+						parameter.setValue(Boolean.TRUE.equals(value) ? 'X' : ' ');
+					} else {
+						// case for string
+						parameter.setValue(String.valueOf(value));
+					}
+					break;
+			}
+		}
+	}
+
+	private static void processParameters(JCoFieldIterator parametersIterator, Map<String, Object> result) {
+		if (parametersIterator == null || result == null) {
+			return;
+		}
+		while (parametersIterator.hasNextField()) {
+			JCoField parameter = parametersIterator.nextField();
+			String parameterName = parameter.getName();
+			int parameterType = parameter.getType();
+
+			switch (parameterType) {
+				case JCoMetaData.TYPE_DATE:
+					result.put(parameterName, YYYYMMDD.format(parameter.getDate()));
+					break;
+				case JCoMetaData.TYPE_DECF16:
+				case JCoMetaData.TYPE_DECF34:
+				case JCoMetaData.TYPE_FLOAT:
+					result.put(parameterName, parameter.getDouble());
+					break;
+				case JCoMetaData.TYPE_INT:
+				case JCoMetaData.TYPE_INT1:
+				case JCoMetaData.TYPE_INT2:
+				case JCoMetaData.TYPE_NUM:
+					result.put(parameterName, parameter.getLong());
+					break;
+
+				case JCoMetaData.TYPE_TABLE:
+					JCoTable table = parameter.getTable();
+					if (!table.isEmpty()) {
+						final int fieldCount = table.getFieldCount();
+						List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+						table.firstRow();
+						do {
+							Map<String, Object> row = new HashMap<String, Object>(fieldCount);
+							processParameters(table.getFieldIterator(), row);
+							rows.add(row);
+
+						} while (table.nextRow());
+						result.put(parameterName, rows);
+					}
+					break;
+
+				case JCoMetaData.TYPE_STRUCTURE:
+					JCoStructure structure = parameter.getStructure();
+					Map<String, Object> struct = new HashMap<String, Object>(structure.getFieldCount());
+					populateParameters(structure.getFieldIterator(), struct);
+					result.put(parameterName, struct);
+					break;
+
+				default:
+					// case for boolean
+					if (JCoMetaData.TYPE_CHAR == parameterType && parameter.getLength() == 1) {
+						result.put(parameterName, 'X' == parameter.getChar());
+					} else {
+						// case for string
+						result.put(parameterName, parameter.getString());
+					}
+					break;
+			}
+		}
+	}
+}
