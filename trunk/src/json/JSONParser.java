@@ -375,7 +375,7 @@ public class JSONParser {
 					throw new Exception("json Path " + Arrays.asList(path).toString() + " list [" + token
 							+ "] doesnot contains such index!");
 				}
-				trace = ((List) trace).get(ix);
+				trace = ((List<?>) trace).get(ix);
 
 			} else {
 				throw new Exception("json Path " + Arrays.asList(path).toString() + " element [" + token
