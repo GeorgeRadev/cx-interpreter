@@ -1,16 +1,16 @@
 package cx;
 
+import handlers.DatabaseHandler;
+import handlers.DateHandler;
+import handlers.MathHandler;
+import handlers.ObjectHandler;
+import handlers.StringHandler;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import junit.framework.TestCase;
 import cx.ast.Node;
 import cx.runtime.ContextFrame;
-import cx.runtime.DatabaseHandler;
-import cx.runtime.DateHandler;
-import cx.runtime.MathHandler;
-import cx.runtime.ObjectHandler;
-import cx.runtime.StringHandler;
 
 public class TestHandlers extends TestCase {
 

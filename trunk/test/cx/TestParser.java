@@ -30,6 +30,47 @@ import cx.exception.ParserException;
 
 public class TestParser extends TestCase {
 
+	public void testIf() {
+		Parser parser;
+		List<Node> block;
+		{
+			parser = new Parser();
+			block = parser.parse("System.listDirectory('c:\tmp',function(entry){ if(System.isFile(entry)){ System.print('file ',entry); }else if(System.isDirectory(entry)){ System.print('directory ',entry); } else { System.print('--- ',entry); } });");
+		}
+		{
+			parser = new Parser("if(a){}");
+			block = parser.parse();
+			NodeIf nodeIf = (NodeIf) block.get(0);
+			assertEquals("a", ((NodeVariable) nodeIf.condition).name);
+			assertNotNull(nodeIf.body);
+			assertNull(nodeIf.elseBody);
+		}
+		{
+			parser = new Parser("if(a);");
+			block = parser.parse();
+			NodeIf nodeIf = (NodeIf) block.get(0);
+			assertEquals("a", ((NodeVariable) nodeIf.condition).name);
+			assertNull(nodeIf.body);
+			assertNull(nodeIf.elseBody);
+		}
+		{
+			parser = new Parser("if(true);else {}");
+			block = parser.parse();
+			NodeIf nodeIf = (NodeIf) block.get(0);
+			assertTrue(nodeIf.condition instanceof NodeTrue);
+			assertNull(nodeIf.body);
+			assertNotNull(nodeIf.elseBody);
+		}
+		{
+			parser = new Parser("if(true){a;}else{b;}");
+			block = parser.parse();
+			NodeIf nodeIf = (NodeIf) block.get(0);
+			assertTrue(nodeIf.condition instanceof NodeTrue);
+			assertNotNull(nodeIf.body);
+			assertNotNull(nodeIf.elseBody);
+		}
+	}
+
 	public void testTryCatchFinally() {
 		Parser parser;
 		List<Node> block;
@@ -505,43 +546,6 @@ public class TestParser extends TestCase {
 			assertNull(nodeFor.iterator);
 			assertNotNull(nodeFor.body);
 			assertNull(nodeFor.elements);
-		}
-	}
-
-	public void testIf() {
-		Parser parser;
-		List<Node> block;
-		{
-			parser = new Parser("if(a){}");
-			block = parser.parse();
-			NodeIf nodeIf = (NodeIf) block.get(0);
-			assertEquals("a", ((NodeVariable) nodeIf.condition).name);
-			assertNotNull(nodeIf.body);
-			assertNull(nodeIf.elseBody);
-		}
-		{
-			parser = new Parser("if(a);");
-			block = parser.parse();
-			NodeIf nodeIf = (NodeIf) block.get(0);
-			assertEquals("a", ((NodeVariable) nodeIf.condition).name);
-			assertNull(nodeIf.body);
-			assertNull(nodeIf.elseBody);
-		}
-		{
-			parser = new Parser("if(true);else {}");
-			block = parser.parse();
-			NodeIf nodeIf = (NodeIf) block.get(0);
-			assertTrue(nodeIf.condition instanceof NodeTrue);
-			assertNull(nodeIf.body);
-			assertNotNull(nodeIf.elseBody);
-		}
-		{
-			parser = new Parser("if(true){a;}else{b;}");
-			block = parser.parse();
-			NodeIf nodeIf = (NodeIf) block.get(0);
-			assertTrue(nodeIf.condition instanceof NodeTrue);
-			assertNotNull(nodeIf.body);
-			assertNotNull(nodeIf.elseBody);
 		}
 	}
 

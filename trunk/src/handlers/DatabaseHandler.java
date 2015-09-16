@@ -1,4 +1,4 @@
-package cx.runtime;
+package handlers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,6 +16,8 @@ import cx.ast.NodeNumber;
 import cx.ast.NodeString;
 import cx.ast.SourcePosition;
 import cx.ast.Visitor;
+import cx.runtime.Function;
+import cx.runtime.Handler;
 
 //Database Handler provides a wrapper around JDBC implementations. 
 // it registers the following object:
@@ -397,8 +399,8 @@ public class DatabaseHandler implements Handler {
 		}
 	}
 
-	public boolean accept(Object object) {
-		return object instanceof DatabaseObject || object instanceof DatabaseCall || object instanceof DatabaseHandler;
+	public Class<?>[] supportedClasses() {
+		return new Class<?>[] { DatabaseObject.class, DatabaseCall.class, DatabaseHandler.class };
 	}
 
 	public void set(Object object, String variable, Object value) {
@@ -530,18 +532,8 @@ public class DatabaseHandler implements Handler {
 		return result;
 	}
 
-	public boolean acceptStaticCall(String method, Object[] args) {
-		DatabaseMethod dbStaticMethod = DatabaseMethod.parse(method);
-		if (dbStaticMethod != null) {
-			switch (dbStaticMethod) {
-				case connect:
-				case open:
-					return true;
-				default:
-					break;
-			}
-		}
-		return false;
+	public String[] supportedStaticCalls() {
+		return new String[] { "connect", "open" };
 	}
 
 	public Object staticCall(String method, Object[] args) {
