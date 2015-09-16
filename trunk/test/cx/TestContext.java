@@ -308,7 +308,7 @@ public class TestContext extends TestCase {
 	private static class PrintHandler implements Handler {
 		public String value = "";
 
-		public Class<?>[] supportedClasses() {
+		public Object[] supportedClasses() {
 			return null;
 		}
 

@@ -1,9 +1,9 @@
 package cx;
 
-import handlers.StringHandler;
 import java.io.File;
 import java.util.List;
 import junit.framework.TestCase;
+import cx.handlers.StringHandler;
 import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
 

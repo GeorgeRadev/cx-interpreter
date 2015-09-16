@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import cx.Context;
 import cx.ast.Visitor;
@@ -103,8 +103,8 @@ public class StringHandler implements Handler {
 
 	public void init(Visitor cx) {}
 
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { String.class, StringCall.class };
+	public Object[] supportedClasses() {
+		return new Object[] { String.class, StringCall.class };
 	}
 
 	public void set(Object object, String variable, Object value) {}

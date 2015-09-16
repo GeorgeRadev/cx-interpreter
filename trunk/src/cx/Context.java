@@ -82,16 +82,16 @@ public class Context implements Visitor {
 	}
 
 	private final List<Handler> handlers = new ArrayList<Handler>();
-	private final Map<Class<?>, Handler> handlersClasses = new HashMap<Class<?>, Handler>();
+	private final Map<Object, Handler> handlersClasses = new HashMap<Object, Handler>();
 	private final Map<String, Handler> handlersStaticCalls = new HashMap<String, Handler>();
 
 	public void addHandler(Handler handler) {
 		if (handler != null) {
 			handlers.add(handler);
 			handler.init(this);
-			Class<?>[] supportedClasses = handler.supportedClasses();
+			Object[] supportedClasses = (Object[]) handler.supportedClasses();
 			if (supportedClasses != null) {
-				for (Class<?> clazz : supportedClasses) {
+				for (Object clazz : supportedClasses) {
 					handlersClasses.put(clazz, handler);
 				}
 			}

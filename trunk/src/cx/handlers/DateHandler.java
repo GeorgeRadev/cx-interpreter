@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -107,8 +107,8 @@ public class DateHandler implements Handler {
 
 	public void init(Visitor cx) {}
 
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { Calendar.class, GregorianCalendar.class };
+	public Object[] supportedClasses() {
+		return new Object[] { Calendar.class, GregorianCalendar.class };
 	}
 
 	public void set(Object object, String variable, Object value) {
