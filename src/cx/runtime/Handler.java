@@ -8,9 +8,8 @@ public interface Handler {
 	void init(Visitor cx);
 
 	// return classes for all supported attribute access, static and dynamic
-	// call
-	// implementations
-	Class<?>[] supportedClasses();
+	// call implementations
+	Object[] supportedClasses();
 
 	// return names of all supported static functions calls
 	String[] supportedStaticCalls();

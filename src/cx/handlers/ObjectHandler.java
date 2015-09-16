@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -69,8 +69,8 @@ public class ObjectHandler implements Handler {
 	}
 
 	@Override
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { ObjectHandler.class, ClassMethodCall.class };
+	public Object[] supportedClasses() {
+		return new Object[] { ObjectHandler.class, ClassMethodCall.class };
 	}
 
 	@Override

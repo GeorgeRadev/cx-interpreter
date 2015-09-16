@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -399,8 +399,8 @@ public class DatabaseHandler implements Handler {
 		}
 	}
 
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { DatabaseObject.class, DatabaseCall.class, DatabaseHandler.class };
+	public Object[] supportedClasses() {
+		return new Object[] { DatabaseObject.class, DatabaseCall.class, DatabaseHandler.class };
 	}
 
 	public void set(Object object, String variable, Object value) {

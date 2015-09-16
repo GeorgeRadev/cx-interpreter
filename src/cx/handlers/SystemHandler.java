@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -118,8 +118,8 @@ public class SystemHandler implements Handler {
 		}
 	}
 
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { SystemMethod.class, SystemHandler.class };
+	public Object[] supportedClasses() {
+		return new Object[] { SystemMethod.class, SystemHandler.class };
 	}
 
 	public void set(Object object, String variable, Object value) {}

@@ -1,4 +1,4 @@
-package handlers;
+package cx.handlers;
 
 import cx.Context;
 import cx.ast.Visitor;
@@ -116,8 +116,8 @@ public class MathHandler implements Handler {
 		}
 	}
 
-	public Class<?>[] supportedClasses() {
-		return new Class<?>[] { MathHandler.class, MathCall.class };
+	public Object[] supportedClasses() {
+		return new Object[] { MathHandler.class, MathCall.class };
 	}
 
 	public void set(Object object, String variable, Object value) {
