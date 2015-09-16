@@ -1,7 +1,8 @@
-package cx.runtime;
+package handlers;
 
 import cx.Context;
 import cx.ast.Visitor;
+import cx.runtime.Handler;
 
 /////////////Math Handler provides the global object Math with methods:
 //Math {
@@ -115,8 +116,8 @@ public class MathHandler implements Handler {
 		}
 	}
 
-	public boolean accept(Object object) {
-		return object instanceof MathHandler || object instanceof MathCall;
+	public Class<?>[] supportedClasses() {
+		return new Class<?>[] { MathHandler.class, MathCall.class };
 	}
 
 	public void set(Object object, String variable, Object value) {
@@ -246,8 +247,8 @@ public class MathHandler implements Handler {
 		return null;
 	}
 
-	public boolean acceptStaticCall(String method, Object[] args) {
-		return false;
+	public String[] supportedStaticCalls() {
+		return null;
 	}
 
 	public Object staticCall(String method, Object[] args) {

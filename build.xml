@@ -21,7 +21,7 @@
 		<mkdir dir="${build.dir}"/>
 		<javac srcdir="${src.dir}" 
 			   destdir="${build.dir}" 
-			   debug="false" 
+			   debug="true" 
 			   optimize="true" 
 			   target="1.5"
 			   source="1.5"

@@ -1,12 +1,11 @@
 package cx;
 
+import handlers.StringHandler;
 import java.io.File;
 import java.util.List;
-
 import junit.framework.TestCase;
 import cx.runtime.BreakPoint;
 import cx.runtime.ContextFrame;
-import cx.runtime.StringHandler;
 
 public class TestMD5 extends TestCase {
 	@SuppressWarnings("rawtypes")

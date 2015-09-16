@@ -1,10 +1,12 @@
-package cx.runtime;
+package handlers;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import cx.Context;
 import cx.ast.Visitor;
+import cx.runtime.ContextFrame;
+import cx.runtime.Handler;
 
 /**
  * does not handles overwritten methods
@@ -32,8 +34,8 @@ public class ObjectHandler implements Handler {
 	}
 
 	@Override
-	public boolean acceptStaticCall(String method, Object[] args) {
-		return false;
+	public String[] supportedStaticCalls() {
+		return null;
 	}
 
 	@Override
@@ -42,8 +44,7 @@ public class ObjectHandler implements Handler {
 	}
 
 	@Override
-	public void set(Object object, String variable, Object value) {
-	}
+	public void set(Object object, String variable, Object value) {}
 
 	private static class ClassMethodCall {
 		private final Object thizz;
@@ -68,8 +69,8 @@ public class ObjectHandler implements Handler {
 	}
 
 	@Override
-	public boolean accept(Object object) {
-		return object instanceof ObjectHandler || object instanceof ClassMethodCall;
+	public Class<?>[] supportedClasses() {
+		return new Class<?>[] { ObjectHandler.class, ClassMethodCall.class };
 	}
 
 	@Override

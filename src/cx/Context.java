@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -81,11 +82,25 @@ public class Context implements Visitor {
 	}
 
 	private final List<Handler> handlers = new ArrayList<Handler>();
+	private final Map<Class<?>, Handler> handlersClasses = new HashMap<Class<?>, Handler>();
+	private final Map<String, Handler> handlersStaticCalls = new HashMap<String, Handler>();
 
 	public void addHandler(Handler handler) {
 		if (handler != null) {
 			handlers.add(handler);
 			handler.init(this);
+			Class<?>[] supportedClasses = handler.supportedClasses();
+			if (supportedClasses != null) {
+				for (Class<?> clazz : supportedClasses) {
+					handlersClasses.put(clazz, handler);
+				}
+			}
+			String[] supportedStaticCalls = handler.supportedStaticCalls();
+			if (supportedStaticCalls != null) {
+				for (String staticCall : supportedStaticCalls) {
+					handlersStaticCalls.put(staticCall, handler);
+				}
+			}
 		}
 	}
 
@@ -1285,11 +1300,10 @@ public class Context implements Visitor {
 			} else {
 				_element = eval(element).toString();
 			}
-
-			for (Handler handler : handlers) {
-				if (handler.accept(obj)) {
+			if (obj != null) {
+				Handler handler = handlersClasses.get(obj.getClass());
+				if (handler != null) {
 					handler.set(obj, _element, value);
-					break;
 				}
 			}
 		}
@@ -1481,9 +1495,9 @@ public class Context implements Visitor {
 				return;
 			}
 		}
-
-		for (Handler handler : handlers) {
-			if (handler.accept(obj)) {
+		if (obj != null) {
+			Handler handler = handlersClasses.get(obj.getClass());
+			if (handler != null) {
 				String _element;
 				if (element instanceof NodeString) {
 					_element = ((NodeString) element).value;
@@ -1559,21 +1573,18 @@ public class Context implements Visitor {
 			}
 		} else {
 			if (function != null) {
-				for (Handler handler : handlers) {
-					if (handler.accept(function)) {
-						cx.result = handler.call(function, argValues.toArray());
-						break;
-					}
+				Handler handler = handlersClasses.get(function.getClass());
+				if (handler != null) {
+					cx.result = handler.call(function, argValues.toArray());
+					return;
 				}
 			} else if (call.function instanceof NodeVariable) {
 				cx.result = null;
 				String functionName = ((NodeVariable) call.function).name;
-				for (Handler handler : handlers) {
+				Handler handler = handlersStaticCalls.get(functionName);
+				if (handler != null) {
 					Object[] args = argValues.toArray();
-					if (handler.acceptStaticCall(functionName, args)) {
-						cx.result = handler.staticCall(functionName, args);
-						break;
-					}
+					cx.result = handler.staticCall(functionName, args);
 				}
 			} else {
 				cx.result = null;

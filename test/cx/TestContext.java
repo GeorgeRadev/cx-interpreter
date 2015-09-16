@@ -9,6 +9,34 @@ import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 public class TestContext extends TestCase {
+	public void testIf() {
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser("function test(v){ if(v.a) return v.a; else if(v.b(3)){return '3';} };")).parse());
+			List<Node> block = (new Parser("f=test({a:0, b:function(c){return c;}});")).parse();
+
+			cx.evaluate(block);
+			assertEquals("3", cx.get("f"));
+		}
+		{
+			Context cx = new Context();
+			cx.evaluate((new Parser(
+					"function test(v){ if(v==1) return 'a'; else if(v==2){return 'b';} else if(v==3) return 'c'; };")).parse());
+			List<Node> block = (new Parser("f=test(f);")).parse();
+
+			cx.set("f", Integer.valueOf(1));
+			cx.evaluate(block);
+			assertEquals("a", cx.get("f"));
+
+			cx.set("f", Integer.valueOf(2));
+			cx.evaluate(block);
+			assertEquals("b", cx.get("f"));
+
+			cx.set("f", Integer.valueOf(3));
+			cx.evaluate(block);
+			assertEquals("c", cx.get("f"));
+		}
+	}
 
 	public void testChainCalls() {
 		Parser parser = new Parser();
@@ -280,8 +308,8 @@ public class TestContext extends TestCase {
 	private static class PrintHandler implements Handler {
 		public String value = "";
 
-		public boolean accept(Object object) {
-			return false;
+		public Class<?>[] supportedClasses() {
+			return null;
 		}
 
 		public void set(Object thiz, String method, Object value) {}
@@ -294,14 +322,8 @@ public class TestContext extends TestCase {
 			return null;
 		}
 
-		public boolean acceptStaticCall(String method, Object[] args) {
-			switch (args.length) {
-				case 0:
-					return "breakpoint".equals(method);
-				case 1:
-					return "print".equals(method) || "log".equals(method);
-			}
-			return false;
+		public String[] supportedStaticCalls() {
+			return new String[] { "breakpoint", "print", "log" };
 		}
 
 		static int lines = 0;

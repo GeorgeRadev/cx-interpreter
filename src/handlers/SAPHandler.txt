@@ -28,7 +28,7 @@ import cx.runtime.Handler;
 //	static SAP create(connectionString);
 //	
 //	readTable(tableName, [columnNames], whereClause, callback(parameters, that, match, the, select, columns) {...});
-//  Object callRFC(RFCName, {map with parameters}, {map with table parameters - i.e. map with list of maps});
+//  Object callRFC(RFCName, {map with parameters}, {map with table parameters - i.e. map with maps});
 //}
 public class SAPHandler implements Handler {
 	protected Visitor visitor;
@@ -94,12 +94,12 @@ public class SAPHandler implements Handler {
 		}
 	}
 
-	public boolean accept(Object object) {
-		return object instanceof SAPObject || object instanceof SAPCall || object instanceof SAPHandler;
+	public Class<?>[] supportedClasses() {
+		return new Class<?>[] { SAPObject.class, SAPCall.class, SAPHandler.class };
 	}
 
-	public boolean acceptStaticCall(String method, Object[] args) {
-		return false;
+	public String[] supportedStaticCalls() {
+		return null;
 	}
 
 	public Object staticCall(String method, Object[] args) {

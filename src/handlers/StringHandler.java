@@ -1,7 +1,8 @@
-package cx.runtime;
+package handlers;
 
 import cx.Context;
 import cx.ast.Visitor;
+import cx.runtime.Handler;
 
 //////////////////supported functions over String
 //trim(); 
@@ -100,15 +101,13 @@ public class StringHandler implements Handler {
 		}
 	}
 
-	public void init(Visitor cx) {
+	public void init(Visitor cx) {}
+
+	public Class<?>[] supportedClasses() {
+		return new Class<?>[] { String.class, StringCall.class };
 	}
 
-	public boolean accept(Object object) {
-		return object instanceof String || object instanceof StringCall;
-	}
-
-	public void set(Object object, String variable, Object value) {
-	}
+	public void set(Object object, String variable, Object value) {}
 
 	public Object get(Object thiz, String variable) {
 		StringMethod method = StringMethod.parse(variable);
@@ -232,8 +231,8 @@ public class StringHandler implements Handler {
 		return null;
 	}
 
-	public boolean acceptStaticCall(String method, Object[] args) {
-		return "toString".equals(method) || "chr".equals(method);
+	public String[] supportedStaticCalls() {
+		return new String[] { "toString", "chr" };
 	}
 
 	public Object staticCall(String method, Object[] args) {
