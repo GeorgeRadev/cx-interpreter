@@ -50,6 +50,19 @@ public class TestHandlers extends TestCase {
 		}
 	}
 
+	public static class TestClass2 {
+		String content;
+
+		public String setContent(String value) {
+			content = value;
+			return value;
+		}
+
+		public String getContent() {
+			return content;
+		}
+	}
+
 	public void testClassHandler() {
 		Context cx = new Context();
 		TestClass instance = new TestClass();
@@ -75,6 +88,24 @@ public class TestHandlers extends TestCase {
 
 		cx.evaluate((new Parser("l = obj.methodMap({a:1, b:2,c:3},'b');")).parse());
 		assertEquals(2L, cx.get("l"));
+
+		TestClass2 instance2 = new TestClass2();
+		cx.addHandler(new ObjectHandler(instance2, "obj2"));
+
+		cx.evaluate((new Parser("str = obj.method1('test');")).parse());
+		assertEquals("test", cx.get("str").toString());
+		assertEquals("test", instance.method1);
+
+		cx.evaluate((new Parser("str2 = obj2.setContent('test');")).parse());
+		assertEquals("test", cx.get("str2").toString());
+		assertEquals("test", instance2.content);
+
+		cx.evaluate((new Parser("str3 = obj2.getContent();")).parse());
+		assertEquals("test", cx.get("str3").toString());
+
+		cx.evaluate((new Parser("l = obj.method2(5);")).parse());
+		assertEquals(5L, cx.get("l"));
+		assertEquals(5L, instance.method2);
 	}
 
 	public void testStringHandler() {

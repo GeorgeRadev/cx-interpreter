@@ -3,34 +3,41 @@ package cx.handlers;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import cx.Context;
 import cx.ast.Visitor;
 import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 /**
- * does not handles overwritten methods
+ * ObjectHandler can have multiple registered instances object instances. <br/>
+ * NB: does not handles overwritten methods
  */
 public class ObjectHandler implements Handler {
+	private static final Map<String, ObjectHandler> supportedObjects = new HashMap<String, ObjectHandler>();
+	private static final Map<Object, Map<String, Method>> supportedObjectsMethods = new HashMap<Object, Map<String, Method>>();
+
+	// current registered name in context
 	private final Object thizz;
-	private final String name;
-	private final Map<String, Method> methodsMap;
 
 	public ObjectHandler(Object thizz, String name) {
 		this.thizz = thizz;
-		this.name = name;
+		supportedObjects.put(name, this);
 
 		// get all public methods and cache them
 		Method[] methods = thizz.getClass().getMethods();
-		methodsMap = new HashMap<String, Method>(methods.length + 8);
+		Map<String, Method> methodsMap = new HashMap<String, Method>(methods.length + 8);
 		for (Method method : methods) {
 			methodsMap.put(method.getName(), method);
 		}
+		supportedObjectsMethods.put(thizz, methodsMap);
 	}
 
 	@Override
 	public void init(Visitor cx) {
-		cx.set(name, this);
+		for (Entry<String, ObjectHandler> supportedObject : supportedObjects.entrySet()) {
+			cx.set(supportedObject.getKey(), supportedObject.getValue());
+		}
 	}
 
 	@Override
@@ -59,6 +66,11 @@ public class ObjectHandler implements Handler {
 	@Override
 	public Object get(Object object, String variable) {
 		if (!(object instanceof ObjectHandler)) {
+			return null;
+		}
+		final Object thizz = ((ObjectHandler) object).thizz;
+		final Map<String, Method> methodsMap = supportedObjectsMethods.get(thizz);
+		if (methodsMap == null) {
 			return null;
 		}
 		Method method = methodsMap.get(variable);
