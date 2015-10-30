@@ -629,23 +629,23 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.evaluate((new Parser("var obj1 = new {};")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj1");
-			assertEquals(0, obj.frame.size());
+			assertEquals(0, obj.size());
 
 			cx.evaluate((new Parser("var obj2 = {};")).parse());
 			obj = (ContextFrame) cx.get("obj2");
-			assertEquals(0, obj.frame.size());
+			assertEquals(0, obj.size());
 
 			cx.evaluate((new Parser("obj2['message'] = 'string';")).parse());
 			obj = (ContextFrame) cx.get("obj2");
-			assertEquals(1, obj.frame.size());
-			assertEquals("string", obj.frame.get("message"));
+			assertEquals(1, obj.size());
+			assertEquals("string", obj._get("message"));
 
 			cx.evaluate((new Parser("var obj3 = new obj2 {getMessage: function(){ return message;} };")).parse());
 			cx.evaluate((new Parser(
 					"var msg1 = obj3.getMessage(); var msg2 = obj3['message']; var msg3 = obj3.message;")).parse());
 			obj = (ContextFrame) cx.get("obj3");
 			// new object with parent inherit all context elements
-			assertEquals(2, obj.frame.size());
+			assertEquals(2, obj.size());
 
 			assertEquals("string", cx.get("msg1"));
 			assertEquals("string", cx.get("msg2"));
@@ -665,7 +665,7 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'}; obj.a++; obj.b += ' more';")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
-			assertEquals(2, obj.frame.size());
+			assertEquals(2, obj.size());
 			assertEquals(2L, obj.get("a"));
 			assertEquals("string more", obj.get("b"));
 		}
@@ -673,7 +673,7 @@ public class TestContext extends TestCase {
 			Context cx = new Context();
 			cx.evaluate((new Parser("obj = {a:1, b: 'string'};")).parse());
 			ContextFrame obj = (ContextFrame) cx.get("obj");
-			assertEquals(2, obj.frame.size());
+			assertEquals(2, obj.size());
 			assertEquals(1L, obj.get("a"));
 			assertEquals("string", obj.get("b"));
 		}

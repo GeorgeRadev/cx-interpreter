@@ -227,7 +227,7 @@ public class TestHandlers extends TestCase {
 		System.out.println("time: " + (System.currentTimeMillis() - time));
 
 		ContextFrame frame = (ContextFrame) cx.get("map");
-		assertEquals("just a string", frame.frame.get("42"));
+		assertEquals("just a string", frame._get("42"));
 		assertEquals("ok", cx.get("error"));
 	}
 }

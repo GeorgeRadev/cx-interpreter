@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import cx.runtime.ContextFrame;
 
 public class JSONBuilder {
 	final StringBuilder builder;
@@ -95,20 +94,6 @@ public class JSONBuilder {
 			Map<?, ?> theMap = (Map<?, ?>) value;
 			startObject();
 			for (Entry<?, ?> element : theMap.entrySet()) {
-				Object key = element.getKey();
-				if (key == null) {
-					continue;
-				}
-				addKey(String.valueOf(element.getKey()));
-				addValue(element.getValue());
-			}
-			endObject();
-			removeComma();
-
-		} else if (value instanceof ContextFrame) {
-			ContextFrame frame = (ContextFrame) value;
-			startObject();
-			for (Entry<?, ?> element : frame.frame.entrySet()) {
 				Object key = element.getKey();
 				if (key == null) {
 					continue;
