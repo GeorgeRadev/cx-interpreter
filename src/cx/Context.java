@@ -162,7 +162,7 @@ public class Context implements Visitor {
 	}
 
 	public void set(String varName, Object value) {
-		cx.set(varName, value);
+		cx.put(varName, value);
 	}
 
 	public void setBreakpoints(int[] breakpointlines, BreakPoint breakPoint) {
@@ -198,7 +198,7 @@ public class Context implements Visitor {
 		if (varNode.defineLocaly) {
 			for (NodeAssign node : varNode.vars) {
 				if (node.left instanceof NodeVariable) {
-					cx.frame.put(((NodeVariable) node.left).name, ZERO);
+					cx._put(((NodeVariable) node.left).name, ZERO);
 				}
 			}
 		}
@@ -244,7 +244,7 @@ public class Context implements Visitor {
 		if (assignNode.left instanceof NodeVariable) {
 			String varName = ((NodeVariable) assignNode.left).name;
 			Object rhsObject = eval(assignNode.right);
-			cx.set(varName, rhsObject);
+			cx.put(varName, rhsObject);
 
 		} else if (assignNode.left instanceof NodeAccess) {
 			setNodeAccessValue((NodeAccess) assignNode.left, eval(assignNode.right));
@@ -376,7 +376,7 @@ public class Context implements Visitor {
 					final List list = (List) elements;
 
 					for (Object e : list) {
-						cx.set(varName, e);
+						cx.put(varName, e);
 						try {
 							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
@@ -390,21 +390,7 @@ public class Context implements Visitor {
 					final Map map = (Map) elements;
 
 					for (Object e : map.keySet()) {
-						cx.set(varName, e);
-						try {
-							eval(paramForNode.body);
-						} catch (JumpBreak localBreakJump) {
-							// break
-							break;
-						} catch (JumpContinue localContinueJump) {
-							// continue
-						}
-					}
-				} else if (elements instanceof ContextFrame) {
-					final ContextFrame cf = (ContextFrame) elements;
-
-					for (String e : cf.frame.keySet()) {
-						cx.set(varName, e);
+						cx.put(varName, e);
 						try {
 							eval(paramForNode.body);
 						} catch (JumpBreak localBreakJump) {
@@ -415,7 +401,6 @@ public class Context implements Visitor {
 						}
 					}
 				}
-
 			} else {
 				eval(paramForNode.initialization);
 				Object condition = eval(paramForNode.condition);
@@ -593,7 +578,7 @@ public class Context implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = increment((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.set(((NodeVariable) unary.expresion).name, newValue);
+						cx.put(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -616,7 +601,7 @@ public class Context implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = increment((Number) result);
 					if (unary.expresion instanceof NodeVariable) {
-						cx.set(((NodeVariable) unary.expresion).name, newValue);
+						cx.put(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -627,7 +612,7 @@ public class Context implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = decrement((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.set(((NodeVariable) unary.expresion).name, newValue);
+						cx.put(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -650,7 +635,7 @@ public class Context implements Visitor {
 				if ((result instanceof Number)) {
 					Object newValue = decrement((Number) result);
 					if ((unary.expresion instanceof NodeVariable)) {
-						cx.set(((NodeVariable) unary.expresion).name, newValue);
+						cx.put(((NodeVariable) unary.expresion).name, newValue);
 					} else if (unary.expresion instanceof NodeAccess) {
 						setNodeAccessValue((NodeAccess) unary.expresion, newValue);
 					}
@@ -717,8 +702,6 @@ public class Context implements Visitor {
 		} else if (obj instanceof List) {
 			return ((List) obj).size() > 0;
 		} else if (obj instanceof Map) {
-			return ((Map) obj).size() > 0;
-		} else if (obj instanceof ContextFrame) {
 			return ((Map) obj).size() > 0;
 		}
 		return false;
@@ -1187,12 +1170,12 @@ public class Context implements Visitor {
 			ContextFrame.flattenAintoB(newObject.parent, newObject);
 			// replace all functions with new ones that has the same this to
 			// the new object
-			for (Entry<String, Object> entry : newObject.frame.entrySet()) {
+			for (Entry<String, Object> entry : newObject.entrySet()) {
 				Object value = entry.getValue();
 				if (value instanceof Function) {
 					Function function = (Function) value;
 					Function newFunction = new Function(newObject, function.body);
-					newObject.frame.put(entry.getKey(), newFunction);
+					newObject._put(entry.getKey(), newFunction);
 				}
 			}
 		} else {
@@ -1202,7 +1185,7 @@ public class Context implements Visitor {
 		cx = newObject;
 		// add object elements
 		for (String key : object.object.keySet()) {
-			newObject.set(key, eval(object.object.get(key)));
+			newObject.put(key, eval(object.object.get(key)));
 		}
 		cx = current;
 		cx.result = newObject;
@@ -1220,7 +1203,7 @@ public class Context implements Visitor {
 			} else {
 				_element = eval(element).toString();
 			}
-			((ContextFrame) obj).set(_element, value);
+			((ContextFrame) obj).put(_element, value);
 
 		} else if (obj instanceof List) {
 			final List list = ((List) obj);
@@ -1324,7 +1307,7 @@ public class Context implements Visitor {
 			if (element instanceof NodeString) {
 				String _element = ((NodeString) element).value;
 				if ("length".equals(_element)) {
-					cx.result = Long.valueOf(((ContextFrame) obj).frame.size());
+					cx.result = Long.valueOf(((ContextFrame) obj).size());
 					return;
 				} else {
 					cx.result = ((ContextFrame) obj).get(_element);
@@ -1335,10 +1318,10 @@ public class Context implements Visitor {
 			Object _element = eval(element);
 			if (_element != null) {
 				if (_element instanceof String) {
-					cx.result = ((ContextFrame) obj).frame.get(_element);
+					cx.result = ((ContextFrame) obj)._get((String) _element);
 					return;
 				} else {
-					cx.result = ((ContextFrame) obj).frame.get(_element.toString());
+					cx.result = ((ContextFrame) obj)._get(_element.toString());
 					return;
 				}
 			} else {
@@ -1524,7 +1507,7 @@ public class Context implements Visitor {
 		String name = function.name;
 		Function result = new Function(cx, function);
 		if (name != null && name.length() > 0) {
-			cx.set(name, result);
+			cx.put(name, result);
 		}
 		cx.result = result;
 	}
@@ -1600,13 +1583,13 @@ public class Context implements Visitor {
 		// cx.frame.put(THIS, function.thiz);
 		// add parameters
 		for (int i = 0; i < l; i++) {
-			cx.frame.put(argumentNames[i], argValues.get(i));
+			cx._put(argumentNames[i], argValues.get(i));
 		}
 		for (int i = l; i < argumentNames.length; i++) {
-			cx.frame.put(argumentNames[i], null);
+			cx._put(argumentNames[i], null);
 		}
 		// add arguments in context
-		cx.frame.put(ARGUMENTS, argValues);
+		cx._put(ARGUMENTS, argValues);
 		// execute
 		try {
 			evaluate(function.body.body);
@@ -1647,7 +1630,7 @@ public class Context implements Visitor {
 					if (catchName == null || exceptionName.equals(catchName)) {
 						try {
 							pushContext();
-							cx.frame.put(tryNode.exceptionNames[i], cxException.value);
+							cx._put(tryNode.exceptionNames[i], cxException.value);
 							eval(tryNode.exceptionBodies[i]);
 						} finally {
 							popContext();
@@ -1664,7 +1647,7 @@ public class Context implements Visitor {
 				if (exceptionName.equals(catchName)) {
 					try {
 						pushContext();
-						cx.frame.put(tryNode.exceptionNames[i], exception.getMessage());
+						cx._put(tryNode.exceptionNames[i], exception.getMessage());
 						eval(tryNode.exceptionBodies[i]);
 					} finally {
 						popContext();
@@ -1736,7 +1719,7 @@ public class Context implements Visitor {
 		if (nodeSQL.left instanceof NodeVariable) {
 			String varName = ((NodeVariable) nodeSQL.left).name;
 			Object rhsObject = sqlEscape.toString();
-			cx.set(varName, rhsObject);
+			cx.put(varName, rhsObject);
 
 		} else if (nodeSQL.left instanceof NodeAccess) {
 			setNodeAccessValue((NodeAccess) nodeSQL.left, sqlEscape.toString());

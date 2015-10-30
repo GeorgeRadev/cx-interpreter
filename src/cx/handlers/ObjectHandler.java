@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import cx.Context;
 import cx.ast.Visitor;
-import cx.runtime.ContextFrame;
 import cx.runtime.Handler;
 
 /**
@@ -143,8 +142,6 @@ public class ObjectHandler implements Handler {
 			return (float) Context.toDouble(value);
 		} else if (type.isAssignableFrom(value.getClass())) {
 			return value;
-		} else if (value instanceof ContextFrame && type.isAssignableFrom(((ContextFrame) value).frame.getClass())) {
-			return ((ContextFrame) value).frame;
 		} else {
 			return null;
 		}
