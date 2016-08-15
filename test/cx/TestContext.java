@@ -512,6 +512,18 @@ public class TestContext extends TestCase {
 		{// arguments
 			Context cx = new Context();
 			cx.evaluate((new Parser(
+					"function gcd(a, b) { var diff = a-b; if (diff == 0)return a; return gcd(b, +diff); }  ")).parse());
+			cx.evaluate((new Parser("result=gcd(60, 40);")).parse());
+			assertEquals(20L, cx.get("result"));
+
+			cx.evaluate((new Parser("var mygcd = gcd; result = mygcd(7, 40);")).parse());
+			assertEquals(1L, cx.get("result"));
+			cx.evaluate((new Parser("var mygcd = gcd; result = mygcd(40, 7);")).parse());
+			assertEquals(1L, cx.get("result"));
+		}
+		{// arguments
+			Context cx = new Context();
+			cx.evaluate((new Parser(
 					"function gcd(a, b) { var diff = a-b; if (diff == 0)return a; return diff > 0 ? gcd(b, diff) : gcd(a, -diff); }  ")).parse());
 			cx.evaluate((new Parser("result=gcd(60, 40);")).parse());
 			assertEquals(20L, cx.get("result"));
