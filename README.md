@@ -34,7 +34,7 @@ throw Exception_name // supported if: parser.supportTryCatchThrow = true;
 variable := SQL statement; //supported if: parser.supportSQLEscaping = true;
 ```
 
-##Operator precedence
+## Operator precedence
 |*Operator Type*     |*Operator*                            |*Associativity*|
 |--------------------|--------------------------------------|---------------|
 |Expression Operators| () [] . expr++ expr--                |left-to-right  |
@@ -52,7 +52,7 @@ variable := SQL statement; //supported if: parser.supportSQLEscaping = true;
 *Note*: Unit test were added for clearing the semantics
 
 
-##Variables
+## Variables
 Variables have no type attached, and any value can be stored in any variable. Variables declared with **var** are defined directly in the current context/block scoping/hoisting, and will hide any existing variables with the same name in the parent contexts. 
 ```js
 var i = 2; 
@@ -65,19 +65,19 @@ var i = 2;
 ```
 
 
-##Data types
+## Data types
 in **CX** we assume the following as equivalent common bottom element in the language semantic:
 ```js
 null == false == 0 == 0.0 == "" == ''
 ```
 
-###null
+### null
 Any used uninitialized variable is null
 
-###Boolean
+### Boolean
 Boolean data type constants are true and false. they are cast to numbers as 1 and 0 respectively.
 
-###Number
+### Number
 Internal implementation uses only Long and Double presentation for numbers. 
 ```js
 345; // an "integer", although there is only one numeric type in JavaScript 
@@ -87,7 +87,7 @@ Internal implementation uses only Long and Double presentation for numbers.
 0xab; // a hexadecimal digits represented by the letters A-F may be upper or lower case
 ```
 
-###String
+### String
 A string in **CX** is a immutable multi-line sequence of characters. Strings can be created directly by placing the series of characters between double or single quotes. Opening quotes inside the string **must be escaped**. 
 ```js
 var helloWorld= "Hello, world!"; 
@@ -106,7 +106,7 @@ var n = helloWorld[100];// =null anything outside the length of the string is nu
 var m = helloWorld[-100];// =null anything outside the length of the string is null
 ```
 
-###Arrays
+### Arrays
 Arrays are designed to store values indexed by integer keys. 
 ```js
 var array = ['string', 1, 2.3, , 4 ]; // empty elements are null 
@@ -117,7 +117,7 @@ b = array[-2]; // 42 - reverse indexing
 b = array[100]; // null - out of index
 ```
 
-###Objects (Maps)
+### Objects (Maps)
 Object in **CX** is just a map with all keys that are Strings.
 If a function belongs to a object - then the object is a parent context to the function execution (see Functions).
 
@@ -143,7 +143,7 @@ t = obj3['message']; // t = string
 t = obj3.message; // t = string
 ```
 
-##Function
+## Function
 Every function is a predefined closure of statements with finite dynamic variables represented by the function parameters. 
 ```js
 // variable referencing to a anonymous function (lambda) with two parameters:
@@ -162,9 +162,9 @@ obj.base = 10;
 a = obj.translate(4); // a = 14
 ```
 
-##Arithmetic operations
+## Arithmetic operations
 
-###unary arithmetic operations
+### unary arithmetic operations
 **CX** supports the following unary arithmetic operators:
 ```js
 + Unary conversion of parsable number to its absolute value 
@@ -185,7 +185,7 @@ val4 = '13'++; // val4 = '13'
 val5 = ~~'-5'; // val5 = -5 
 val6 = ~~'3.14'; // val6 = 3
 ```
-###binary arithmetic operations
+### binary arithmetic operations
 **CX** supports the following binary arithmetic operators: 
 ```js
 + Addition 
@@ -195,7 +195,7 @@ val6 = ~~'3.14'; // val6 = 3
 % Modulus (returns the remainder) 
 ```
 
-###Operations result table
+### Operations result table
 
 |*types*          |*null*       |*Bool* b   |*Number* b         |*String* b         |*Array* b          |*Object* b         |*else*|
 |-----------------|-------------|--------------|-------------------|-------------------|-------------------|-------------------|------|
@@ -213,7 +213,7 @@ val6 = ~~'3.14'; // val6 = 3
 |**Array** a +    | a.add(null) | a.add(b)     | a.add(b)          | a.add(b)          | a.add(b)          | a.add(b)          | null |
 |**else**         | null        | null         | null              | null              | null              | null              | null |
 
-###bit operators
+### bit operators
 **CX** supports the following unary and binary bit operators: 
 ``` js
 // Unary operator
@@ -229,7 +229,7 @@ val6 = ~~'3.14'; // val6 = 3
 >>> Shift right - converts to Long and shift right with zero fill. For positive numbers, >> and >>> yield the same result. 
 ```
 
-###Assignments
+### Assignments
 **CX** supports the following assignments: 
 ```js
 =  Assign 
@@ -241,7 +241,7 @@ val6 = ~~'3.14'; // val6 = 3
 ```
 All these operator assignments are converted to their long versions ( i.e. a += b; is executed as : a = a + b; )
 
-###Comparisons
+### Comparisons
 **CX** supports the following comparisons that produce Boolean result: 
 ```js
  ==  Equal 
@@ -252,7 +252,7 @@ All these operator assignments are converted to their long versions ( i.e. a += 
  <=  Less than or equal to 
 ```
 
-###Logical operators
+### Logical operators
 CX supports the following Logical operators: 
 ```js
 !     Not/Negation // true if parameter is not: null, false, 0, 0.0, "", '', [], {} 
@@ -269,12 +269,12 @@ var b = a ? "" : "otherwise"; // b = ""
 var c = b ?? 5; // c = 5 since b is empty string
 ```
 
-##Control structures
+## Control structures
 
-###Compound statements
+### Compound statements
 A pair of curly brackets { } and an enclosed sequence of statements constitute a compound statement, which can be used wherever a statement can be used.
 
-###if...else
+### if...else
 ```js
 if (expr) { 
     //statements; 
@@ -284,7 +284,7 @@ if (expr) {
 } ]
 ```
 
-###Switch statement
+### Switch statement
 ```js
 switch (expr) { 
     case SOMEVALUE:         //Strings literals and numbers can be used for the case values.
@@ -306,7 +306,7 @@ switch (expr) {
 - case default: is optional. 
 - Braces are required.
 
-###For loop
+### For loop
 The syntax of the **CX** for loop is as follows: 
 ```js
 for (initial; condition; loop statement) { 
@@ -316,7 +316,7 @@ for (initial; condition; loop statement) {
 }
 ```
 
-###For in loop
+### For in loop
 The syntax of the **CX** for in loop is as follows: 
 ```js
 for (variable : some_array_or_object) { 
@@ -328,7 +328,7 @@ for (variable : some_array_or_object) {
 Iterates through all enumerable properties of an object. 
 Iterates through all elements of an array from first to last.
 
-###While loop
+### While loop
 The syntax of the **CX** While loop is as follows: 
 ```js
 while (condition) { 
@@ -340,7 +340,7 @@ while (condition) {
       // continue 
 }
 ```
-###Do ... while loop
+### Do ... while loop
 The syntax of the **CX** Do ... while loop is as follows: 
 ```js
 do { 
@@ -353,7 +353,7 @@ do {
 } while (condition);
 ```
 
-##Functions
+## Functions
 A function is a combination of context with parent context to the current place of definition, statements sequence, (possibly empty) parameter list and optionally a given a name.
 A function may define its local variables via var. 
 Any used variable not defined in the function or anywhere in the context will be automatically defined as local variable.
@@ -390,7 +390,7 @@ var result2 = f(); // result2 = 0
 ```
 
 
-##Object Inheritance (sort of)
+## Object Inheritance (sort of)
 
 In **CX** inheritance is done via: 
 ```js
@@ -411,7 +411,7 @@ key3 = newObj.key; // key3 = 'oldValue'
 //The same is valid for the functions in case there is a need to use global functions from the parent.
 ```
 
-##eval (expression)
+## eval (expression)
 eval (expression) Evaluates expression string parameter, which can include assignment statements. Variables local to functions can be referenced by the expression. 
 ```js
 a = 5; eval('a++;'); // a = 6 
@@ -419,7 +419,7 @@ inc = eval('function _(x){return ++x;};');
 a = inc(a); // a = 7
 ```
 
-##Exception handling
+## Exception handling
 
 **CX** includes a **try ... catch ... finally** exception handling statement to handle run-time errors. This functionality should be enabled in the parser via: **parser.supportTryCatchThrow = true;** 
 ```js
@@ -461,11 +461,11 @@ try{
 }
 ```
 
-##Handlers
+## Handlers
 Handlers are custom implementation (like plugins or add-ons) that can be dynamically attached to a Context via method addHandler. All handlers needs to implement **cx.runtime.Handler** interface.
 with the current **CX** interpreter there are several handlers already implemented:
 
-###StringHandler
+### StringHandler
 
 String handler provides the following methods:
 ```js
@@ -489,7 +489,7 @@ str = str.trim(); // str = 'trim'
 str = 'smallCammelCase'.toLowerCase(); // str = 'smallcammelcase'
 ```
 
-###DateHandler
+### DateHandler
 Date Handler provides the following object generated by global functions: newDate() or newDate(string, format): 
 ```js
 Date = { 
@@ -514,7 +514,7 @@ var date = newDate('08/07/2013','dd/MM/yyyy'); // creates a date object
 var datestr = formatDate(date,'yyyy-MM-dd'); // datestr = '2013-07-08' 
 ```
 
-###MathHandler
+### MathHandler
 Math Handler provides the global object Math with functions: 
 ```js
 Math { 
@@ -540,7 +540,7 @@ var d = Math.min(2,4,6,8,9); // d = 2.0
 var d = Math.parseInteger('2.3'); // d = 2
 ```
 
-###ObjectHandler
+### ObjectHandler
 Object Handler provides a wrapper around POJO objects. 
 Example for an object:
 ```java
@@ -567,7 +567,7 @@ obj.methodList([1,2,3],1);
 obj.methodMap({a:1, b:2,c:3},'b');
 ```
 
-###DatabaseHandler
+### DatabaseHandler
 Database Handler provides a wrapper around JDBC implementations and is usefull for the SQL inlined syntax that parser supports. 
 Provided methods are: 
 ```js
